@@ -29,7 +29,7 @@ static class Utils
    
         $mung = strtr($mung, $table);
         
-        // Remove integers from mungek
+        // Remove integers from mung string if flagged
         if ($removeIntegers)
         {
             $key = '/[^A-Za-z \-]+/';
@@ -38,18 +38,45 @@ static class Utils
         {
             $key = '/[^A-Za-z0-9 \-]+/';
         }
+        
         $replace = array($key, '/(\s|\-)+/', '/^-+|-+$/');
         $with = array('', '-', '');
         $mung = preg_replace($replace, $with, $mung);
 
-        // Truncate string to the length defined
-        preg_match('/^.{0,' . $length. '}(?:.*?)\b/iu', $mung, $matches);
-        $mung = $matches[0];
+        // Truncate string to the defined length
+        $mung = Utils::Truncate($mung, $length);
         
         // Lower all cases
         $mung = strtolower($mung);
         return $mung;
     }
 
+    public static function Truncate($string, $stringLimit = 30, $breakpointDelimeter = null)
+    {
+        if(null === $breakpointDelimeter)
+        {
+            if(strlen($string) <= $stringLimit)
+            {
+                return $string;
+            }
+            
+            $string = substr($string, 0, $stringLimit);
+            if(false !== ($breakpoint = strrpos($string, ' ')))
+            {
+                $string = substr($string, 0, $breakpoint);
+            }
+        }
+        elseif(false !== ($breakpoint = strrpos($string, $breakpointDelimeter)))
+        {
+            $string=substr($string, 0, $breakpoint);
+        }
+                
+        return $string;
+    }
+
 }
+
+
+
+
 ?>

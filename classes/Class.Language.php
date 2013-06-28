@@ -10,22 +10,22 @@
 
 static class LanguageFactory
 {
-    private static $LangInstance = null;
+    private static $langInstance = null;
     
     
     public static function Create($languageCode = null)
     {
-        if (null === $LangInstance) {
-            $LangInstance = new Language($languageCode);
+        if (null === $this->langInstance) {
+            $this->langInstance = new Language($languageCode);
         }
 
-        return $LangInstance;
+        return $this->langInstance;
     }
     
     public static function Reset($languageCode = null)
     {
-        $LangInstance = new Language($languageCode);
-        return $LangInstance;
+        $this->langInstance = new Language($languageCode);
+        return $this->langInstance;
     }
 }
 
