@@ -1,16 +1,12 @@
-<a href="http://gowondesigns.com">
-  <img src="http://gowondesigns.com/favicon.ico" />
-</a>
+# [SMPL CMS](https://github.com/gowondesigns/smpl)
 
-# [SMPL Web Content Management System](https://github.com/gowondesigns/smpl)
-
-Optimo it is a platform that give your small/big application for faster and easier web development, created and maintained by [Saidur Rahman](http://www.saidur-rahman.com) and [Optimo Solution](http://www.optimosolution.com).
+SMPL is a single file, template independent, open-source, standards-compliant, extensible content management system for the web, created and maintained by Gowon Patterson for [Gowon Designs](http://gowondesigns.com).
 
 To get started, checkout [https://github.com/gowondesigns/smpl](https://github.com/gowondesigns/smpl)!
 
 
 
-## Quick start
+## Quick Start
 
 Two quick start options are available:
 
@@ -37,7 +33,7 @@ For more information on SemVer, please visit [http://semver.org/](http://semver.
 
 
 
-## Bug tracker
+## Bug Tracker
 
 Have a bug or a feature request? [Please open a new issue](https://github.com/gowondesigns/smpl/issues). Before opening any issue, please search for existing issues and read the [Issue Guidelines](https://github.com/necolas/issue-guidelines), written by [Nicolas Gallagher](https://github.com/necolas/).
 
