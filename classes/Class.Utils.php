@@ -73,10 +73,23 @@ static class Utils
                 
         return $string;
     }
+    
+    // Simple Hashing function (for generating permalinks)
+    public static function Hash($string)
+    {
+        $dictionary  = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        $base  = strlen($dictionary);           
+        $hash = null;
+
+        do 
+        {
+            $hash = $dict[($id%$base)].$hash;
+        } 
+        while ($id = floor($id/$base));
+
+        return $hash;
+    }
 
 }
-
-
-
 
 ?>

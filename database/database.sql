@@ -36,6 +36,7 @@ DROP TABLE IF EXISTS content;
 -- ---- Create content table:
 CREATE TABLE `content` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
+  `hash-hidden` VARCHAR(255) UNIQUE NOT NULL,
   `content-title-field` VARCHAR(100) NOT NULL,
   `content-title_mung-field` VARCHAR(25) NOT NULL,
   `content-static_page_flag-checkbox` BOOL DEFAULT FALSE,
