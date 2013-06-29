@@ -1,3 +1,5 @@
+<img src="https://raw.github.com/gowondesigns/smpl/master/images/smpl.png" alt="SMPL CMS" />
+
 # [SMPL CMS](https://github.com/gowondesigns/smpl)
 
 SMPL is a single file, template independent, open-source, standards-compliant, extensible content management system for the web, created and maintained by Gowon Patterson for [Gowon Designs](http://gowondesigns.com).
