@@ -1,21 +1,32 @@
+/*
+    Database fields should be in the following format:
+
+    id -OR-
+    item_name-item_type -OR-
+    item_group-item_name-item_type
+*/
+
 DROP TABLE IF EXISTS system;
 -- ---- Create system table:
 CREATE TABLE `system` (
   `id` TINYINT PRIMARY KEY AUTO_INCREMENT,
-  `name` VARCHAR(30) NOT NULL,
-  `value` LONGTEXT NOT NULL
+  `name-field` VARCHAR(30) NOT NULL,
+  `value-field` LONGTEXT NOT NULL
 );
 
 
 DROP TABLE IF EXISTS users;
 -- ---- Create users table:
 CREATE TABLE `users` (
-  `id` INT PRIMARY KEY AUTO_INCREMENT,
-  `user_name-hash` CHAR(32) UNIQUE NOT NULL,
-  `password-hash` CHAR(32) NOT NULL,
-  `name-field` VARCHAR(30) NOT NULL,
-  `email-field` VARCHAR(255) NOT NULL,
-  `permissions-set` VARCHAR(255) NOT NULL DEFAULT ''
+  `id` TINYINT PRIMARY KEY AUTO_INCREMENT,
+  `account-user_name-hash` CHAR(32) UNIQUE NOT NULL,
+  `account-password-hash` CHAR(32) NOT NULL,
+  `account-name-field` VARCHAR(30) NOT NULL,
+  `account-email-field` VARCHAR(255) NOT NULL,
+  `permissions-edit_system-checkbox` BOOL DEFAULT FALSE,
+  `permissions-edit_users-checkbox` BOOL DEFAULT FALSE,
+  `permissions-edit_content-checkbox` BOOL DEFAULT FALSE,
+  `permissions-edit_views-checkbox` BOOL DEFAULT FALSE
 );
 
 
@@ -68,12 +79,13 @@ DROP TABLE IF EXISTS blocks;
 -- ---- Create blocks table:
 CREATE TABLE `blocks` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
-  `content-title-field` VARCHAR(100) NOT NULL,
-  `content-views-list` INT NOT NULL DEFAULT 1,  
+ 	`content-title-field` VARCHAR(100) UNIQUE NOT NULL,
+ 	`content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
+  `content-views-list` INT NOT NULL DEFAULT 1,
+  `content-priority-list` ENUM('LOW', 'MED', 'HIGH') NOT NULL DEFAULT 1,  
   `content-body-textarea` LONGTEXT,
   `publish-publish_flag-checkbox` BOOL DEFAULT TRUE,
   `publish-publish_date-date` BIGINT(14) UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL DEFAULT FALSE,
   `publish-unpublish_date-date` BIGINT(14) UNSIGNED NOT NULL
 );
-
