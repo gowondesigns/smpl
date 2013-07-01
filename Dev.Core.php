@@ -18,6 +18,15 @@ error_reporting(E_ALL ^ E_NOTICE); // #1 Report all Errors
 
 
 // Include all of the classes located in the classes/ folder
+function load_folder($folder){
+    foreach (glob("{$folder}/*.php") as $filename)
+    {
+        require_once($filename);
+    }
+}
+
+include_all_php("my_classes");
+
 function __autoload($class_name) {
     require_once('classes/Class.'.$class_name.'.php');
 }

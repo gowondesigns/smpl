@@ -9,9 +9,9 @@ RewriteEngine on
 #   Output: /index.php?categories/uncategorized/
 
 
-#/api/ (pre-case)
-#/admin/ (pre-case)
-#/feed/ (pre-case)
+#/api/ (special)
+#/admin/ (special)
+#/feed/ (special)
 #/feed/custom-feed-type/
 #/categories/category-title/<index>/
 #/category-title/page-title/
@@ -19,5 +19,5 @@ RewriteEngine on
 #/category-title/articles/article-id/ (Force Reload to the URL with the title)
 #/articles/article-title/
 #/articles/article-id/ (Either date (down to the second) or hash-id), (Force Reload to the URL with the title)
-/page-name/ (Articles cannot be accessed this way, they must have the "Static Content" flag to be treated like a page)  
+#/page-name/ (Articles cannot be accessed this way, they must have the "Static Content" flag to be treated like a page)  
 RewriteRule ^/(?!\?)(\w+)/?$ index.php?$1 
