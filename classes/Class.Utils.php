@@ -7,6 +7,7 @@
 
 static class Utils
 {
+      
     // Convert strings to SEO-friendly strings, with optional flags to remove integers
     public static function Munge($string, $length = 30, $removeIntegers = false)
     {
@@ -74,12 +75,18 @@ static class Utils
         return $string;
     }
     
-    // Simple Hashing function (for generating permalinks)
+    // Simple Hashing function (primarily for generating permalinks)
     public static function Hash($string)
     {
         $dictionary  = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $base  = strlen($dictionary);           
-        $hash = null;
+        $base  = strlen($dictionary);
+        $hash = null;           
+        $id = null;
+        
+        for($i = 0; $i < strlen($string); $i++)
+        {
+            $id .= ord($string[$i]);
+        }
 
         do 
         {
@@ -88,6 +95,90 @@ static class Utils
         while ($id = floor($id/$base));
 
         return $hash;
+    }
+    
+    // Returns current URI in an array of assets
+    public static function ParseUri()
+    {
+        $assets = array();
+        $currentUri = $_SERVER['QUERY_STRING'];
+        
+        // Need to make sure whether or not '?' is included in the Query String
+        // If so, must remove it before exploding the string
+        $assets = explode('/', $currentUri);
+        
+        return $assets;
+    }
+    
+    // System-generated URIs  
+    public static function GenerateUri($asset)
+    {
+        $optionalAssets = array_slice(func_get_args(), 1);
+        $uri = Configuration::Site();
+        
+        if (Configuration::CheckSetting('modRewriteFlag'))
+        {
+            $uri .= $asset.'/';
+        }
+        else
+        {
+            $uri .= '?'.$asset.'/';
+        }
+        
+        if(isset($optionalAssets)) // If there are any additional assets, append them
+        {
+            $uri .= implode('/', $optionalAssets).'/';
+        }
+        
+        return $uri;
+    }
+    
+    // System-generated URIs  
+    public static function AppendUri($asset)
+    {
+        $optionalAssets = array_slice(func_get_args(), 1);
+        $uri = Configuration::Site();
+        
+        if (Configuration::CheckSetting('modRewriteFlag'))
+        {
+            $uri .= $asset.'/';
+        }
+        else
+        {
+            $uri .= '?'.$asset.'/';
+        }
+                 
+        $uri .= implode('/', $optionalAssets);
+        return $uri;
+    }
+    
+    
+    public static function Pagination($setAmount, $currentPosition, $showPageNumbers = false, $pageNumberItems = null, $seperator = "&#124;")
+    {
+        $l = LanguageFactory::Create(); // Grab language data
+        $html = '<div class="smpl-pagination"><ul>';
+        
+        if($currentPosition > $setAmount || $currentPosition < 1)
+        {
+            die('Index Error');// Replace with DEBUG METHODS
+        }
+
+        if($currentPosition > 1)
+        {
+            $html .= '<li id="previous"><a href="'.Utils::GenerateUri($l->Phrase('admin')).'" title="">'.$seperator.'</a></li>';
+        }        
+
+        if($currentPosition > $setAmount || $currentPosition < 1)
+        {
+            die('Index Error');// Replace with DEBUG METHODS
+        }        
+        $html .= '<li id="seperator">'.$seperator.'</li>';
+        
+        
+        
+        $html .= '</ul></div>';
+        
+        return $html;
     }
 
 }

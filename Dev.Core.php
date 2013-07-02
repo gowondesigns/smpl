@@ -25,7 +25,7 @@ function load_folder($folder){
     }
 }
 
-include_all_php("my_classes");
+include_all_php("classes");
 
 function __autoload($class_name) {
     require_once('classes/Class.'.$class_name.'.php');

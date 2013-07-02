@@ -30,6 +30,7 @@ interface iDatabase
 
 abstract class aDatabase
 {
+    private $foobar;
 }
 
 class MySqlDatabase extends aDatabase implements iDatabase

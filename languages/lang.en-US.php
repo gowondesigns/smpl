@@ -28,6 +28,9 @@ $SMPL_LANG_PHRASES = array(
   "categories" => "categories",
   
   // SMPL Admin Panel phrases
+  "Administration" => "Administration",
+  "Logout" => "Logout",
+  "EditContent" => "Edit Content",
   "Author" => "Author",
   "Comment" => "Comment",
   "Page" => "Page",

@@ -34,9 +34,6 @@ static class Configuration
             'prefix' => $this->databasePrefix);
     }
     
-    public static function UriQuery()
-    {
-    }
 }
 
 ?>

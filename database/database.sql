@@ -10,8 +10,24 @@ DROP TABLE IF EXISTS system;
 -- ---- Create system table:
 CREATE TABLE `system` (
   `id` TINYINT PRIMARY KEY AUTO_INCREMENT,
-  `name-field` VARCHAR(30) NOT NULL,
+  `name-hidden` VARCHAR(30) UNIQUE NOT NULL,
+  `title-label` VARCHAR(255) NOT NULL,
   `value-field` LONGTEXT NOT NULL
+);
+
+
+DROP TABLE IF EXISTS api;
+-- ---- Create api table:
+CREATE TABLE `api` (
+  `id` TINYINT PRIMARY KEY AUTO_INCREMENT,
+  `api-token-field` VARCHAR(30) UNIQUE NOT NULL,
+  `api-description-field` VARCHAR(255) DEFAULT '',
+  `api-cnonce-field` VARCHAR(255) NOT NULL,
+  `permissions-access_database-checkbox` BOOL DEFAULT FALSE,  -- Give client ability to make custom SQL queries, effectively supercedes all other permissions
+  `permissions-access_system-checkbox` BOOL DEFAULT FALSE,
+  `permissions-access_users-checkbox` BOOL DEFAULT FALSE,
+  `permissions-access_content-checkbox` BOOL DEFAULT FALSE,
+  `permissions-access_blocks-checkbox` BOOL DEFAULT FALSE
 );
 
 
@@ -23,10 +39,11 @@ CREATE TABLE `users` (
   `account-password-hash` CHAR(32) NOT NULL,
   `account-name-field` VARCHAR(30) NOT NULL,
   `account-email-field` VARCHAR(255) NOT NULL,
-  `permissions-edit_system-checkbox` BOOL DEFAULT FALSE,
-  `permissions-edit_users-checkbox` BOOL DEFAULT FALSE,
-  `permissions-edit_content-checkbox` BOOL DEFAULT FALSE,
-  `permissions-edit_views-checkbox` BOOL DEFAULT FALSE
+  `account-last_login-hidden` BIGINT UNSIGNED,
+  `permissions-access_system-checkbox` BOOL DEFAULT FALSE,
+  `permissions-access_users-checkbox` BOOL DEFAULT FALSE,
+  `permissions-access_content-checkbox` BOOL DEFAULT FALSE,
+  `permissions-access_blocks-checkbox` BOOL DEFAULT FALSE
 );
 
 
@@ -65,9 +82,9 @@ CREATE TABLE `content` (
 );
 
 
-DROP TABLE IF EXISTS views;
--- ---- Create views table:
-CREATE TABLE `views` (
+DROP TABLE IF EXISTS spaces;
+-- ---- Create spaces table:
+CREATE TABLE `spaces` (
 	`id` TINYINT PRIMARY KEY AUTO_INCREMENT,
  	`title-field` VARCHAR(100) UNIQUE NOT NULL,
  	`title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
@@ -81,8 +98,10 @@ CREATE TABLE `blocks` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
  	`content-title-field` VARCHAR(100) UNIQUE NOT NULL,
  	`content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
-  `content-views-list` INT NOT NULL DEFAULT 1,
-  `content-priority-list` ENUM('LOW', 'MED', 'HIGH') NOT NULL DEFAULT 1,  
+  `content-space-list` INT NOT NULL DEFAULT 1,
+  `content-priority-list` ENUM('LOW', 'MED', 'HIGH') NOT NULL DEFAULT 1,
+  `content-redirect_flag-checkbox` BOOL DEFAULT TRUE,
+  `content-redirect_location-field` VARCHAR(255),    
   `content-body-textarea` LONGTEXT,
   `publish-publish_flag-checkbox` BOOL DEFAULT TRUE,
   `publish-publish_date-date` BIGINT(14) UNSIGNED NOT NULL,

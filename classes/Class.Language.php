@@ -49,7 +49,7 @@ class Language
         // Language files are included from the implied location (languages/) folder
         if (isset($languageCode))
         {
-            include("languages/lang.".$languageCode.".php");
+            include("smpl-languages/lang.".$languageCode.".php");
             /* The language file is just a container including these three variables
             // $SMPL_LANG_DESC
             // $SMPL_LANG_CODE
