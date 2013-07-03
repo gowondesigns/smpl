@@ -7,12 +7,13 @@
 
 static class Configuration
 {
-    private $databaseType = 'MySql';
-    private $databaseHost = 'localhost';
-    private $databaseName = 'smpl';
-    private $databaseUsername = 'root';
-    private $databasePassword = '';
-    private $databasePrefix = '';
+    private $database = array(
+        'type' => 'MySql',
+        'host' => 'localhost',
+        'name' => 'smpl',
+        'username' => 'root',
+        'password' => '',
+        'prefix' => '');
     private $modRewriteOn = false;
 
 
@@ -24,16 +25,38 @@ static class Configuration
         return $website;
     }
     
-    public static function Credentials()
+    public static function DatabaseInfo($item = null)
     {
-        return array(
-            'host' => $this->databaseHost,
-            'name' => $this->databaseName,
-            'username' => $this->databaseUsername,
-            'password' => $this->databasePassword,
-            'prefix' => $this->databasePrefix);
+        if (null === $this->langInstance)
+        {
+            return return $this->database;
+        }
+        else
+        {
+            return $this->database[$item];
+        }
     }
     
+    public static CheckSetting($settingName)
+    {
+        $database = Database::Connect();
+        //return the value from the Database query
+        
+            /* SITE SETTINGS - grab site settings from database
+function s($var) {
+	global $site_settings;
+	if (!$site_settings){
+		$query = 'SELECT name,value FROM '._PRE.'settings';
+		$result = mysql_query($query);
+		while ($r = mysql_fetch_assoc($result)) {
+			$site_settings[$r['name']] = $r['value'];
+		}
+	}
+	$value = $site_settings[$var];
+	return $value;
+}*/ 
+    }
+  
 }
 
 ?>

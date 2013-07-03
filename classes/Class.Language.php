@@ -15,7 +15,8 @@ static class LanguageFactory
     
     public static function Create($languageCode = null)
     {
-        if (null === $this->langInstance) {
+        if (null === $this->langInstance)
+        {
             $this->langInstance = new Language($languageCode);
         }
 
@@ -32,29 +33,39 @@ static class LanguageFactory
 
 class Language
 {
-    private $language;
-    private $languageCode;
-    private $languagePhrases = array();
+    private $language = "US English";
+    private $languageCode = "en-US";
+    
+    // This default array represents the official set of phrases that must be guaranteed by translations
+    private $languagePhrases = array(
+        // SMPL-generated URL phrases
+        "api" => "api",
+        "feed" => "feed",
+        "admin" => "admin",
+        "articles" => "articles",
+        "categories" => "categories",
+  
+        // SMPL Admin Panel phrases
+        "Administration" => "Administration",
+        "Logout" => "Logout",
+        "EditContent" => "Edit Content",
+        "Author" => "Author",
+        "Comment" => "Comment",
+        "Page" => "Page",
+        "Date" => "Date"
+        );
 
     
     public function __construct($languageCode)
     {
-        // This default array represents the official set of phrases that must be guaranteed by translations
-        $this->languagePhrases = array(
-            "Author" => "Author",
-            "Comment" => "Comment",
-            "Page" => "Page",
-            "Date" => "Date");
-
-        // Language files are included from the implied location (languages/) folder
+        // If the language code is 
         if (isset($languageCode))
         {
             include("smpl-languages/lang.".$languageCode.".php");
-            /* The language file is just a container including these three variables
-            // $SMPL_LANG_DESC
-            // $SMPL_LANG_CODE
-            // $SMPL_LANG_PHRASES
-            //*/
+            if(!isset($SMPL_LANG_DESC) || !isset($SMPL_LANG_CODE) || !isset($SMPL_LANG_PHRASES))
+            {
+                die('Invalid Language File'); // [MUSTCHANGE]
+            }
             
             $this->language = $SMPL_LANG_DESC;
             $this->languageCode = $SMPL_LANG_CODE;
@@ -63,12 +74,6 @@ class Language
                 $this->Update($key, $value);
             }
             
-        }
-        // If no language is set, default to US-English
-        else
-        {
-            $this->language = "US English";
-            $this->languageCode = "en-US";
         }
     }
 

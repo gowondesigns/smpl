@@ -10,7 +10,7 @@
 
 static class Content
 {
-    private static $langInstance = null;
+    private static $spaces = array();
     
     
     public static function Space($spaceName)
@@ -56,5 +56,21 @@ static class Content
     
 }
 
+// Sttucture for all content elements
+abstract class aContentObject
+{
+}
+
+class Page extends aContentObject
+{
+}
+
+class Article extends aContentObject
+{
+}
+
+class Block extends aContentObject
+{
+}
 
 ?>

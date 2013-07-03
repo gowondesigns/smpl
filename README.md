@@ -19,7 +19,7 @@ Two quick start options are available:
 
 ## Versioning
 
-For transparency and insight into our release cycle, and for striving to maintain backward compatibility, Optimo will be maintained under the Semantic Versioning guidelines as much as possible.
+To increase transparency, improve organization, and increase maintain backwards compatibility, SMPL will be maintained under the Semantic Versioning guidelines as much as possible.
 
 Releases will be numbered with the following format:
 
@@ -27,9 +27,9 @@ Releases will be numbered with the following format:
 
 And constructed with the following guidelines:
 
-* Breaking backward compatibility bumps the major (and resets the minor and patch)
-* New additions without breaking backward compatibility bumps the minor (and resets the patch)
-* Bug fixes and misc changes bumps the patch
+* Breaking backward compatibility increment the major version (minor and patch reset)
+* New additions without breaking backward compatibility increment the minor version (patch resets)
+* Bug fixes and misc changes increment the patch version
 
 For more information on SemVer, please visit [http://semver.org/](http://semver.org/).
 
@@ -43,6 +43,6 @@ Have a bug or a feature request? [Please open a new issue](https://github.com/go
 
 ## Copyright and License
 
-Copyright &copy; 2013 Gowon Designs.
+Copyright &copy; 2013 Gowon Patterson, Gowon Designs.
 
 License pending.
