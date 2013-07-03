@@ -57,50 +57,56 @@ interface iDatabase
 
 abstract class aDatabase
 {
-    protected $databaseStatus = null;
-    protected $databaseHost;
-    protected $databaseName;
-    protected $databaseUsername;
-    protected $databasePassword;
-    protected $databasePrefix;
+    protected $status = null;
+    protected $host;
+    protected $name;
+    protected $username;
+    protected $password;
+    protected $prefix;
     
     public function __construct($host, $name, $username, $password, $prefix)
     {
-        $this->databaseHost = $host;
-        $this->databaseName = $name;
-        $this->databaseUsername = $username;
-        $this->databasePassword = $password;
-        $this->databasePrefix = $prefix;
+        $this->host = $host;
+        $this->name = $name;
+        $this->username = $username;
+        $this->password = $password;
+        $this->prefix = $prefix;
     }
     
     
-    public function GetStatus()
+    public function GetStatus()    // This type of method may not be necessary
     {
-        return $this->databaseStatus;
+        return $this->status;
     }
 }
 
 class MySqlDatabase extends aDatabase implements iDatabase
 {
+    private $mysqli;
+
 
     public function __construct($host, $name, $username, $password, $prefix)
     {
         parent::__construct($host, $name, $username, $password, $prefix);
         
-        $this->databaseStatus = mysql_connect($host, $username, $password) or die('MySQL Connection Error'); // Establish Connection, save results      // [MUSTCHANGE]
+        $this->mysqli = new mysqli($host, $username, $password, $host);
+        if ($this->mysqli->connect_errno)
+        {
+            die("Connect failed: %s\n", $mysqli->connect_error); // [MUSTCHANGE]
+        }
+        
     }
 
     public function Query($queryString)
     {
-        $data = mysql_fetch_array( mysql_query($queryString));
-        // restructure elements
-        return $data;
+        // Return mysqli result object: http://www.php.net/manual/en/class.mysqli-result.php
+        return $this->mysqli->query($queryString);
     }
     
-    public function Create($insertToTable, $insertItems) // $insertItems must be an array
+    public function Create($insertToTable, $insertItems, $insertExtra = null) // $insertItems must be an array
     {
         $insertString = array();
-        $insertToTable = Configuration::DatabaseInfo('prefix').$insertToTable;
+        $insertToTable = $this->prefix.$insertToTable;
         
         for ($i = 0; $i < count($insertItems); $i++)
         {
@@ -116,13 +122,15 @@ class MySqlDatabase extends aDatabase implements iDatabase
         
         $insertString = implode(', ', $insertItems);
             
-        mysql_query('INSERT INTO '.$insertToTable.' VALUES (SET '.$insertString.')');
+        // Method will return TRUE on success, FALSE on failure
+        return $this->mysqli->query('INSERT INTO '.$insertToTable.' VALUES (SET '.$insertString.') '.$insertExtra);
+
     }
     
     // Retrieve specific item (not meant for queries that return multiple results)
     public function Retrieve($selectFromTable, $selectItems = null,  $selectWhereClause = null, $selectExtra = null)
     {
-        $selectFromTable = Configuration::DatabaseInfo('prefix').$selectFromTable;
+        $selectFromTable = $this->prefix.$selectFromTable;
         
         if (null === $selectItems)
         {
@@ -134,16 +142,15 @@ class MySqlDatabase extends aDatabase implements iDatabase
             $selectWhereClause = ' WHERE '.$selectWhereClause;
         }
         
-        $data = mysql_fetch_array( mysql_query('SELECT '.$selectItems.' FROM '.$selectFromTable.$selectWhereClause.' '.$selectExtra));
-        // restructure elements
-        return $data;
+        // Return mysqli result object: http://www.php.net/manual/en/class.mysqli-result.php
+        return $this->mysqli->query('SELECT '.$selectItems.' FROM '.$selectFromTable.$selectWhereClause.' '.$selectExtra);
     }
     
     public function Update($updateToTable, $updateItems, $updateWhereClause, $updateExtra = null)    // $updateItems must be an array
     {
         $i = 0;
         $updateString = array();
-        $updateToTable = Configuration::DatabaseInfo('prefix').$updateToTable;
+        $updateToTable = $this->prefix.$updateToTable;
         
         foreach ($updateItems as $key => $value)
         {
@@ -160,13 +167,17 @@ class MySqlDatabase extends aDatabase implements iDatabase
         
         $updateString = implode(', ', $updateString);
             
-        mysql_query('UPDATE '.$updateToTable.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$selectExtra);
+        
+        // Method will return TRUE on success, FALSE on failure
+        return $this->mysqli->query('UPDATE '.$updateToTable.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$selectExtra);
     }
     
     public function Delete($deleteFromTable, $deleteWhereClause, $selectExtra = null)
     {
-        $deleteFromTable = Configuration::DatabaseInfo('prefix').$deleteFromTable;
-        mysql_query('DELETE FROM '.$deleteFromTable.' WHERE '.$selectWhereClause.' '.$selectExtra);
+        $deleteFromTable = $this->prefix.$deleteFromTable;
+        
+        // Method will return TRUE on success, FALSE on failure
+        return $this->mysqli->query('DELETE FROM '.$deleteFromTable.' WHERE '.$selectWhereClause.' '.$selectExtra);
     }
 
 }

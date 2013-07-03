@@ -16,16 +16,16 @@ session_start();
 error_reporting(E_ALL ^ E_NOTICE); // #1 Report all Errors
 //error_reporting(0); // #2 No Error Reporting
 
-
 // Include all of the classes located in the classes/ folder
-function load_folder($folder){
-    foreach (glob("{$folder}/*.php") as $filename)
+function IncludeFromFolder($folder)
+{
+    foreach (glob("{$folder}*.php") as $filename)
     {
         require_once($filename);
     }
 }
 
-include_all_php("classes");
+IncludeFromFolder("classes/");
 
 function __autoload($class_name) {
     require_once('classes/Class.'.$class_name.'.php');

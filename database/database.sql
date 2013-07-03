@@ -6,9 +6,9 @@
     item_group-item_name-item_type
 */
 
-DROP TABLE IF EXISTS system;
--- ---- Create system table:
-CREATE TABLE `system` (
+DROP TABLE IF EXISTS settings;
+-- ---- Create settings table:
+CREATE TABLE `settings` (
   `id` TINYINT PRIMARY KEY AUTO_INCREMENT,
   `name-hidden` VARCHAR(30) UNIQUE NOT NULL,
   `title-label` VARCHAR(255) NOT NULL,

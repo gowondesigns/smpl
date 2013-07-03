@@ -10,14 +10,22 @@
 
 static class Content
 {
-    private static $spaces = array();
+    private static $spaces = array('main' => null);
+
     
+    public static function Status()
+    {
+        return print_r($this->spaces, true);        
+    }
     
     public static function Space($spaceName)
     {
-        $l = LanguageFactory::Create();
-        echo $l->Phrase("Author");
-        
+        if (!isset($this->spaces[$spaceName]) || null === $this->spaces[$spaceName])
+        {
+            $this->spaces[$spaceName] = new Space($spaceName);
+        }
+
+        return $this->spaces[$spaceName];
     }
     
     public static function HtmlHeader()

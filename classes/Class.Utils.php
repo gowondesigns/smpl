@@ -111,24 +111,12 @@ static class Utils
     }
     
     // System-generated URIs  
-    public static function GenerateUri($asset)
+    public static function GenerateUri($stub) // $stub isn't used, it's just here to force at least one argument passed 
     {
-        $optionalAssets = array_slice(func_get_args(), 1);
+        $assets = array_slice(func_get_args());
         $uri = Configuration::Site();
-        
-        if (Configuration::CheckSetting('modRewriteFlag'))
-        {
-            $uri .= $asset.'/';
-        }
-        else
-        {
-            $uri .= '?'.$asset.'/';
-        }
-        
-        if(isset($optionalAssets)) // If there are any additional assets, append them
-        {
-            $uri .= implode('/', $optionalAssets).'/';
-        }
+        $uri .= (Configuration::CheckSetting('modRewriteFlag')) ? '': '?';
+        $uri .= implode('/', $assets).'/';
         
         return $uri;
     }
@@ -153,24 +141,24 @@ static class Utils
     }
     
     
-    public static function Pagination($setAmount, $currentPosition, $showPageNumbers = false, $pageNumberItems = null, $seperator = "&#124;")
+    public static function Pagination($setAmount, $currentPosition, $showPageNumbers = false, $totalPageNumbers = null, $seperator = "&#124;")
     {
         $l = LanguageFactory::Create(); // Grab language data
         $html = '<div class="smpl-pagination"><ul>';
         
         if($currentPosition > $setAmount || $currentPosition < 1)
         {
-            die('Index Error');// Replace with DEBUG METHODS
+            die('Index Error');// Replace with DEBUG METHODS [MUSTCHANGE]
         }
 
         if($currentPosition > 1)
         {
-            $html .= '<li id="previous"><a href="'.Utils::GenerateUri($l->Phrase('admin')).'" title="">'.$seperator.'</a></li>';
+            $html .= '<li id="previous"><a href="'.Utils::GenerateUri($l->Phrase('Previous')).'" title="'.$l->Phrase('Previous').'">'.$l->Phrase('Previous').'</a></li>';
         }        
 
-        if($currentPosition > $setAmount || $currentPosition < 1)
+        if($currentPosition < $setAmount)
         {
-            die('Index Error');// Replace with DEBUG METHODS
+            $html .= '<li id="previous"><a href="'.Utils::GenerateUri($l->Phrase('Next')).'" title="'.$l->Phrase('Next').'">'.$l->Phrase('Next').'</a></li>';
         }        
         $html .= '<li id="seperator">'.$seperator.'</li>';
         

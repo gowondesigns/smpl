@@ -14,14 +14,16 @@ static class Configuration
         'username' => 'root',
         'password' => '',
         'prefix' => '');
-    private $modRewriteOn = false;
+        
+    private $modRewrite = false;
+    private $sslCertificate = false;
 
 
-    public static function Site()
+    public static function Site()                         // [MUSTCHANGE]
     {
         $host = 'http://'.$_SERVER['HTTP_HOST'];
         $directory = dirname($_SERVER['SCRIPT_NAME']);
-        $website = $directory == '/' ? $host.'/' : $host.$directory.'/';
+        $website = ($directory == '/') ? $host.'/': $host.$directory.'/';
         return $website;
     }
     
@@ -40,23 +42,23 @@ static class Configuration
     public static CheckSetting($settingName)
     {
         $database = Database::Connect();
-        //return the value from the Database query
+        $result = $database->Retrieve('settings', 'value-field',  "name-hidden = '{$settingName}'");
+        $value = $result->fetch_array(MYSQLI_NUM);
         
-            /* SITE SETTINGS - grab site settings from database
-function s($var) {
-	global $site_settings;
-	if (!$site_settings){
-		$query = 'SELECT name,value FROM '._PRE.'settings';
-		$result = mysql_query($query);
-		while ($r = mysql_fetch_assoc($result)) {
-			$site_settings[$r['name']] = $r['value'];
-		}
-	}
-	$value = $site_settings[$var];
-	return $value;
-}*/ 
+        return $value[0]
     }
-  
+    
+    public static ModRewrite()
+    {
+        return $this->modRewrite;
+    }
+    
+    
+    public static SslCertificate()
+    {
+        return $this->sslCertificate;
+    }
+      
 }
 
 ?>
