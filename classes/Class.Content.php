@@ -13,6 +13,11 @@ static class Content
     private static $spaces = array('main' => null);
 
     
+    public static function Start()
+    {
+    
+    }
+    
     public static function Status()
     {
         return print_r($this->spaces, true);        

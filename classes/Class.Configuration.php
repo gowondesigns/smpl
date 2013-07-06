@@ -21,7 +21,9 @@ static class Configuration
 
     public static function Site()                         // [MUSTCHANGE]
     {
-        $host = 'http://'.$_SERVER['HTTP_HOST'];
+
+        $host = (Configuration::SslCertificate()) ? 'https://': 'http://';
+        $host .= $_SERVER['HTTP_HOST'];
         $directory = dirname($_SERVER['SCRIPT_NAME']);
         $website = ($directory == '/') ? $host.'/': $host.$directory.'/';
         return $website;
@@ -39,7 +41,7 @@ static class Configuration
         }
     }
     
-    public static CheckSetting($settingName)
+    public static GetSetting($settingName)
     {
         $database = Database::Connect();
         $result = $database->Retrieve('settings', 'value-field',  "name-hidden = '{$settingName}'");

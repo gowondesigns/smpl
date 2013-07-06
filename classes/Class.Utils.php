@@ -52,6 +52,10 @@ static class Utils
         return $mung;
     }
 
+    /* Discussion: How should truncate behave?
+    1) Either truncate by length limit OR truncate by delimiter, NOT BOTH
+    2) Truncate by delimiter OR length limit, WHICHEVER COMES FIRST 
+    //*/
     public static function Truncate($string, $stringLimit = 30, $breakpointDelimeter = null)
     {
         if(null === $breakpointDelimeter)
@@ -115,7 +119,7 @@ static class Utils
     {
         $assets = array_slice(func_get_args());
         $uri = Configuration::Site();
-        $uri .= (Configuration::CheckSetting('modRewriteFlag')) ? '': '?';
+        $uri .= (Configuration::GetSetting('modRewriteFlag')) ? '': '?';
         $uri .= implode('/', $assets).'/';
         
         return $uri;
@@ -127,7 +131,7 @@ static class Utils
         $optionalAssets = array_slice(func_get_args(), 1);
         $uri = Configuration::Site();
         
-        if (Configuration::CheckSetting('modRewriteFlag'))
+        if (Configuration::GetSetting('modRewriteFlag'))
         {
             $uri .= $asset.'/';
         }
