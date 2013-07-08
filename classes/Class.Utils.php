@@ -172,19 +172,6 @@ static class Utils
         
         return $html;
     }
-    
-    
-    // Method to initiate all automatic actions
-    public static function Cron()
-    {
-     /*   function updateContent() {
-$query="UPDATE ".db('prefix')."content SET published='1' WHERE published='2' AND date<='".timeStamp()."'";
-mysql_query($query);
-$query="UPDATE ".db('prefix')."content SET published='0', unpublish='0' WHERE unpublish='1' AND enddate<='".timeStamp()."'";
-mysql_query($query);
-}
-*/ 
-    }
 
 }
 

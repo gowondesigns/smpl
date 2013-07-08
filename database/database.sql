@@ -64,9 +64,9 @@ DROP TABLE IF EXISTS content;
 -- ---- Create content table:
 CREATE TABLE `content` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
-  `hash-hidden` VARCHAR(255) UNIQUE NOT NULL,
+  `content-permalink-hidden` VARCHAR(255) UNIQUE NOT NULL,
   `content-title-field` VARCHAR(100) NOT NULL,
-  `content-title_mung-field` VARCHAR(25) NOT NULL,
+  `content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
   `content-static_page_flag-checkbox` BOOL DEFAULT FALSE,
   `content-category-dropdown` INT NOT NULL DEFAULT 1,
   `content-author-dropdown` INT NOT NULL DEFAULT 1,
@@ -87,7 +87,7 @@ CREATE TABLE `spaces` (
 	`id` TINYINT PRIMARY KEY AUTO_INCREMENT,
  	`title-field` VARCHAR(100) UNIQUE NOT NULL,
  	`title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
- 	`publish_flag-checkbox` BOOL DEFAULT TRUE,
+ 	`publish_flag-checkbox` BOOL DEFAULT TRUE
 );
 
 
