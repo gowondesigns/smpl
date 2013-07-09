@@ -19,13 +19,12 @@ require('smpl.dev.php');
   <meta name="robots" content="index,follow">
   <meta name="description" content="Description of website from SMPL Settings">
   <meta name="keywords" content="Tags from Content Object if present">
+  <link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="?rss" />
   -->
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link href="favicon.ico" rel="shortcut icon">
   <link rel="stylesheet" href="css/style.css">
-  
-  <!-- <link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="?rss" /> -->
-    
+
   <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
 </head>
 

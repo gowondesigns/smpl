@@ -12,14 +12,21 @@ static class Date
     // Create new DateData or generate DateData from SMPL Date Strings
     public static function Create($fromSmplDateString = null)
     {
-        $fromSmplDateString = (null === $fromSmplDateString) ? date("YmdHis"): $fromSmplDateString;
+        if (null === $fromSmplDateString)
+            $fromSmplDateString = date("YmdHis");
+            
         return new DateData($fromSmplDateString);
     }
 
     // Flatten DateData into a printable/passable string (Default to SMPL Date String format) 
-    public static function Flatten(DateData $dateData, $stringFormat = null)
+    public static function CreateFlat(DateData $dateData = null, $stringFormat = null)
     {
-        $stringFormat = (null === stringFormat) ? "YmdHis": $stringFormat;
+        if (null === $stringFormat)
+            $stringFormat = "YmdHis";
+        
+        if (null === $dateData)
+            $dateData = new DateData();
+        
         $date = $dateData->Info();
         return date($stringFormat, mktime($date['hours'], $date['minutes'], $date['seconds'], $date['month'], $date['day'], $date['year']));
     }

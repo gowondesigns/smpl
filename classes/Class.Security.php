@@ -150,9 +150,9 @@ static class Security
                     session_start();
                 
                 // User authentication period is still active, then update 
-                if (isset($_SESSION[Configuration::Site().'_AUTH_PERIOD']) && $_SESSION[Configuration::Site().'_AUTH_PERIOD'] > Date::Flatten(Date::Create()))
+                if (isset($_SESSION[Configuration::Site().'_AUTH_PERIOD']) && $_SESSION[Configuration::Site().'_AUTH_PERIOD'] > Date::CreateFlat())
                 {
-                    $_SESSION[Configuration::Site().'_AUTH_PERIOD'] = (int) Date::Flatten(Date::Create()) + 10000;
+                    $_SESSION[Configuration::Site().'_AUTH_PERIOD'] = (int) Date::CreateFlat() + 10000;
                     $this->currentSessionValid = true;
                 }
                 else
@@ -223,7 +223,7 @@ static class Security
         $_SESSION[Configuration::Site().'-AUTH-ID'] = $sessionData['id'];
         $_SESSION[Configuration::Site().'-AUTH-USERNAME'] = $sessionData['account-user_name-hash'];
         // Validate sessions for an hour
-        $_SESSION[Configuration::Site().'-AUTH-PERIOD'] = (int) Date::Flatten(Date::Create()) + 10000;
+        $_SESSION[Configuration::Site().'-AUTH-PERIOD'] = (int) Date::CreateFlat() + 10000;
         
         $_SESSION[Configuration::Site().'-AUTH-ACCESS_SYSTEM'] = $sessionData['permissions-access_system-checkbox'];
         $_SESSION[Configuration::Site().'-AUTH-ACCESS_USERS'] = $sessionData['permissions-access_users-checkbox'];

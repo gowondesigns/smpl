@@ -49,10 +49,10 @@ static class Database
 interface iDatabase
 {
     public function Query($queryString);    // Custom Queries that cant be handled by the basic handlers
-    public function Create($insertToTable, $insertItems);   // Create (Insert) Queries
-    public function Retrieve($selectFromTable, $selectItems = null,  $selectWhereClause = null, $selectExtra = null); // Retrieve (Select) Queries
-    public function Update($updateToTable, $updateItems, $updateWhereClause, $updateExtra = null);   // Update Queries
-    public function Delete($deleteFromTable, $deleteWhereClause, $selectExtra = null);   // Delete Queries
+    public function Create($insertToTables, $insertItems, $insertExtra = null);   // Create (Insert) Queries
+    public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null); // Retrieve (Select) Queries
+    public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null);   // Update Queries
+    public function Delete($deleteFromTables, $deleteWhereClause, $selectExtra = null);   // Delete Queries
 }
 
 abstract class aDatabase
@@ -102,35 +102,49 @@ class MySqlDatabase extends aDatabase implements iDatabase
         // Return mysqli result object: http://www.php.net/manual/en/class.mysqli-result.php
         return $this->mysqli->query($queryString);
     }
-    
-    public function Create($insertToTable, $insertItems, $insertExtra = null) // $insertItems must be an array
+    // $insertToTables can be a single string, or an array of strings for the tables
+    // $insertItems must be an array
+    public function Create($insertToTables, $insertItems, $insertExtra = null) 
     {
         $insertString = array();
-        $insertToTable = $this->prefix.$insertToTable;
+        if (is_array($insertToTables))
+        {
+            foreach ($insertToTables as $key => $value)
+                $insertToTables[$key] = $this->prefix.$value;
+        
+            $tableString = implode(', ', $insertToTables);  
+        }
+        else
+            $tableString = $this->prefix.$insertToTables;
+
         
         for ($i = 0; $i < count($insertItems); $i++)
         {
             if (is_numeric($value))
-            {
                 $insertString[] = $insertItems[$i];
-            }
             else
-            {
                 $insertString[] = "'{$insertItems[$i]}'";
-            }
         }
         
         $insertString = implode(', ', $insertItems);
             
         // Method will return TRUE on success, FALSE on failure
-        return $this->mysqli->query('INSERT INTO '.$insertToTable.' VALUES (SET '.$insertString.') '.$insertExtra);
+        return $this->mysqli->query('INSERT INTO '.$tableString.' VALUES (SET '.$insertString.') '.$insertExtra);
 
     }
     
     // Retrieve specific item (not meant for queries that return multiple results)
-    public function Retrieve($selectFromTable, $selectItems = null,  $selectWhereClause = null, $selectExtra = null)
+    public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null)
     {
-        $selectFromTable = $this->prefix.$selectFromTable;
+        if (is_array($selectFromTables))
+        {
+            foreach ($selectFromTables as $key => $value)
+                $selectFromTables[$key] = $this->prefix.$value;
+        
+            $tableString = implode(', ', $selectFromTables);  
+        }
+        else
+            $tableString = $this->prefix.$selectFromTables;
         
         if (null === $selectItems)
         {
@@ -143,14 +157,23 @@ class MySqlDatabase extends aDatabase implements iDatabase
         }
         
         // Return mysqli result object: http://www.php.net/manual/en/class.mysqli-result.php
-        return $this->mysqli->query('SELECT '.$selectItems.' FROM '.$selectFromTable.$selectWhereClause.' '.$selectExtra);
+        return $this->mysqli->query('SELECT '.$selectItems.' FROM '.$tableString.$selectWhereClause.' '.$selectExtra);
     }
     
-    public function Update($updateToTable, $updateItems, $updateWhereClause, $updateExtra = null)    // $updateItems must be an array
+    public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null)    // $updateItems must be an array
     {
         $i = 0;
         $updateString = array();
-        $updateToTable = $this->prefix.$updateToTable;
+        
+        if (is_array($updateToTables))
+        {
+            foreach ($updateToTables as $key => $value)
+                $updateToTables[$key] = $this->prefix.$value;
+        
+            $tableString = implode(', ', $updateToTables);  
+        }
+        else
+            $tableString = $this->prefix.$updateToTables;
         
         foreach ($updateItems as $key => $value)
         {
@@ -169,15 +192,23 @@ class MySqlDatabase extends aDatabase implements iDatabase
             
         
         // Method will return TRUE on success, FALSE on failure
-        return $this->mysqli->query('UPDATE '.$updateToTable.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$selectExtra);
+        return $this->mysqli->query('UPDATE '.$tableString.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$selectExtra);
     }
     
-    public function Delete($deleteFromTable, $deleteWhereClause, $selectExtra = null)
+    public function Delete($deleteFromTables, $deleteWhereClause, $selectExtra = null)
     {
-        $deleteFromTable = $this->prefix.$deleteFromTable;
+        if (is_array($deleteFromTables))
+        {
+            foreach ($deleteFromTables as $key => $value)
+                $deleteFromTables[$key] = $this->prefix.$value;
+        
+            $tableString = implode(', ', $deleteFromTables);  
+        }
+        else
+            $tableString = $this->prefix.$deleteFromTables;
         
         // Method will return TRUE on success, FALSE on failure
-        return $this->mysqli->query('DELETE FROM '.$deleteFromTable.' WHERE '.$selectWhereClause.' '.$selectExtra);
+        return $this->mysqli->query('DELETE FROM '.$tableString.' WHERE '.$selectWhereClause.' '.$selectExtra);
     }
 
 }
