@@ -80,7 +80,7 @@ final class AtomFeed extends aFeed
         $xml .= "<title>{$this->title}</title>\n\t<subtitle>{$this->feedDescription}</subtitle>\n\t";
         $xml .= '<link href="'.$this->feedUrl.'" />'."\n\t"; 
         $xml .= "<id>urn:uuid:{$this->feedUuid}</id>\n\t";
-        $xml .= "<updated>".Date::CreateFlat($this->lastUpdated, "Y-m-d\x54H:i:s\x5A")."</updated>\n\n\n";
+        $xml .= "<updated>".Date::CreateFlat($this->lastUpdated, "Y-m-d\x54H:i:sP")."</updated>\n\n\n";
       
         foreach ($this->feedItems as $value)
         {
@@ -90,7 +90,7 @@ final class AtomFeed extends aFeed
             $xml .= '<link href="'.$entry['url'].'" />'."\n\t\t";
             $xml .= '<link href="'.$entry['permalink'].'" rel="alternate" type="text/html" />'."\n\t\t"; 
             $xml .= "<id>urn:uuid:{$entry['uuid']}</id>\n\t\t";
-            $xml .= "<updated>".Date::CreateFlat($entry['date'], "Y-m-d\x54H:i:s\x5A")."</updated>\n\t\t";
+            $xml .= "<updated>".Date::CreateFlat($entry['date'], "Y-m-d\x54H:i:sP")."</updated>\n\t\t";
             $xml .= "<summary>{$entry['summary']}</summary>\n\t\t";
             $xml .= "<author>\n\t\t\t<name>{$entry['author']}</name>\n\t\t</author>\n";
             $xml .= "\t</entry>\n\n";

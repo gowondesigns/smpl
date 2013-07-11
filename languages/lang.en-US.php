@@ -23,7 +23,6 @@ $SMPL_LANG_PHRASES = array(
   // SMPL-generated URL phrases
   "api" => "api",
   "feed" => "feed",
-  "admin" => "admin",
   "articles" => "articles",
   "categories" => "categories",
   
