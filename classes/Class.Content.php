@@ -11,6 +11,12 @@
 static class Content
 {
     private static $spaces = array('main' => null);
+    private static $hooks = array();
+    
+    // [MUSTCHANGE]
+    // Hooks define the behavior the CMS will take when a trigger is defined
+    // Custom hooks are inserted in smpl-includes/hooks/, filnames 'hook.<hook_name>.php'
+    // 'default:<action>' or 'include:<filename>.php'
 
     
     // Method to initiate all automatic actions
@@ -66,10 +72,10 @@ Otherwise, look for the space being called
     
     public static function HtmlHeader()
     {
-        $html = '<title>'.Configuration::GetSetting('title')."</title>\n";
-        $html .= '<meta content="text/html; charset=utf-8" http-equiv="content-type">'."\n";
+        $html = '<title>'.Configuration::Get('title')."</title>\n";
+        $html .= '<meta content="text/html; charset=UTF-8" http-equiv="content-type">'."\n";
         $html .= '<meta name="robots" content="index,follow">'."\n";
-        $html .= '<meta name="description" content="'.Configuration::GetSetting('description').'">'."\n";
+        $html .= '<meta name="description" content="'.Configuration::Get('description').'">'."\n";
         
         if (isset($this->spaces['main']) && is_a($this->spaces['main'][0], 'Page') )
         {
@@ -108,36 +114,10 @@ Otherwise, look for the space being called
     {
         // Grab and explode URI Query data
         // List assets in heirarchical order, with links to various paths
+        // [MUSTCHANGE]
     }
     
     
-}
-
-
-class Space
-{
-
-    public function __construct($spaceName)
-    {
-
-            $database = Database::Connect();
-            $result = $database->Retrieve('spaces', 'id', "title_mung-field = '{$spaceName}'");
-        
-            if ($value = $result->fetch_array(MYSQLI_ASSOC))
-            {
-                $this->spaces[$spaceName] = null;
-                $spaceId = $value['id'];
-                $result = $database->Retrieve('blocks', '*', "content-space-dropdown = '{$spaceId}'", "ORDER BY content-priority-dropdown DESC");
-            }
-        
-        if(isset($this->spaces[$spaceName]))
-        {}
-        elseif($spaceName =='main')
-        {}
-        
-
-    }
-
 }
 
 
@@ -193,10 +173,17 @@ class Page extends aContentObject
         parent::__construct($page['content-title_mung-field'], $page['content-body-textarea']);
     }
     
-    
-    public function Tags()
+    public function Display()
     {
-        return implode(', ', $this->tags);
+        return null; // [MUSTCHANGE]
+    }
+    
+    public function Get($data)
+    {
+        if($data == 'tags')
+            return implode(', ', $this->tags);
+            
+        return $this->$data;
     }
 }
 
@@ -222,7 +209,7 @@ class Article extends Page
         parent::__construct($id, $data);
     }
     
-    public function Summary()
+    public function Summary() // [MUSTCHANGE]
     {
     }
 }

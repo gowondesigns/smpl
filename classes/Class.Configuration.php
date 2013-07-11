@@ -19,29 +19,31 @@ static class Configuration
     private $sslCertificate = false;
 
 
-    public static function Site()                         // [MUSTCHANGE]
+    public static function Site($domainOnly = false)                         // [MUSTCHANGE]
     {
 
         $host = (Configuration::SslCertificate()) ? 'https://': 'http://';
         $host .= $_SERVER['HTTP_HOST'];
         $directory = dirname($_SERVER['SCRIPT_NAME']);
         $website = ($directory == '/') ? $host.'/': $host.$directory.'/';
-        return $website;
-    }
-    
-    public static function DatabaseInfo($item = null)
-    {
-        if (null === $this->langInstance)
-        {
-            return return $this->database;
-        }
+        
+        if ($domainOnly)
+            return $host.'/';
         else
-        {
-            return $this->database[$item];
-        }
+            return $website;
     }
     
-    public static GetSetting($settingName)
+    // Return database configuration information
+    public static function Database($item = null)
+    {
+        if (null === $item)
+            return $this->database;
+        else
+            return $this->database[$item];
+    }
+    
+    // Return data from the settings DB table
+    public static Get($settingName)
     {
         $database = Database::Connect();
         $result = $database->Retrieve('settings', 'value-field',  "name-hidden = '{$settingName}'");

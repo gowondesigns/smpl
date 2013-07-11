@@ -1,8 +1,16 @@
 #mydomain.com/?about-us/ -OR-
 #mydomain.com/about-us/
 
+# Set default 404 to SMPL 404
+ErrorDocument 404 /index.php?404
+
 # Enable Rewriting  
 RewriteEngine on  
+
+# Throw 404 errors anytime anyone attempts to access reserved filespaces through the web
+# Prevents confirmation of existence of folders or SMPL CMS through URI pinging
+RewriteRule ^/smpl-(\w+)$ index.php?404
+
   
 # Rewrite URLs  
 #   Input:  /categories/uncategorized/  

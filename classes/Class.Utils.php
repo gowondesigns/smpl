@@ -119,7 +119,7 @@ static class Utils
     {
         $assets = array_slice(func_get_args());
         $uri = Configuration::Site();
-        $uri .= (Configuration::GetSetting('modRewriteFlag')) ? '': '?';
+        $uri .= (Configuration::ModRewrite()) ? '': '?';
         $uri .= implode('/', $assets).'/';
         
         return $uri;
@@ -131,7 +131,7 @@ static class Utils
         $optionalAssets = array_slice(func_get_args(), 1);
         $uri = Configuration::Site();
         
-        if (Configuration::GetSetting('modRewriteFlag'))
+        if (Configuration::ModRewrite())
         {
             $uri .= $asset.'/';
         }

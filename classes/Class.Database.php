@@ -12,7 +12,7 @@ static class Database
     // Database factory method, establish database connection and then pass it
     public static function Connect($databaseType = null)
     {
-        $configurations = Configuration::DatabaseInfo();
+        $configurations = Configuration::Database();
         
         // If no database type is specified, assume that the main database object is being used
         if (null === $databaseType)

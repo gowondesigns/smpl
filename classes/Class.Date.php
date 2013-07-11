@@ -27,7 +27,7 @@ static class Date
         if (null === $dateData)
             $dateData = new DateData();
         
-        $date = $dateData->Info();
+        $date = $dateData->Get();
         return date($stringFormat, mktime($date['hours'], $date['minutes'], $date['seconds'], $date['month'], $date['day'], $date['year']));
     }
 }
@@ -52,15 +52,18 @@ class DateData
         $this->seconds = substr($smplDateString, 12, 2);
     }
     
-    public function Info()
+    public function Get($item = null)
     {
-        return array(
-        'year' => $this->year,
-        'month' => $this->month,
-        'day' => $this->day,
-        'hours' => $this->hours,
-        'minutes' => $this->minutes,
-        'seconds' => $this->seconds);
+        if (null === $item)
+            return $this->$item;
+        else
+            return array(
+                'year' => $this->year,
+                'month' => $this->month,
+                'day' => $this->day,
+                'hours' => $this->hours,
+                'minutes' => $this->minutes,
+                'seconds' => $this->seconds);
     }
 }
 ?>
