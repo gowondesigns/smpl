@@ -68,6 +68,7 @@ CREATE TABLE `content` (
   `content-title-field` VARCHAR(100) NOT NULL,
   `content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
   `content-static_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `content-default_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
   `content-category-dropdown` INT NOT NULL DEFAULT 1,
   `content-author-dropdown` INT NOT NULL DEFAULT 1,
   `content-date-date` BIGINT(14) UNSIGNED UNIQUE NOT NULL,

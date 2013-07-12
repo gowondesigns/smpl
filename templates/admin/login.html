@@ -1,29 +1,126 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="pl" xml:lang="pl">
-<head>
-<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<meta name="author" content="Paweł 'kilab' Balicki - kilab.pl" />
-<title>SimpleAdmin</title>
-<link rel="stylesheet" type="text/css" href="css/login.css" media="screen" />
-</head>
-<body>
-<div class="wrap">
-	<div id="content">
-		<div id="main">
-			<div class="full_w">
-				<form action="" method="post">
-					<label for="login">Username:</label>
-					<input id="login" name="login" class="text" />
-					<label for="pass">Password:</label>
-					<input id="pass" name="pass" type="password" class="text" />
-					<div class="sep"></div>
-					<button type="submit" class="ok">Login</button> <a class="button" href="">Forgotten password?</a>
-				</form>
-			</div>
-			<div class="footer">&raquo; <a href="">http://yourpage.com</a> | Admin Panel</div>
-		</div>
-	</div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>SMPL Control Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Loading Bootstrap -->
+    <link href="bootstrap/css/bootstrap.css" rel="stylesheet">
+
+    <!-- Loading Flat UI -->
+    <link href="css/flat-ui.css" rel="stylesheet">
+
+    <link rel="shortcut icon" href="images/favicon.ico">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements. All other JS at the end of file. -->
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  </head>
+  <body style="background-color: #2ecc71;">
+    <div class="container">  
+
+          <div class="row">
+        <div class="span8">
+          <h3 class="demo-panel-title">Publish</h3>
+          <div class="row mbl">
+            <div class="span6">
+                <label class="share-label" for="share-toggle6">publish-publish_flag-dropdown</label>
+                <select name="herolist" value="X-Men" class="select-block span3">
+                  <option value="1">Unpublished</option>
+                  <option value="2" selected="selected">Published</option>
+                  <option value="3">To Publish</option>
+                </select>
+            </div>
+
+            <div class="span8">
+                <label class="share-label" for="share-toggle2">publish-publish_date-date</label>
+            </div>
+            
+            <div class="span8">
+                Date:&nbsp; 
+                <input type="text" value="" placeholder="Inactive" class="span1" />&nbsp;&#47;&nbsp;
+                <input type="text" value="" placeholder="Inactive" class="span1" />&nbsp;&#47;&nbsp;
+                <input type="text" value="" placeholder="Inactive" class="span1" />
+                
+                Time:&nbsp; 
+                <input type="text" value="" placeholder="Inactive" class="span1" />&nbsp;&#58;&nbsp;
+                <input type="text" value="" placeholder="Inactive" class="span1" />&nbsp;&#58;&nbsp;
+                <input type="text" value="" placeholder="Inactive" class="span1" />
+            </div>
+                        
+            <div class="span6">
+                <label class="share-label" for="share-toggle4">publish-unpublish_flag-checkbox</label>
+                <input type="checkbox" checked="" data-toggle="switch" />
+            </div>
+            
+            <div class="span8">
+                <label class="share-label" for="share-toggle2">publish-unpublish_date-date</label>
+            </div>
+            
+            <div class="span8">
+                Date:&nbsp; 
+                <input type="text" value="" placeholder="Inactive" class="span1" />&nbsp;&#47;&nbsp;
+                <input type="text" value="" placeholder="Inactive" class="span1" />&nbsp;&#47;&nbsp;
+                <input type="text" value="" placeholder="Inactive" class="span1" />
+                
+                Time:&nbsp; 
+                <input type="text" value="" placeholder="Inactive" class="span1" />&nbsp;&#58;&nbsp;
+                <input type="text" value="" placeholder="Inactive" class="span1" />&nbsp;&#58;&nbsp;
+                <input type="text" value="" placeholder="Inactive" class="span1" />
+            </div>
+            
+
+          </div> <!-- /color swatches -->
+
+        </div>
+
+      </div> <!-- /swatches row -->
+
+
+          <div class="row demo-row share">
+          <div class="span2">
+            <a href="#fakelink" class="btn btn-large btn-block btn-danger">Cancel</a>
+          </div>
+          <div class="span2">
+            <button type = "reset" class="btn btn-large btn-block btn-danger">Reset</button>
+          </div>
+          <div class="span4">
+            <button type = "submit" class="btn btn-large btn-block btn-success"><span class="fui-check"></span> Submit</button>
+          </div>
+      </div>
+
+            <div class="span3">
+
+            <img src="images/icons/Compas@2x.png" alt="Compas@2x" class="tile-image big-illustration">
+            <h3 class="tile-title">Welcome to</h3>
+            <p>SMPL Control Panel</p
+            
+            <button type="submit" class="btn btn-primary btn-large btn-block">Login</button>
+            <a class="btn btn-primary btn-large btn-block" href="http://designmodo.com/flat">Get Pro</a>
+
+        </div>
+
+<!--      <div class="demo-headline">
+
+          <div class="span4">
+          <h4 class="demo-logo"><div class="logo"></div>Welcome to<br/><small>SMPL Control Panel</small></h4>
+            <div class="control-group">
+              <label class="share-label" for="share-toggle2">username</label><br/>
+              <input type="text" value="" placeholder="Inactive" class="span4" />
+            </div>
+
+            <div class="control-group">
+              <input type="password" class="login-field" value="" placeholder="Password" id="login-pass" />
+              <label class="login-field-icon fui-lock" for="login-pass"></label>
+            </div>
+
+            <button type = "submit" class="btn btn-primary btn-large btn-block">Login</button>
+
+
+        </div>    -->
+      </div> <!-- /demo-headline -->
+
+  </div>
+      
 </body>
 </html>
