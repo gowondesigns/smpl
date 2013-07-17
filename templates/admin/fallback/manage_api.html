@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>SMPL Control Panel</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <!--[if IE]>
+        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    
+	<link rel="stylesheet" href="base.css">
+	<link rel="stylesheet" href="skeleton.css">
+	<link rel="stylesheet" href="layout.css">
+</head>
+
+<body>
+
+  <div class="container">
+		<div class="sixteen columns">
+			<h1 class="remove-bottom" style="margin-top: 40px">SMPL Control Panel</h1>
+			<hr />
+		</div>
+
+    <div class="one-third column">
+      <ul class="navigation">
+        <li>
+          <a href="?admin/users/self/">
+            <span class="admin-user-icon"></span>
+            User Name
+          </a>
+        </li>
+        <li>
+          <a href="?admin/settings/">
+            System
+          </a>
+          <ul>
+            <li><a href="?admin/settings/">Settings</a></li>
+            <li><a href="?admin/api/">API Settings</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/users/">
+            Users
+          </a>
+          <ul>
+            <li><a href="?admin/users/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/categories/">
+            Categories
+          </a>
+          <ul>
+            <li><a href="?admin/categories/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li class="active">
+          <a href="?admin/content/">
+            Content
+          </a>
+          <ul>
+            <li><a href="?admin/content/new/">Create New</a></li>
+            <li><a href="?admin/content/purge/">Purge</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/spaces/">
+            Spaces
+          </a>
+          <ul>
+            <li><a href="?admin/spaces/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/blocks/">
+            Blocks
+          </a>
+          <ul>
+            <li><a href="?admin/blocks/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/logout/">
+            Logout
+          </a>
+        </li>
+      </ul>
+    </div><!--/.nav -->
+<!--
+  `id` TINYINT PRIMARY KEY AUTO_INCREMENT,
+  `api-token-field` VARCHAR(30) UNIQUE NOT NULL,
+  `api-description-field` VARCHAR(255) DEFAULT NULL,
+  `api-cnonce-field` VARCHAR(255) NOT NULL,
+  `permissions-access_database-checkbox` BOOL NOT NULL DEFAULT FALSE,  -- Give client ability to make custom SQL queries, effectively supercedes all other permissions
+  `permissions-access_system-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `permissions-access_users-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `permissions-access_content-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `permissions-access_blocks-checkbox` BOOL NOT NULL DEFAULT FALSE
+-->
+    <div class="two-thirds column">
+      <h2>Manage API Settings</h2>
+    
+      <form action="">   
+    
+        <fieldset id="api">
+          <legend><h3>API</h3></Legend>
+          
+          <input type="hidden" name="id" value="" />
+          
+          <!-- Label and text input -->
+          <label for="api-token-field">api-token-field</label>
+          <input type="text" value="" id="api-token-field" /> 
+
+          <label for="api-description-field">api-description-field</label>
+          <input type="text" value="" id="api-description-field" />
+               
+          <!-- Label and text input -->
+          <label for="api-cnonce-field">api-cnonce-field</label>
+          <input type="text" value="" id="api-cnonce-field" /> 
+          
+        </fieldset>
+        
+        <fieldset id="permissions">
+        <legend><h3>Permissions</h3></Legend>
+
+          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
+          <fieldset>
+            <label for="permissions-access_database-checkbox">
+              <span>permissions-access_database-checkbox</span>
+              <input type="checkbox" id="permissions-access_database-checkbox" value="true" />
+            </label>
+          </fieldset>
+          
+          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
+          <fieldset>
+            <label for="permissions-access_system-checkbox">
+              <span>permissions-access_system-checkbox</span>
+              <input type="checkbox" id="permissions-access_system-checkbox" value="true" />
+            </label>
+          </fieldset>
+          
+          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
+          <fieldset>
+            <label for="permissions-access_users-checkbox">
+              <span>permissions-access_users-checkbox</span>
+              <input type="checkbox" id="permissions-access_users-checkbox" value="true" />
+            </label>
+          </fieldset>
+          
+          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
+          <fieldset>
+            <label for="permissions-access_content-checkbox">
+              <span>permissions-access_content-checkbox</span>
+              <input type="checkbox" id="permissions-access_content-checkbox" value="true" />
+            </label>
+          </fieldset>
+          
+          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
+          <fieldset>
+            <label for="permissions-access_blocks-checkbox">
+              <span>permissions-access_blocks-checkbox</span>
+              <input type="checkbox" id="permissions-access_blocks-checkbox" value="true" />
+            </label>
+          </fieldset>
+        </fieldset>
+        
+        <fieldset>
+          <a href="?admin/api/">Cancel</a> &bull;
+          <a href="?admin/api/1/delete/">Delete API</a> &ndash;
+          <button type="reset">Reset</button>
+          <button type="submit">Submit</button>
+        </fieldset>
+      
+      </form> <!-- editor form --> 
+
+    </div><!-- management-->
+
+    <div class="sixteen columns">
+      <hr />
+    </div>
+
+    <div class="two-thirds column">
+      <h4>SMPL Content Management System 0.1.1</h4>
+        <p>Bug reports, suggestions: <a href="https://github.com/gowondesigns/smpl/issues" target="_blank">Please open a new issue.</a><br/>
+        Check to see if there are any <a href="http://smply.it/" target="_blank">new releases</a> of SMPL available.<br/>
+        <a href="http://smply.it/" target="_blank">SMPL</a> is licensed under the <a href="http://www.opensource.org/licenses/osl-3.0.php">Open Software License 3.0</a>.<br/>
+        Copyright &copy; 2013, <a href="http://www.gowondesigns.com/" target="_blank">Gowon Designs</a>
+        </p>
+    </div>
+            
+    <div class="one-third column">
+      <h4>Statistics</h4>
+      <ul>
+        <li>Last Login: <strong>12/20/1988 07:14:08PM</strong></li>
+        <li>Total Users: <strong>3</strong></li>
+        <li>Total Pages: <strong>8</strong></li>
+        <li>Total Articles: <strong>42</strong></li>
+        <li>Pending Publishes: <strong>10</strong></li>
+      </ul>
+    </div>
+
+  </div> <!-- container -->
+
+</body>
+</html>

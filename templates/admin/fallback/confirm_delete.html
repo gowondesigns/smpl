@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>SMPL Control Panel</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <!--[if IE]>
+        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    
+	<link rel="stylesheet" href="base.css">
+	<link rel="stylesheet" href="skeleton.css">
+	<link rel="stylesheet" href="layout.css">
+</head>
+
+<body>
+
+  <div class="container">
+		<div class="sixteen columns">
+			<h1 class="remove-bottom" style="margin-top: 40px">SMPL Control Panel</h1>
+			<hr />
+		</div>
+
+    <div class="one-third column">
+      <ul class="navigation">
+        <li>
+          <a href="?admin/users/self/">
+            <span class="admin-user-icon"></span>
+            User Name
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            System
+          </a>
+          <ul>
+            <li><a href="?admin/settings/system/">Settings</a></li>
+            <li><a href="?admin/settings/api/">API Settings</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/users/">
+            Users
+          </a>
+          <ul>
+            <li><a href="?admin/users/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/categories/">
+            Categories
+          </a>
+          <ul>
+            <li><a href="?admin/categories/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li class="active">
+          <a href="?admin/content/">
+            Content
+          </a>
+          <ul>
+            <li><a href="?admin/content/new/">Create New</a></li>
+            <li><a href="?admin/content/purge/">Purge</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/spaces/">
+            Spaces
+          </a>
+          <ul>
+            <li><a href="?admin/spaces/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/blocks/">
+            Blocks
+          </a>
+          <ul>
+            <li><a href="?admin/blocks/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/logout/">
+            Logout
+          </a>
+        </li>
+      </ul>
+    </div><!--/.nav -->
+
+    <div class="two-thirds column">
+      <h2>Confirm Deletion</h2>
+    
+      <form action="">   
+    
+        <fieldset>
+          <p>Are you sure you want to delete this?<br/>
+          <strong>TYPE - CONTENT TITLE</strong></p>
+          
+          <input type="hidden" name="id" value="" />
+        
+        </fieldset>
+        
+        <fieldset>
+          <a href="?admin/" onclick="javascript:history.length > 0 ? history.back(): window.location = '?admin/'; return false;">Cancel</a> &ndash;
+          <button type="submit">Delete</button>
+        </fieldset>
+      
+      </form> <!-- editor form --> 
+
+    </div><!-- management-->
+
+    <div class="sixteen columns">
+      <hr />
+    </div>
+
+    <div class="two-thirds column">
+      <h4>SMPL Content Management System 0.1.1</h4>
+        <p>Bug reports, suggestions: <a href="https://github.com/gowondesigns/smpl/issues" target="_blank">Please open a new issue.</a><br/>
+        Check to see if there are any <a href="http://smply.it/" target="_blank">new releases</a> of SMPL available.<br/>
+        <a href="http://smply.it/" target="_blank">SMPL</a> is licensed under the <a href="http://www.opensource.org/licenses/osl-3.0.php">Open Software License 3.0</a>.<br/>
+        Copyright &copy; 2013, <a href="http://www.gowondesigns.com/" target="_blank">Gowon Designs</a>
+        </p>
+    </div>
+            
+    <div class="one-third column">
+      <h4>Statistics</h4>
+      <ul>
+        <li>Last Login: <strong>12/20/1988 07:14:08PM</strong></li>
+        <li>Total Users: <strong>3</strong></li>
+        <li>Total Pages: <strong>8</strong></li>
+        <li>Total Articles: <strong>42</strong></li>
+        <li>Pending Publishes: <strong>10</strong></li>
+      </ul>
+    </div>
+
+  </div> <!-- container -->
+
+</body>
+</html>

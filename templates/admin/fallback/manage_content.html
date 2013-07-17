@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>SMPL Control Panel</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <!--[if IE]>
+        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    
+	<link rel="stylesheet" href="base.css">
+	<link rel="stylesheet" href="skeleton.css">
+	<link rel="stylesheet" href="layout.css">
+</head>
+
+<body>
+
+  <div class="container">
+		<div class="sixteen columns">
+			<h1 class="remove-bottom" style="margin-top: 40px">SMPL Control Panel</h1>
+			<hr />
+		</div>
+
+    <div class="one-third column">
+      <ul class="navigation">
+        <li>
+          <a href="?admin/users/self/">
+            <span class="admin-user-icon"></span>
+            User Name
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            System
+          </a>
+          <ul>
+            <li><a href="?admin/settings/system/">Settings</a></li>
+            <li><a href="?admin/settings/api/">API Settings</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/users/">
+            Users
+          </a>
+          <ul>
+            <li><a href="?admin/users/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/categories/">
+            Categories
+          </a>
+          <ul>
+            <li><a href="?admin/categories/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li class="active">
+          <a href="?admin/content/">
+            Content
+          </a>
+          <ul>
+            <li><a href="?admin/content/new/">Create New</a></li>
+            <li><a href="?admin/content/purge/">Purge</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/spaces/">
+            Spaces
+          </a>
+          <ul>
+            <li><a href="?admin/spaces/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/blocks/">
+            Blocks
+          </a>
+          <ul>
+            <li><a href="?admin/blocks/new/">Create New</a></li>
+          </ul> <!-- /Sub menu -->
+        </li>
+        <li>
+          <a href="?admin/logout/">
+            Logout
+          </a>
+        </li>
+      </ul>
+    </div><!--/.nav -->
+
+    <div class="two-thirds column">
+      <h2>Manage Content</h2>
+    
+      <form action="">   
+    
+        <fieldset id="content">
+          <legend><h3>Content</h3></Legend>
+          
+          <input type="hidden" name="id" value="" />
+          
+          <input type="hidden" name="content-permalink-hidden" value="" />
+        
+          <!-- Label and text input -->
+          <label for="content-title-field">content-title-field</label>
+          <input type="text" value="" id="content-title-field" /> 
+    
+          <!-- Label and text input -->
+          <label for="content-title_mung-field">content-title_mung-field</label>
+          <input type="text" value="" id="content-title_mung-field" /> 
+
+          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
+          <fieldset>
+            <label for="content-static_page_flag-checkbox">
+              <span>content-static_page_flag-checkbox</span>
+              <input type="checkbox" id="content-static_page_flag-checkbox" value="true" />
+            </label>
+          </fieldset>
+
+          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
+          <fieldset>
+            <label for="content-default_page_flag-checkbox">
+              <span>content-default_page_flag-checkbox</span>
+              <input type="checkbox" id="content-default_page_flag-checkbox" value="true" />
+            </label>
+          </fieldset>
+
+          <!-- Label and select list -->
+          <label for="content-category-dropdown">content-category-dropdown</label>
+          <select id="content-category-dropdown">
+            <option value="1" selected="selected">Uncategorized</option>
+            <option value="2">Category 2</option>
+            <option value="3">Category 3</option>
+          </select>
+                
+          <!-- Label and select list -->
+          <label for="content-author-dropdown">content-author-dropdown</label>
+          <select id="content-author-dropdown">
+            <option value="1" selected="selected">User Name</option>
+            <option value="2">Other User</option>
+            <option value="3">Another User</option>
+          </select>
+
+          <fieldset id="content-date-date">
+            <label for="content-date-date">content-date-date</label>
+            Date: <input id="content-date-date['month']" type="number" min="1" max="12" step="1" />&nbsp;&#47;&nbsp;
+            <input id="content-date-date['day']" type="number" min="1" max="31" step="1" />&nbsp;&#47;&nbsp;
+            <input id="content-date-date['year']" type="number" min="1" max="31" step="1" /><br/>
+        
+            Time: <input id="content-date-date['hours']" type="number" min="0" max="23" step="1" />&nbsp;&#58;&nbsp;
+            <input id="content-date-date['minutes']" type="number" min="0" max="59" step="1" />&nbsp;&#58;&nbsp;
+            <input id="content-date-date['seconds']" type="number" min="0" max="59" step="1" />
+          </fieldset>
+        
+          <!-- Label and textarea -->
+          <label for="content-body-textarea">content-body-textarea</label>
+          <textarea id="content-body-textarea"></textarea>
+        
+          <!-- Label and text input -->
+          <label for="content-tags-field">content-tags-field</label>
+          <input type="text" value="" id="content-tags-field" /> 
+
+        </fieldset>
+        
+        <fieldset id="publish">
+        <legend><h3>Publish</h3></Legend>
+
+          <!-- Label and select list -->
+          <label for="publish-publish_flag-dropdown">publish-publish_flag-dropdown</label>
+          <select id="publish-publish_flag-dropdown">
+            <option value="1">Unpublished</option>
+            <option value="2" selected="selected">Published</option>
+            <option value="3">To Publish</option>
+          </select> 
+          
+          <fieldset id="publish-publish_date-date">
+            <label for="publish-publish_date-date">publish-publish_date-date</label>
+            Date: <input id="publish-publish_date-date['month']" type="number" min="1" max="12" step="1" />&nbsp;&#47;&nbsp;
+            <input id="publish-publish_date-date['day']" type="number" min="1" max="31" step="1" />&nbsp;&#47;&nbsp;
+            <input id="publish-publish_date-date['year']" type="number" min="1" max="31" step="1" /><br/>
+        
+            Time: <input id="publish-publish_date-date['hours']" type="number" min="0" max="23" step="1" />&nbsp;&#58;&nbsp;
+            <input id="publish-publish_date-date['minutes']" type="number" min="0" max="59" step="1" />&nbsp;&#58;&nbsp;
+            <input id="publish-publish_date-date['seconds']" type="number" min="0" max="59" step="1" />
+          </fieldset>
+          
+          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
+          <fieldset>
+            <label for="publish-unpublish_flag-checkbox">
+              <span>publish-unpublish_flag-checkbox</span>
+              <input type="checkbox" id="publish-unpublish_flag-checkbox" value="true" />
+            </label>
+          </fieldset>
+
+          <fieldset id="publish-unpublish_date-date">
+            <label for="publish-unpublish_date-date">publish-unpublish_date-date</label>
+            Date: <input id="publish-unpublish_date-date['month']" type="number" min="1" max="12" step="1" />&nbsp;&#47;&nbsp;
+            <input id="publish-unpublish_date-date['day']" type="number" min="1" max="31" step="1" />&nbsp;&#47;&nbsp;
+            <input id="publish-unpublish_date-date['year']" type="number" min="1" max="31" step="1" /><br/>
+        
+            Time: <input id="publish-unpublish_date-date['hours']" type="number" min="0" max="23" step="1" />&nbsp;&#58;&nbsp;
+            <input id="publish-unpublish_date-date['minutes']" type="number" min="0" max="59" step="1" />&nbsp;&#58;&nbsp;
+            <input id="publish-unpublish_date-date['seconds']" type="number" min="0" max="59" step="1" />
+          </fieldset>  
+        </fieldset>
+        
+        <fieldset>
+          <a href="?admin/content/">Cancel</a> &bull;
+          <a href="?admin/content/1/delete/">Delete Content</a> &ndash;
+          <button type="reset">Reset</button>
+          <button type="submit">Submit</button>
+        </fieldset>
+      
+      </form> <!-- editor form --> 
+
+    </div><!-- management-->
+
+    <div class="sixteen columns">
+      <hr />
+    </div>
+
+    <div class="two-thirds column">
+      <h4>SMPL Content Management System 0.1.1</h4>
+        <p>Bug reports, suggestions: <a href="https://github.com/gowondesigns/smpl/issues" target="_blank">Please open a new issue.</a><br/>
+        Check to see if there are any <a href="http://smply.it/" target="_blank">new releases</a> of SMPL available.<br/>
+        <a href="http://smply.it/" target="_blank">SMPL</a> is licensed under the <a href="http://www.opensource.org/licenses/osl-3.0.php">Open Software License 3.0</a>.<br/>
+        Copyright &copy; 2013, <a href="http://www.gowondesigns.com/" target="_blank">Gowon Designs</a>
+        </p>
+    </div>
+            
+    <div class="one-third column">
+      <h4>Statistics</h4>
+      <ul>
+        <li>Last Login: <strong>12/20/1988 07:14:08PM</strong></li>
+        <li>Total Users: <strong>3</strong></li>
+        <li>Total Pages: <strong>8</strong></li>
+        <li>Total Articles: <strong>42</strong></li>
+        <li>Pending Publishes: <strong>10</strong></li>
+      </ul>
+    </div>
+
+  </div> <!-- container -->
+
+</body>
+</html>
