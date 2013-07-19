@@ -88,75 +88,49 @@
     </div><!--/.nav -->
 
     <div class="two-thirds column">
-      <h2>Manage API Settings</h2>
+      <h2>Manage Settings</h2>
     
       <form action="">   
     
-        <fieldset id="api">
-          <legend><h3>API</h3></Legend>
-          
-          <input type="hidden" name="id" value="" />
-          
+        <fieldset>         
           <!-- Label and text input -->
-          <label for="api-token-field">api-token-field</label>
-          <input type="text" value="" id="api-token-field" /> 
+          <label for="name-hidden">title-label</label>
+          <input type="value-field" value="" id="name-hidden" /> 
 
-          <label for="api-description-field">api-description-field</label>
-          <input type="text" value="" id="api-description-field" />
-               
           <!-- Label and text input -->
-          <label for="api-cnonce-field">api-cnonce-field</label>
-          <input type="text" value="" id="api-cnonce-field" /> 
-          
-        </fieldset>
-        
-        <fieldset id="permissions">
-        <legend><h3>Permissions</h3></Legend>
+          <label for="name-hidden">title-label</label>
+          <input type="value-field" value="" id="name-hidden" /> 
 
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_database-checkbox">
-              <span>permissions-access_database-checkbox</span>
-              <input type="checkbox" id="permissions-access_database-checkbox" value="true" />
-            </label>
-          </fieldset>
+          <!-- Label and text input -->
+          <label for="name-hidden">title-label</label>
+          <input type="value-field" value="" id="name-hidden" /> 
+
+          <!-- Label and text input -->
+          <label for="name-hidden">title-label</label>
+          <input type="value-field" value="" id="name-hidden" /> 
+
+          <!-- Label and text input -->
+          <label for="name-hidden">title-label</label>
+          <input type="value-field" value="" id="name-hidden" /> 
+
+          <!-- Label and text input -->
+          <label for="name-hidden">title-label</label>
+          <input type="value-field" value="" id="name-hidden" /> 
+
+          <!-- Label and text input -->
+          <label for="name-hidden">title-label</label>
+          <input type="value-field" value="" id="name-hidden" /> 
+
+          <!-- Label and text input -->
+          <label for="name-hidden">title-label</label>
+          <input type="value-field" value="" id="name-hidden" /> 
+
+
           
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_system-checkbox">
-              <span>permissions-access_system-checkbox</span>
-              <input type="checkbox" id="permissions-access_system-checkbox" value="true" />
-            </label>
-          </fieldset>
-          
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_users-checkbox">
-              <span>permissions-access_users-checkbox</span>
-              <input type="checkbox" id="permissions-access_users-checkbox" value="true" />
-            </label>
-          </fieldset>
-          
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_content-checkbox">
-              <span>permissions-access_content-checkbox</span>
-              <input type="checkbox" id="permissions-access_content-checkbox" value="true" />
-            </label>
-          </fieldset>
-          
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_blocks-checkbox">
-              <span>permissions-access_blocks-checkbox</span>
-              <input type="checkbox" id="permissions-access_blocks-checkbox" value="true" />
-            </label>
-          </fieldset>
         </fieldset>
         
         <fieldset>
-          <a href="?admin/api/">Cancel</a> &bull;
-          <a href="?admin/api/1/delete/">Delete API</a> &ndash;
+          <a href="?admin/" onclick="javascript:history.length > 0 ? history.back(): window.location = '?admin/'; return false;">Cancel</a> &ndash;
           <button type="reset">Reset</button>
           <button type="submit">Submit</button>
         </fieldset>

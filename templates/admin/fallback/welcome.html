@@ -30,12 +30,12 @@
           </a>
         </li>
         <li>
-          <a href="?admin/settings/">
+          <a href="#">
             System
           </a>
           <ul>
-            <li><a href="?admin/settings/">Settings</a></li>
-            <li><a href="?admin/api/">API Settings</a></li>
+            <li><a href="?admin/settings/system/">Settings</a></li>
+            <li><a href="?admin/settings/api/">API Settings</a></li>
           </ul> <!-- /Sub menu -->
         </li>
         <li>
@@ -88,80 +88,9 @@
     </div><!--/.nav -->
 
     <div class="two-thirds column">
-      <h2>Manage API Settings</h2>
+      <h2>Welcome, Gowon Patterson</h2>
     
-      <form action="">   
-    
-        <fieldset id="api">
-          <legend><h3>API</h3></Legend>
-          
-          <input type="hidden" name="id" value="" />
-          
-          <!-- Label and text input -->
-          <label for="api-token-field">api-token-field</label>
-          <input type="text" value="" id="api-token-field" /> 
-
-          <label for="api-description-field">api-description-field</label>
-          <input type="text" value="" id="api-description-field" />
-               
-          <!-- Label and text input -->
-          <label for="api-cnonce-field">api-cnonce-field</label>
-          <input type="text" value="" id="api-cnonce-field" /> 
-          
-        </fieldset>
-        
-        <fieldset id="permissions">
-        <legend><h3>Permissions</h3></Legend>
-
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_database-checkbox">
-              <span>permissions-access_database-checkbox</span>
-              <input type="checkbox" id="permissions-access_database-checkbox" value="true" />
-            </label>
-          </fieldset>
-          
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_system-checkbox">
-              <span>permissions-access_system-checkbox</span>
-              <input type="checkbox" id="permissions-access_system-checkbox" value="true" />
-            </label>
-          </fieldset>
-          
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_users-checkbox">
-              <span>permissions-access_users-checkbox</span>
-              <input type="checkbox" id="permissions-access_users-checkbox" value="true" />
-            </label>
-          </fieldset>
-          
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_content-checkbox">
-              <span>permissions-access_content-checkbox</span>
-              <input type="checkbox" id="permissions-access_content-checkbox" value="true" />
-            </label>
-          </fieldset>
-          
-          <!-- Wrap each checkbox in a label, then give it the input and span for the text option -->
-          <fieldset>
-            <label for="permissions-access_blocks-checkbox">
-              <span>permissions-access_blocks-checkbox</span>
-              <input type="checkbox" id="permissions-access_blocks-checkbox" value="true" />
-            </label>
-          </fieldset>
-        </fieldset>
-        
-        <fieldset>
-          <a href="?admin/api/">Cancel</a> &bull;
-          <a href="?admin/api/1/delete/">Delete API</a> &ndash;
-          <button type="reset">Reset</button>
-          <button type="submit">Submit</button>
-        </fieldset>
       
-      </form> <!-- editor form --> 
 
     </div><!-- management-->
 

@@ -94,7 +94,7 @@ class Language
         }
         else
         {
-            die(); // REPLACE with Exception: Phrase Does not exist in <Language>-<Language Code>
+            return false; // REPLACE with Exception: Phrase Does not exist in <Language>-<Language Code>
         }
     }
     
