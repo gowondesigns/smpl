@@ -41,6 +41,7 @@ static class Forms
 class Form
 {
     private $elements = array();
+    private $options = array();
     
     
     public function __construct($languageCode)
@@ -72,30 +73,119 @@ class Form
             "code" => $this->languageCode);
     }
 
-    // Use language phrase    
     public function AddElement($stub)
     {
 
     }
-    
-    // Add/Update/Remove the content of a particular phrase, the changes are global    
+       
     public function RemoveElement($stub)
     {
 
+    }
+    
+    public function AddOption($name)
+    {
+    }
+    
+    public function RemoveOption($name)
+    {
     }  
 
 }
 
 interface iFormElement
 {
+    public Html();
+    public Enable();
+    public Disable();
+    public IsEnabled();
 }
 
 abstract class aFormElement
 {
+    protected $id;
+    protected $name;
+    protected $value = null;
+    protected $extra = null;
+    protected $disabled = false;
+    
+    
+    public __construct($name, $id)
+    {
+        $this->name = $name;
+        $this->id = $id;
+    }
+    
+    public Enable()
+    {
+        $this->disabled = false;
+    }
+
+    public Disable()
+    {
+        $this->disabled = true;
+    }
+    
+    public IsEnabled()
+    {
+        return $this->disabled;
+    }
+    
+    public SetValue($value)
+    {
+        $this->value = htmlentities($value);
+    }
+    
+    // Input must be an array
+    public SetExtra($extra)
+    {
+        if (!is_array($extra))
+            return false;
+            
+        foreach ($extra as $key => $value)
+        {
+            $this->extra[$key] = htmlentities($value);
+        }
+    
+    }
 }
 
 class ButtonElement extends aFormElement implements iFormElement
 {
+    private $type;
+    private $content;
+
+    
+    public __construct($name, $type = 'button')
+    {
+        parent::__construct($name, null);
+        
+        $this->type = $type;
+    }
+    
+    public SetContent($content)
+    {
+        $this->value = $content;
+    }
+    
+    public Html()
+    {
+        $html ='<button type="'.$this->type.'" name="'.$this->name.'"';
+        
+        if (isset($this->value))
+            $html .= ' value="'.$this->value.'"';
+        
+        if (isset($this->extra))
+        {
+            foreach($this->extra as $key => $value)
+            {
+                $html .= ' value="'.$this->value.'"';
+            }
+        }
+
+        
+        return $html;
+    }
 }
 
 ?>
