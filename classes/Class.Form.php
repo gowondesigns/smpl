@@ -35,61 +35,106 @@ static class Forms
         
         return $this->forms[$name];
     }
+
+    // Assuming data is coming from GET or POST
+    public static function Validate(Form $form, $data)
+    {
+        if (null === $name)
+        {
+            return $this->forms;
+        }
+        
+        return $this->forms[$name];
+    }
 }
 
 
 class Form
 {
+    private $name;
+    private $id;
+    private $action;
+    private $method;
+    private $enctype;
     private $elements = array();
-    private $options = array();
+    private $attributes = null;
+    private $allowedAttributes = array(
+        'class',
+        'contextmenu',
+        'dir',
+        'draggable',
+        'dropzone',
+        'id',
+        'spellcheck',
+        'style',
+        'tabindex',
+        'title',
+        'maxlength',
+        'size',
+        'autocomplete',
+        'list',
+        'pattern',
+        'placeholder',
+        'target'
+    );
+    private $booleanAttributes = array(
+        'novalidate'  
+    );            
     
-    
-    public function __construct($languageCode)
+    public function __construct($name, $id, $action, $method='post', $enctype='application/x-www-form-urlencoded')
     {
-        // If the language code is 
-        if (isset($languageCode))
-        {
-            include("smpl-languages/lang.".$languageCode.".php");
-            if(!isset($SMPL_LANG_DESC) || !isset($SMPL_LANG_CODE) || !isset($SMPL_LANG_PHRASES))
-            {
-                die('Invalid Language File'); // [MUSTCHANGE]
-            }
-            
-            $this->language = $SMPL_LANG_DESC;
-            $this->languageCode = $SMPL_LANG_CODE;
-            foreach ($SMPL_LANG_PHRASES as $key => $value)
-            {
-                $this->Update($key, $value);
-            }
-            
-        }
+
     }
 
-    // Get the information on the current language    
-    public function Info()
-    {
-        return array(               
-            "language" => $this->language,
-            "code" => $this->languageCode);
-    }
-
+    // AddElement($name, $element)
+    // AddElement($group, $name, $element)
     public function AddElement($stub)
     {
 
     }
-       
+    
+    // AddElement($name)
+    // AddElement($group, $name)
     public function RemoveElement($stub)
     {
 
     }
-    
-    public function AddOption($name)
+
+    public function GetElements()
     {
+        return $this->elements;
     }
     
-    public function RemoveOption($name)
+    public SetAttributes($attributes)
     {
-    }  
+        if (!is_array($attributes))
+            return;
+            
+        foreach ($attributes as $key => $value)
+        {
+            if (null === $value)
+                unset($this->attributes[$key]);
+            else
+                $this->attributes[$key] = htmlentities($value);
+        }
+    
+    }
+    
+    protected ValidateAttributes()
+    {
+        $attributes = null;
+        
+        foreach( $this->attributes as $key => $value )
+        {
+            if ( in_array($key, $this->allowedAttributes) )
+                $attributes .= " $key=\"$value\"";
+                    
+            if ( in_array($key, $this->booleanAttributes) )
+                $attributes .= " $key=\"$key\"";
+        }
+        
+        return $attributes;
+    } 
 
 }
 
@@ -99,36 +144,83 @@ interface iFormElement
     public Enable();
     public Disable();
     public IsEnabled();
+    public Validate($data);
 }
 
 abstract class aFormElement
 {
-    protected $id;
     protected $name;
+    protected $id;
+    protected $type;
     protected $value = null;
-    protected $extra = null;
-    protected $disabled = false;
+    protected $attributes = null;
+    protected $isEnabled = true;
+
+    // List of acceptable optional attributes   
+    protected $allowedAttributes = array(
+        'class',
+        'contextmenu',
+        'dir',
+        'draggable',
+        'dropzone',
+        'id',
+        'spellcheck',
+        'style',
+        'tabindex',
+        'title',
+        'maxlength',
+        'size',
+        'autocomplete',
+        'list',
+        'pattern',
+        'placeholder'
+    );
+
+    // List of acceptable optional boolean attributes     
+    protected $booleanAttributes = array(
+        'disabled',
+        'readonly',
+        'autofocus',
+        'required'    
+    );
     
-    
-    public __construct($name, $id)
+    public __construct($name, $id, $type)
     {
         $this->name = $name;
-        $this->id = $id;
+        $this->id = $name;
+        $this->type = $name;
     }
     
+    // Garbage or nonstandard elements are ignored
+    protected ValidateAttributes()
+    {
+        $attributes = null;
+        
+        foreach( $this->attributes as $key => $value )
+        {
+            if ( in_array($key, $this->allowedAttributes) )
+                $attributes .= " $key=\"$value\"";
+                    
+            if ( in_array($key, $this->booleanAttributes) )
+                $attributes .= " $key=\"$key\"";
+        }
+        
+        return $attributes;
+    }
+
     public Enable()
     {
-        $this->disabled = false;
+        $this->isEnabled = true;
     }
 
     public Disable()
     {
-        $this->disabled = true;
+        $this->isEnabled = false;
     }
     
     public IsEnabled()
     {
-        return $this->disabled;
+        return $this->isEnabled;
     }
     
     public SetValue($value)
@@ -137,14 +229,17 @@ abstract class aFormElement
     }
     
     // Input must be an array
-    public SetExtra($extra)
+    public SetAttributes($attributes)
     {
-        if (!is_array($extra))
-            return false;
+        if (!is_array($attributes))
+            return;
             
-        foreach ($extra as $key => $value)
+        foreach ($attributes as $key => $value)
         {
-            $this->extra[$key] = htmlentities($value);
+            if (null === $value)
+                unset($this->attributes[$key]);
+            else
+                $this->attributes[$key] = htmlentities($value);
         }
     
     }
@@ -152,37 +247,29 @@ abstract class aFormElement
 
 class ButtonElement extends aFormElement implements iFormElement
 {
-    private $type;
     private $content;
-
     
     public __construct($name, $type = 'button')
     {
-        parent::__construct($name, null);
-        
-        $this->type = $type;
+        parent::__construct($name, $name, $type);
     }
     
     public SetContent($content)
     {
-        $this->value = $content;
+        $this->content = $content;
     }
     
     public Html()
     {
-        $html ='<button type="'.$this->type.'" name="'.$this->name.'"';
+        $html = '<button type="'.$this->type.'" name="'.$this->name.'"';
         
         if (isset($this->value))
             $html .= ' value="'.$this->value.'"';
         
-        if (isset($this->extra))
-        {
-            foreach($this->extra as $key => $value)
-            {
-                $html .= ' value="'.$this->value.'"';
-            }
-        }
-
+        if (isset($this->attributes))
+            $html .= ValidateAttributes();
+            
+        $html .= '>'.$this->content."</button>\n\n";
         
         return $html;
     }
