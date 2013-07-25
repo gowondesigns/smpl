@@ -149,10 +149,11 @@ static class Security
                 if (session_status() !== PHP_SESSION_ACTIVE)
                     session_start();
                 
+                $key = md5(Configuration::Get('siteURL'));
                 // User authentication period is still active, then update 
-                if (isset($_SESSION[Configuration::Site().'_AUTH_PERIOD']) && $_SESSION[Configuration::Site().'_AUTH_PERIOD'] > Date::CreateFlat())
+                if (isset($_SESSION[$key]['auth']['period']) && $_SESSION[$key]['auth']['period'] > Date::CreateFlat())
                 {
-                    $_SESSION[Configuration::Site().'_AUTH_PERIOD'] = (int) Date::CreateFlat() + 10000;
+                    $_SESSION[$key]['auth']['period'] = (int) Date::CreateFlat() + 10000;
                     $this->currentSessionValid = true;
                 }
                 else
@@ -173,24 +174,10 @@ static class Security
         if(!Security::Authenticate())
             return false;
         
-        switch ($level) {
-            case 'system':
-                return $_SESSION[Configuration::Site().'-AUTH-ACCESS_SYSTEM'];
-                break;
-            case 'users':
-                return $_SESSION[Configuration::Site().'-AUTH-ACCESS_USERS'];
-                break;
-            case 'content':
-                return $_SESSION[Configuration::Site().'-AUTH-ACCESS_CONTENT'];
-                break;
-            case 'blocks':
-                return $_SESSION[Configuration::Site().'-AUTH-ACCESS_BLOCKS'];
-                break;
-            default:
-                return false;
-                break;
-        }
-       
+        if (isset($_SESSION[$key]['auth']['access'][$level]))
+            return $_SESSION[$key]['auth']['access'][$level];
+        else
+            return false;
     }    
     
     // Validate login information, and create an administrative session success
@@ -200,7 +187,7 @@ static class Security
         $password = md5(Security::FilterXSS($password) );
 
         $database = Database::Connect();
-        $result = $database->Retrieve('users', '*',  "account-user_name-hash = '{$username}' AND account-password-hash = '{$username}'");
+        $result = $database->Retrieve('users', '*',  "account-user_name-hash = '{$username}' AND account-password-hash = '{$password}'");
     
         if($value = $result->fetch_array(MYSQLI_ASSOC))
         {
@@ -219,16 +206,17 @@ static class Security
 
     private static function CreateSession($sessionData)
     {
-        session_start();
-        $_SESSION[Configuration::Site().'-AUTH-ID'] = $sessionData['id'];
-        $_SESSION[Configuration::Site().'-AUTH-USERNAME'] = $sessionData['account-user_name-hash'];
-        // Validate sessions for an hour
-        $_SESSION[Configuration::Site().'-AUTH-PERIOD'] = (int) Date::CreateFlat() + 10000;
+        if (session_status() !== PHP_SESSION_ACTIVE)
+            session_start();
         
-        $_SESSION[Configuration::Site().'-AUTH-ACCESS_SYSTEM'] = $sessionData['permissions-access_system-checkbox'];
-        $_SESSION[Configuration::Site().'-AUTH-ACCESS_USERS'] = $sessionData['permissions-access_users-checkbox'];
-        $_SESSION[Configuration::Site().'-AUTH-ACCESS_CONTENT'] = $sessionData['permissions-access_content-checkbox'];
-        $_SESSION[Configuration::Site().'-AUTH-ACCESS_BLOCKS'] = $sessionData['permissions-access_blocks-checkbox'];
+        $key = md5(Configuration::Get('siteURL'));
+        $_SESSION[$key]['auth']['id'] = $sessionData['id'];
+        $_SESSION[$key]['auth']['username'] = $sessionData['account-user_name-hash'];
+        $_SESSION[$key]['auth']['period'] = (int) Date::CreateFlat() + 10000;
+        $_SESSION[$key]['auth']['access']['system'] = $sessionData['permissions-access_system-checkbox'];
+        $_SESSION[$key]['auth']['access']['users'] = $sessionData['permissions-access_users-checkbox'];
+        $_SESSION[$key]['auth']['access']['content'] = $sessionData['permissions-access_content-checkbox'];
+        $_SESSION[$key]['auth']['access']['blocks'] = $sessionData['permissions-access_blocks-checkbox'];
         
         // Possibly use Cookies instead of Sessions (less server overhead, more security concerns)
         /*        
@@ -240,14 +228,12 @@ static class Security
     
     private static function DestroySession()
     {
-        unset($_SESSION[Configuration::Site().'_AUTH_ID']);
-        unset($_SESSION[Configuration::Site().'_AUTH_USERNAME']);
-        unset($_SESSION[Configuration::Site().'_AUTH_PERIOD']);
-        unset($_SESSION[Configuration::Site().'-AUTH-ACCESS_SYSTEM']);
-        unset($_SESSION[Configuration::Site().'-AUTH-ACCESS_USERS']);
-        unset($_SESSION[Configuration::Site().'-AUTH-ACCESS_CONTENT');
-        unset($_SESSION[Configuration::Site().'-AUTH-ACCESS_BLOCKS']);
-        session_destroy();
+        if (session_status() !== PHP_SESSION_ACTIVE)
+            session_start();
+        
+        $key = md5(Configuration::Get('siteURL'));
+        unset($_SESSION[$key]);
+        //session_destroy();
         
         // Possibly use Cookies instead of Sessions (less server overhead, more security concerns)
         /*
