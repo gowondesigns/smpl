@@ -11,7 +11,15 @@
 static class Content
 {
     private static $spaces = array('main' => null);
-    private static $hooks = array();
+    private static $hooks = array(
+        'pre' => array(
+            'sitemap' => 'default:sitemap',
+            'feed' => 'default:feed',
+        ),
+        'post' => array(
+            'articles' => 'default;Sitemap::CreateXML'
+        ),
+    );
     
     // [MUSTCHANGE]
     // Hooks define the behavior the CMS will take when a trigger is defined
@@ -22,9 +30,16 @@ static class Content
     // Method to initiate all automatic actions
     public static function Update()
     {
+        // Is not POST signature is present, any existing validation data should be unset
+        $key = md5(Configuration::Get('siteURL'));
+        if (!isset($_POST[$key]))
+            unset($_SESSION[$key]['validate']);
+        
         $database = Database::Connect();
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 1), "publish-publish_flag-dropdown = 2 AND publish-publish_date-date <= ".Date::CreateFlat() );
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::CreateFlat() );
+        
+        // Make modifications to CMS, including various files if they're present on the server
     }
 
     // Change the behavior of the system based on any hooks defined in the URI [MUSTCHANGE]
@@ -32,8 +47,21 @@ static class Content
     {
         $l = LanguageFactory::Create(); // Grab language data
         $database = Database::Connect();
-        $database->Update('content', array('publish-publish_flag-dropdown' => 1), "publish-publish_flag-dropdown = 2 AND publish-publish_date-date <= ".Date::CreateFlat() );
-        $database->Update('content', array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::CreateFlat() );
+        
+        // Check if form validation needs to take place
+        $key = md5(Configuration::Get('siteURL'));
+        if (isset($_SESSION[$key]['validate']))
+        {
+            $name = key($_SESSION[$key]['validate']['form']);
+            $form = Forms::Create($name);
+            $isValid = $form->Validate($_SESSION[$key]['validate']['form'], $_POST);
+            
+            
+            //On Success, unset the validation info, Commit Changes, Refresh page.
+            unset($_SESSION[$key]['validate']);
+            // Admin::UpdateDatabase($_POST);
+            //header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+        }
     }
     
         

@@ -1,9 +1,6 @@
 <?php
 /* SMPL Feed Classes
 // 
-// Example Use:
-// $l = LanguageFactory::Create("en-US");
-// echo $l->Phrase("Author");
 //
 //*/
 

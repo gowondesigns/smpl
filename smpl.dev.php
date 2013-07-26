@@ -31,11 +31,12 @@ error_reporting(E_ALL ^ E_NOTICE); // #1 Report all Errors
 //error_reporting(0); // #2 No Error Reporting
 
 // Always update the database, un/publishing content based on the current date
-Content::Update();
+
+Security::EnforceHttps();
 
 Security::Authenticate();
 
-Security::EnforceHttps();
+Content::Update();
 
 Content::Hook();
 

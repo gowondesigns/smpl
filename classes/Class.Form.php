@@ -12,12 +12,11 @@ static class Forms
 
     public static function Create($name)
     {
-    
         if (isset($this->forms[$name]))
             $form = $this->forms[$name];
         else
         {
-            $form = new Form();
+            $form = new Form($name);
             $this->forms[$name] = $form;
         }
 
@@ -117,10 +116,9 @@ class Form
         'novalidate'  
     );            
     
-    public function __construct($name, $id, $action, $method='post', $enctype='application/x-www-form-urlencoded')
+    public function __construct($name)
     {
-
-
+        return $this->name;
     }
 
     // AddElement($name, $element)
@@ -141,6 +139,12 @@ class Form
     {
         return $this->elements;
     }
+
+    public function SetOptions($id, $action, $method='post', $enctype='application/x-www-form-urlencoded')
+    {
+
+
+    }
     
     public SetAttributes($attributes)
     {
@@ -157,7 +161,7 @@ class Form
     
     }
     
-    protected ValidateAttributes()
+    protected RenderAttributes()
     {
         $attributes = null;
         
@@ -173,7 +177,7 @@ class Form
         return $attributes;
     }
     
-    public Execute($postData = null)
+    public Render($postData = null)
     {
         // Create Session Variable for Initiation and Validation
         // Output HTML 
@@ -183,7 +187,7 @@ class Form
 
 interface iFormElement
 {
-    public Html();
+    public Render();
     public Enable();
     public Disable();
     public IsEnabled();
@@ -197,6 +201,7 @@ abstract class aFormElement
     protected $type;
     protected $value = null;
     protected $content = null;
+    protected $label = null;
     protected $attributes = null;
     protected $isEnabled = true;
 
@@ -258,6 +263,10 @@ abstract class aFormElement
         $this->content = $content;
     }
         
+    public SetLabel($label)
+    {
+        $this->label = $label;
+    }
     // Input must be an array
     public SetAttributes($attributes)
     {
@@ -275,7 +284,7 @@ abstract class aFormElement
     }
     
     // Garbage or nonstandard elements are ignored
-    protected ValidateAttributes()
+    protected RenderAttributes()
     {
         $attributes = null;
         
@@ -299,7 +308,7 @@ class ButtonElement extends aFormElement implements iFormElement
         parent::__construct($name, $name, $type);
     }
     
-    public Html()
+    public Render()
     {
         $html = '<button type="'.$this->type.'" name="'.$this->name.'" id="'.$this->id.'"';
         
@@ -307,7 +316,7 @@ class ButtonElement extends aFormElement implements iFormElement
             $html .= ' value="'.$this->value.'"';
         
         if (isset($this->attributes))
-            $html .= ValidateAttributes();
+            $html .= RenderAttributes();
             
         $html .= '>'.$this->content."</button>\n\n";
         
@@ -325,7 +334,7 @@ class InputElement extends aFormElement implements iFormElement
 {
     public __construct($name, $id, $type)
     {
-        parent::__construct($name, $id, $type);
+        parent::__construct($name, $name, $type);
 
         switch ($type) {
             case 'checkbox':
@@ -359,12 +368,19 @@ class InputElement extends aFormElement implements iFormElement
 
     }
     
-    public Html()
+    public SetValue($value)
     {
+        $this->value = htmlentities($value);
+        $this->SetContent($this->value);
+    }
+    
+    public Render()
+    {
+        
         if ($this->type == 'checkbox')
-            $html = '<label for="'.$this->id.'">'.$this->content.'</label>';
+            $html = '<label for="'.$this->id.'">'.$this->label.'</label>';
         else
-            $html = '<fieldset><label for="'.$this->id."\">\n\t<span>".$this->content."</span>\n\t";
+            $html = '<fieldset><label for="'.$this->id."\">\n\t<span>".$this->label."</span>\n\t";
         
         $html .= '<input type="'.$this->type.'" name="'.$this->name.'" id="'.$this->id.'"';
         
@@ -372,7 +388,7 @@ class InputElement extends aFormElement implements iFormElement
             $html .= ' value="'.$this->value.'"';
         
         if (isset($this->attributes))
-            $html .= ValidateAttributes();
+            $html .= RenderAttributes();
         
         if ($this->type == 'checkbox')
             $html .= " />\n</label></fieldset>\n\n";
@@ -387,7 +403,7 @@ class InputElement extends aFormElement implements iFormElement
     {
         $valid = true;
         
-        switch ($type) {
+        switch ($this->type) {
             case 'text':
             case 'password':
             case 'checkbox':
