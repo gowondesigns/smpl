@@ -1,24 +1,41 @@
 <?php
 /* SMPL Content Class
 // 
-// Example Use:
-// $l = LanguageFactory::Create("en-US");
-// echo $l->Phrase("Author");
 //
 //*/
 
 
 static class Content
 {
-    private static $spaces = array('main' => null);
+    private static $query = function()
+        {
+            var_dump($result);
+        };
+    
+    private static $spaces = array(
+        'head' => null,
+        'main' => null
+    );
+    
     private static $hooks = array(
         'pre' => array(
             'sitemap' => 'default:sitemap',
             'feed' => 'default:feed',
+            'api' => 'default:main',
+            'categories' => 'default:categories',
+            'articles' => 'default:articles',
         ),
-        'post' => array(
-            'articles' => 'default;Sitemap::CreateXML'
+        'head' => array(
+            'tags' => 'default:tags',
+            'categories' => 'default:categories',
+            'articles' => 'default:articles',
         ),
+        'main' => array(
+            'tags' => 'default:tags',
+            'categories' => 'default:categories',
+            'articles' => 'default:articles',
+            'pages' => 'default:pages',
+        )
     );
     
     // [MUSTCHANGE]
@@ -30,6 +47,19 @@ static class Content
     // Method to initiate all automatic actions
     public static function Update()
     {
+        /* Make modifications to CMS, including various files if they're present on the server
+        smpl-includes/	(for Redirect Blocks)
+        class.*.php -> Additional Classes
+        hook.*.php -> Additional Hooks
+        smpl-includes/hooks/	(recommended organization to manage customized hooks)
+        smpl-uploads/ (Where uploaded content where be stored and managed)
+
+        */
+        foreach (glob("smpl-includes/class.*.php") as $filename)
+        {
+        require_once($filename);
+        }
+        
         // Is not POST signature is present, any existing validation data should be unset
         $key = md5(Configuration::Get('siteURL'));
         if (!isset($_POST[$key]))
@@ -38,8 +68,6 @@ static class Content
         $database = Database::Connect();
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 1), "publish-publish_flag-dropdown = 2 AND publish-publish_date-date <= ".Date::CreateFlat() );
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::CreateFlat() );
-        
-        // Make modifications to CMS, including various files if they're present on the server
     }
 
     // Change the behavior of the system based on any hooks defined in the URI [MUSTCHANGE]

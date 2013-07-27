@@ -9,11 +9,9 @@ static class Feed
 {
     public static function Create($type = null)
     {
-        if (null === $type)
-            $type = 'Atom';
-        
-        $type = ucfirst($type)."Feed";
-        return new $type();
+        $type = (null === $type) ? 'AtomFeed': ucfirst($type).'Feed';
+        $feed = (class_exists($type)) ? new $type(): null;
+        return $feed;
     }
     
     public static function GenerateUuid($key = null, $prefix = '')

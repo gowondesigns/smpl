@@ -13,7 +13,8 @@ static class Configuration
         'name' => 'smpl',
         'username' => 'root',
         'password' => '',
-        'prefix' => '');
+        'prefix' => ''
+        );
         
     private $modRewrite = false;
     private $sslCertificate = false;
