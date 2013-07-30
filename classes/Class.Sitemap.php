@@ -1,9 +1,6 @@
 <?php
 /* SMPL Sitemap Class
 // 
-// Example Use:
-// $l = LanguageFactory::Create("en-US");
-// echo $l->Phrase("Author");
 //
 //*/
 
@@ -11,7 +8,7 @@
 static class Sitemap
 {
 
-    public static function CreateXML()
+    public static function RenderXML()
     {
         header("Content-Type: application/xml charset=utf-8");
         $database = Database::Connect();
@@ -32,13 +29,14 @@ static class Sitemap
         {
             $xml .= "\n\t<url>";
             $xml .= "\n\t\t<loc>".Utils::GenerateUri($pages['content-title_mung-field']).'</loc>';
-            $xml .= "\n\t\t<lastmod>".Date::CreateFlat(Date::Create($pages['content-date-date']), "Y-m-d\x54H:i:sP").'</lastmod>';b
+            $xml .= "\n\t\t<lastmod>".Date::CreateFlat(Date::Create($pages['content-date-date']), "Y-m-d\x54H:i:sP").'</lastmod>';
             $xml .= "\n\t</url>\n";
         }
         
         $xml .= "\n</urlset>";
         
         echo $xml;
+        exit;
     }
 }
 

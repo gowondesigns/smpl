@@ -7,10 +7,7 @@
 
 static class Content
 {
-    private static $query = function()
-        {
-            var_dump($result);
-        };
+    private static $uri = null;
     
     private static $spaces = array(
         'head' => null,
@@ -19,34 +16,46 @@ static class Content
     
     private static $hooks = array(
         'pre' => array(
-            'sitemap' => 'default:sitemap',
-            'feed' => 'default:feed',
-            'api' => 'default:main',
-            'categories' => 'default:categories',
-            'articles' => 'default:articles',
+            '*' => array(
+            ),
+            'sitemap' => 'Sitemap::RenderXML',
+            'feed' => 'Feed::Render',
+            'api' => 'Content::Stub',
         ),
         'head' => array(
-            'tags' => 'default:tags',
-            'categories' => 'default:categories',
-            'articles' => 'default:articles',
+            '*' => array(
+            'Content::HtmlHeader'
+            ),
+            'articles' => 'Content::TagsKeywords',
+            'pages' => 'Content::TagsKeywords',
         ),
         'main' => array(
-            'tags' => 'default:tags',
-            'categories' => 'default:categories',
-            'articles' => 'default:articles',
-            'pages' => 'default:pages',
+            '*' => array(
+            ),
+            'tags' => 'Content::ListByTags',
+            'categories' => 'Content::ListByCategory',
+            'articles' => 'Content::RenderArticle',
         )
     );
     
     // [MUSTCHANGE]
     // Hooks define the behavior the CMS will take when a trigger is defined
-    // Custom hooks are inserted in smpl-includes/hooks/, filnames 'hook.<hook_name>.php'
-    // 'default:<action>' or 'include:<filename>.php'
+    // Custom hooks are inserted in smpl-includes/, filnames 'hook.<hook_name>.php'
+    // 'StaticClassName::StaticMethodName'
 
+
+    //Do-nothing function
+    public static function Stub($uri)
+    {
+        return null;
+    }
     
     // Method to initiate all automatic actions
     public static function Update()
     {
+        self::$uri = explode('/', $_SERVER['QUERY_STRING']);
+        
+        
         /* Make modifications to CMS, including various files if they're present on the server
         smpl-includes/	(for Redirect Blocks)
         class.*.php -> Additional Classes
@@ -73,29 +82,23 @@ static class Content
     // Change the behavior of the system based on any hooks defined in the URI [MUSTCHANGE]
     public static function Hook()
     {
-        $l = LanguageFactory::Create(); // Grab language data
-        $database = Database::Connect();
-        
-        // Check if form validation needs to take place
-        $key = md5(Configuration::Get('siteURL'));
-        if (isset($_SESSION[$key]['validate']))
+        // Run all wildcard '*' hooks
+        foreach (self::$hooks['pre']['*'] as $action)
+            $action(self::$uri); 
+
+        // Run any hooks triggerd by the URI
+        foreach (self::$uri as $key)
         {
-            $name = key($_SESSION[$key]['validate']['form']);
-            $form = Forms::Create($name);
-            $isValid = $form->Validate($_SESSION[$key]['validate']['form'], $_POST);
-            
-            
-            //On Success, unset the validation info, Commit Changes, Refresh page.
-            unset($_SESSION[$key]['validate']);
-            // Admin::UpdateDatabase($_POST);
-            //header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+            if(array_key_exists($key, self::$hooks['pre'])))
+                self::$hooks['pre'][$key](self::$uri); 
         }
     }
     
         
     public static function Status()
     {
-        return print_r($this->spaces, true);        
+        print_r(self, true);
+        exit;        
     }
 
 /*
@@ -131,13 +134,6 @@ Otherwise, look for the space being called
         $html = '<title>'.Configuration::Get('title')."</title>\n";
         $html .= '<meta content="text/html; charset=UTF-8" http-equiv="content-type">'."\n";
         $html .= '<meta name="robots" content="index,follow">'."\n";
-        $html .= '<meta name="description" content="'.Configuration::Get('description').'">'."\n";
-        
-        if (isset($this->spaces['main']) && is_a($this->spaces['main'][0], 'Page') )
-        {
-            $html .= '<meta name="keywords" content="'.$this->spaces['main'][0]->Tags().'">'."\n";
-        }
-
         $html .= '<link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="'.Utils::GenerateUri('feed/').'">'."\n";
         //$html .= '<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="'.Utils::GenerateUri('feed/rss/').'">'."\n";
           
@@ -168,6 +164,21 @@ Otherwise, look for the space being called
 
     public static function Breadcrumbs($seperator = "&bull;")
     {
+        $l = LanguageFactory::Create(); // Grab language data
+        $crumbs = array();
+        $crumbs[] = '<li><a href="'.Utils::GenerateUri().'" title="'.$l->Phrase('Home').'">'.$l->Phrase('Home')."</a></li>\n";
+        
+        $html = "<ul class=\"breadcrumbs\">\n";
+        
+        if (Security::Authenticate())
+        {
+            $crumbs[] = '<li><a href="'.Utils::GenerateUri($l->Phrase('admin')).'" title="'.$l->Phrase('Admnistration').'">'.$l->Phrase('Admnistration')."</a></li>\n";
+            $crumbs[] = '<li><a href="'.Utils::GenerateUri($l->Phrase('admin'),'logout').'" title="'.$l->Phrase('Logout').'">'.$l->Phrase('Logout')."</a></li>\n";
+        }
+        
+        $html .= implode($crumbs);
+        $html .= "</ul>\n";
+        echo $html;
         // Grab and explode URI Query data
         // List assets in heirarchical order, with links to various paths
         // [MUSTCHANGE]

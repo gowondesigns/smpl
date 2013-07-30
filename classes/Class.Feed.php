@@ -26,6 +26,13 @@ static class Feed
 
 		    return $prefix . $uuid;
     }
+    
+    public static function Render()
+    {
+        $feed = Feed::Create();
+        
+        exit;
+    }
 }
 
  
@@ -50,7 +57,7 @@ abstract class aFeed
         $this->feedItems[] = $item;
     }
     
-    abstract public function Display();
+    abstract public function Render();
         
 }
 
@@ -66,7 +73,7 @@ final class AtomFeed extends aFeed
         parent::__construct();
     }
     
-    public function Display()
+    public function Render()
     {
         header("Content-Type: application/atom+xml charset=utf-8");
         
