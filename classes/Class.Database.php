@@ -18,12 +18,12 @@ static class Database
         if (null === $databaseType)
         {
             $databaseType = $configurations['type'].'Database';
-            if (null === $this->mainDatabaseInstance)
+            if (null === self::$mainDatabaseInstance)
             {
-                $this->mainDatabaseInstance = new $databaseType($configurations['host'], $configurations['name'], $configurations['username'], $configurations['password'], $configurations['prefix']);
+                self::$mainDatabaseInstance = new $databaseType($configurations['host'], $configurations['name'], $configurations['username'], $configurations['password'], $configurations['prefix']);
             }
             
-            return $this->mainDatabaseInstance;
+            return self::$mainDatabaseInstance;
         }
         else // Otherwise assume a unique database instance
         {
@@ -42,12 +42,28 @@ static class Database
             return new $databaseType($configurations['host'], $configurations['name'], $configurations['username'], $configurations['password'], $configurations['prefix']);
         }
     }
-
+    
+    public static function Fetch($result, $databaseResultType = null)
+    {
+        // If no database type is specified, assume that the main database object is being used
+        if (null === $databaseResultType)
+        {
+            $configurations = Configuration::Database();
+            $databaseResultType = $configurations['type'].'DatabaseResult';
+        }
+        else // Otherwise assume a unique database instance
+        {
+            $databaseResultType .= 'DatabaseResult';
+        }
+        
+        return new $databaseResultType($result);
+    }
 }
 
 
 interface iDatabase
 {
+    //public function __construct($host, $name, $username, $password, $prefix);
     public function Query($queryString);    // Custom Queries that cant be handled by the basic handlers
     public function Create($insertToTables, $insertItems, $insertExtra = null);   // Create (Insert) Queries
     public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null); // Retrieve (Select) Queries
@@ -55,15 +71,49 @@ interface iDatabase
     public function Delete($deleteFromTables, $deleteWhereClause, $selectExtra = null);   // Delete Queries
 }
 
-abstract class aDatabase
+/*
+
+class Database_MySQLi extends MySQLi
 {
-    protected $status = null;
+    public function query($query)
+    {
+        $this->real_query($query);
+        return new Database_MySQLi_Result($this);
+    }
+}
+
+class Database_MySQLi_Result extends MySQLi_Result
+{
+    public function fetch()
+    {
+        return $this->fetch_assoc();
+    }
+
+    public function fetchAll()
+    {
+        $rows = array();
+        while($row = $this->fetch())
+        {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+}
+
+
+
+*/
+
+
+
+class MySqlDatabase extends MySQLi implements iDatabase
+{
     protected $host;
     protected $name;
     protected $username;
     protected $password;
     protected $prefix;
-    
+
     public function __construct($host, $name, $username, $password, $prefix)
     {
         $this->host = $host;
@@ -71,36 +121,14 @@ abstract class aDatabase
         $this->username = $username;
         $this->password = $password;
         $this->prefix = $prefix;
-    }
-    
-    
-    public function GetStatus()    // This type of method may not be necessary
-    {
-        return $this->status;
-    }
-}
-
-class MySqlDatabase extends aDatabase implements iDatabase
-{
-    private $mysqli;
-
-
-    public function __construct($host, $name, $username, $password, $prefix)
-    {
-        parent::__construct($host, $name, $username, $password, $prefix);
         
-        $this->mysqli = new mysqli($host, $username, $password, $host);
-        if ($this->mysqli->connect_errno)
-        {
-            die("Connect failed: %s\n", $mysqli->connect_error); // [MUSTCHANGE]
-        }
-        
+        parent::__construct($host, $username, $password, $name);
     }
 
-    public function Query($queryString)
+    public function Query($query)
     {
-        // Return mysqli result object: http://www.php.net/manual/en/class.mysqli-result.php
-        return $this->mysqli->query($queryString);
+        $this->real_query($query);
+        return new MySqlDatabaseResult($this);
     }
     // $insertToTables can be a single string, or an array of strings for the tables
     // $insertItems must be an array
@@ -129,7 +157,7 @@ class MySqlDatabase extends aDatabase implements iDatabase
         $insertString = implode(', ', $insertItems);
             
         // Method will return TRUE on success, FALSE on failure
-        return $this->mysqli->query('INSERT INTO '.$tableString.' VALUES (SET '.$insertString.') '.$insertExtra);
+        return $this->query('INSERT INTO '.$tableString.' VALUES (SET '.$insertString.') '.$insertExtra);
 
     }
     
@@ -156,8 +184,8 @@ class MySqlDatabase extends aDatabase implements iDatabase
             $selectWhereClause = ' WHERE '.$selectWhereClause;
         }
         
-        // Return mysqli result object: http://www.php.net/manual/en/class.mysqli-result.php
-        return $this->mysqli->query('SELECT '.$selectItems.' FROM '.$tableString.$selectWhereClause.' '.$selectExtra);
+        $this->real_query('SELECT '.$selectItems.' FROM '.$tableString.$selectWhereClause.' '.$selectExtra);
+        return new MySqlDatabaseResult($this);
     }
     
     public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null)    // $updateItems must be an array
@@ -192,7 +220,7 @@ class MySqlDatabase extends aDatabase implements iDatabase
             
         
         // Method will return TRUE on success, FALSE on failure
-        return $this->mysqli->query('UPDATE '.$tableString.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$selectExtra);
+        return $this->query('UPDATE '.$tableString.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$selectExtra);
     }
     
     public function Delete($deleteFromTables, $deleteWhereClause, $selectExtra = null)
@@ -208,9 +236,46 @@ class MySqlDatabase extends aDatabase implements iDatabase
             $tableString = $this->prefix.$deleteFromTables;
         
         // Method will return TRUE on success, FALSE on failure
-        return $this->mysqli->query('DELETE FROM '.$tableString.' WHERE '.$selectWhereClause.' '.$selectExtra);
+        return $this->query('DELETE FROM '.$tableString.' WHERE '.$selectWhereClause.' '.$selectExtra);
     }
 
 }
+
+interface iDatabaseResult extends Iterator
+{
+    public function Fetch();
+    public function FetchAll();
+    public function Count();
+}
+
+/*
+abstract class aDatavaseResult
+{
+}
+//*/
+
+class MySqlDatabaseResult extends MySQLi_Result implements iDatabaseResult
+{
+    public function Fetch()
+    {
+        return $this->fetch_assoc();
+    }
+
+    public function FetchAll()
+    {
+        $rows = array();
+        while($row = $this->Fetch())
+        {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+    
+    public function Count()
+    {
+        return $this->num_rows;
+    }
+}
+
 
 ?>

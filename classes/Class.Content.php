@@ -21,20 +21,21 @@ static class Content
             'sitemap' => 'Sitemap::RenderXML',
             'feed' => 'Feed::Render',
             'api' => 'Content::Stub',
+            'admin' => 'Admin::Render'
         ),
         'head' => array(
             '*' => array(
             'Content::HtmlHeader'
             ),
             'articles' => 'Content::TagsKeywords',
-            'pages' => 'Content::TagsKeywords',
+            'pages' => 'Content::TagsKeywords'
         ),
         'main' => array(
             '*' => array(
             ),
             'tags' => 'Content::ListByTags',
             'categories' => 'Content::ListByCategory',
-            'articles' => 'Content::RenderArticle',
+            'articles' => 'Content::RenderArticle'
         )
     );
     
