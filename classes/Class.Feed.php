@@ -26,13 +26,6 @@ static class Feed
 
 		    return $prefix . $uuid;
     }
-    
-    public static function Render()
-    {
-        $feed = Feed::Create();
-        
-        exit;
-    }
 }
 
  
@@ -71,6 +64,11 @@ final class AtomFeed extends aFeed
         $this->feedUrl = Utils::GenerateUri('feed');
         $this->feedUuid = Feed::GenerateUuid();
         parent::__construct();
+    }
+    
+    public function AddItem(FeedItem $item)
+    {
+        $this->feedItems[] = $item;
     }
     
     public function Render()

@@ -48,9 +48,9 @@ static class Configuration
     {
         $database = Database::Connect();
         $result = $database->Retrieve('settings', 'value-field',  "name-hidden = '{$settingName}'");
-        $value = $result->fetch_array(MYSQLI_NUM);
+        $value = $result->Fetch();
         
-        return $value[0]
+        return $value['value-field'];
     }
     
     public static ModRewrite()

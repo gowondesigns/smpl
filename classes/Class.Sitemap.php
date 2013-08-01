@@ -17,7 +17,7 @@ static class Sitemap
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
         $result = $database->Retrieve('categories', 'title_mung-field', "publish_flag-checkbox = 1");
-        while($category = $result->fetch_array(MYSQLI_ASSOC))
+        while($category = $result->Fetch())
         {
             $xml .= "\n\t<url>";
             $xml .= "\n\t\t<loc>".Utils::GenerateUri('categories',$category['title_mung-field']).'</loc>';
@@ -25,7 +25,7 @@ static class Sitemap
         }
         
         $result = $database->Retrieve('content', '*', "content-static_page_flag-checkbox = 1 AND publish-publish_flag-dropdown = 2");
-        while($pages = $result->fetch_array(MYSQLI_ASSOC))
+        while($pages = $result->Fetch())
         {
             $xml .= "\n\t<url>";
             $xml .= "\n\t\t<loc>".Utils::GenerateUri($pages['content-title_mung-field']).'</loc>';

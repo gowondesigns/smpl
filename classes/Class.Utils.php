@@ -79,28 +79,6 @@ static class Utils
         return $string;
     }
     
-    // Simple Hashing function (primarily for generating permalinks)
-    public static function Hash($string)
-    {
-        $dictionary  = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $base  = strlen($dictionary);
-        $hash = null;           
-        $id = null;
-        
-        for($i = 0; $i < strlen($string); $i++)
-        {
-            $id .= ord($string[$i]);
-        }
-
-        do 
-        {
-            $hash = $dict[($id%$base)].$hash;
-        } 
-        while ($id = floor($id/$base));
-
-        return $hash;
-    }
-    
     // Returns current URI in an array of assets
     public static function ParseUri()
     {
@@ -143,8 +121,7 @@ static class Utils
         $uri .= implode('/', $optionalAssets);
         return $uri;
     }
-    
-    
+
     public static function Pagination($setAmount, $currentPosition, $showPageNumbers = false, $totalPageNumbers = null, $seperator = "&#124;")
     {
         $l = LanguageFactory::Create(); // Grab language data
@@ -172,7 +149,106 @@ static class Utils
         
         return $html;
     }
+    
+    
+     //const $codeset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    //readable character set excluded (0,O,1,l)
+    // Base 58
+    // Simple Permalink mask for unique IDs
+    private static $permalinkBase = "23456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ";
 
+    public static function PermalinkEncode($id)
+    {
+        $base = str_split(self::$permalinkBase);
+        $baseNum = count($base);
+        $salt = intval( Configuration::Get('permalinkSalt'));
+
+        // Shift the order of base by the salt amount. + = Shift Left, - = Shift Right
+        $baseOffset = $salt % $baseNum;
+      
+        if ($salt < 0)
+        {
+            // Example.
+            // base = "ABCDEFGHIJ"
+            // 1st = array_slice($base, -3) = "HIJ" 
+            // 2nd = array_slice($base, 0, 10-3 = 7) = "ABCDEFG"
+            // newbase = 1st.2nd = "HIJABCDEFG"
+            if($baseOffset == 0)
+                $baseOffset = -1;  
+            $first = array_slice($base, $baseOffset);
+            $second = array_slice($base, 0, ($baseNum - $baseOffset));
+        }
+        else
+        {
+            // Example.
+            // base = "ABCDEFGHIJ"
+            // 1st = array_slice($base, 3) = "DEFGHIJ" 
+            // 2nd = array_slice($base, 0, 3) = "ABC"
+            // newbase = 1st.2nd = "DEFGHIJABC"
+            if($baseOffset == 0)
+                $baseOffset = 1;   
+            $first = array_slice($base, $baseOffset);
+            $second = array_slice($base, 0, $baseOffset);
+        }
+
+        $base = array_merge($first, $second);
+        $r = $id % $baseNum ;
+        $hash = $base[$r];
+        $q = floor($id / $baseNum);
+        while ($q)
+        {
+              $r = $q % $baseNum;
+              $q = floor($q / $baseNum);
+              $hash = $base[$r].$hash;
+        }
+        return $hash;
+    }
+
+    public static function PermalinkDecode($hash)
+    {
+        $base = str_split(self::$permalinkBase);
+        $baseNum = count($base);
+        $salt = intval( Configuration::Get('permalinkSalt'));
+
+        // Shift the order of base by the salt amount. + = Shift Left, - = Shift Right
+        $baseOffset = $salt % $baseNum;
+      
+        if ($salt < 0)
+        {
+            // Example.
+            // base = "ABCDEFGHIJ"
+            // 1st = array_slice($base, -3) = "HIJ" 
+            // 2nd = array_slice($base, 0, 10-3 = 7) = "ABCDEFG"
+            // newbase = 1st.2nd = "HIJABCDEFG"
+            if($baseOffset == 0)
+                $baseOffset = -1;  
+            $first = array_slice($base, $baseOffset);
+            $second = array_slice($base, 0, ($baseNum - $baseOffset));
+        }
+        else
+        {
+            // Example.
+            // base = "ABCDEFGHIJ"
+            // 1st = array_slice($base, 3) = "DEFGHIJ" 
+            // 2nd = array_slice($base, 0, 3) = "ABC"
+            // newbase = 1st.2nd = "DEFGHIJABC"
+            if($baseOffset == 0)
+                $baseOffset = 1;   
+            $first = array_slice($base, $baseOffset);
+            $second = array_slice($base, 0, $baseOffset);
+        }
+
+        $base = array_merge($first, $second);
+        $limit = strlen($hash);
+        $id = strpos($base, $hash[0]);
+        
+        for($i = 1; $i < $limit; $i++)
+        {
+            $id = $baseNum * $id + strpos($base, $hash[$i]);
+        }
+        
+        return $id;
+    }
 }
 
 ?>

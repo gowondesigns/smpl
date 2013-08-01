@@ -10,7 +10,7 @@ static class Database
     private static $mainDatabaseInstance = null;
     
     // Database factory method, establish database connection and then pass it
-    public static function Connect($databaseType = null)
+    public static function Connect($databaseType = null, $host = null, $name = null, $username = null, $password = null, $prefix = null)
     {
         $configurations = Configuration::Database();
         
@@ -30,33 +30,20 @@ static class Database
             $databaseType .= 'Database';
             $optionalAssets = array_slice(func_get_args(), 1);
             
-            if (isset($optionalAssets))
-            {
-                $configurations['host'] = $optionalAssets[0];
-                $configurations['name'] = $optionalAssets[1];
-                $configurations['username'] = $optionalAssets[2];
-                $configurations['password'] = $optionalAssets[3];
-                $configurations['prefix'] = $optionalAssets[4];
-            }
+            if($host)
+                $configurations['host'] = $host;
+            if($name)
+                $configurations['name'] = $name;
+            if($username)
+                $configurations['username'] = $username;
+            if($password)
+                $configurations['password'] = $password;
+            if($prefix)
+                $configurations['prefix'] = $prefix;
+            
             
             return new $databaseType($configurations['host'], $configurations['name'], $configurations['username'], $configurations['password'], $configurations['prefix']);
         }
-    }
-    
-    public static function Fetch($result, $databaseResultType = null)
-    {
-        // If no database type is specified, assume that the main database object is being used
-        if (null === $databaseResultType)
-        {
-            $configurations = Configuration::Database();
-            $databaseResultType = $configurations['type'].'DatabaseResult';
-        }
-        else // Otherwise assume a unique database instance
-        {
-            $databaseResultType .= 'DatabaseResult';
-        }
-        
-        return new $databaseResultType($result);
     }
 }
 
@@ -70,41 +57,6 @@ interface iDatabase
     public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null);   // Update Queries
     public function Delete($deleteFromTables, $deleteWhereClause, $selectExtra = null);   // Delete Queries
 }
-
-/*
-
-class Database_MySQLi extends MySQLi
-{
-    public function query($query)
-    {
-        $this->real_query($query);
-        return new Database_MySQLi_Result($this);
-    }
-}
-
-class Database_MySQLi_Result extends MySQLi_Result
-{
-    public function fetch()
-    {
-        return $this->fetch_assoc();
-    }
-
-    public function fetchAll()
-    {
-        $rows = array();
-        while($row = $this->fetch())
-        {
-            $rows[] = $row;
-        }
-        return $rows;
-    }
-}
-
-
-
-*/
-
-
 
 class MySqlDatabase extends MySQLi implements iDatabase
 {
@@ -247,12 +199,6 @@ interface iDatabaseResult extends Iterator
     public function FetchAll();
     public function Count();
 }
-
-/*
-abstract class aDatavaseResult
-{
-}
-//*/
 
 class MySqlDatabaseResult extends MySQLi_Result implements iDatabaseResult
 {

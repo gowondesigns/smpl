@@ -189,7 +189,7 @@ static class Security
         $database = Database::Connect();
         $result = $database->Retrieve('users', '*',  "account-user_name-hash = '{$username}' AND account-password-hash = '{$password}'");
     
-        if($value = $result->fetch_array(MYSQLI_ASSOC))
+        if($value = $result->Fetch())
         {
             Security::CreateSession($value);  
         }

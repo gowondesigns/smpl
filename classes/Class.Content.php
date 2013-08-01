@@ -188,7 +188,10 @@ Otherwise, look for the space being called
     
 }
 
-
+interface iContentObject
+{
+    public function Render();
+}
 // Structure for all content elements
 abstract class aContentObject
 {
@@ -214,7 +217,7 @@ class Page extends aContentObject
     protected $date;
     protected $tags = null;
     
-    public function __construct($id, MySQLi_Result $data = null)
+    public function __construct($id, iDatabaseResult $data = null)
     {
         if (null === $data)
         {
@@ -222,9 +225,12 @@ class Page extends aContentObject
             $data = $database->Retrieve('content', '*',  "id = '{$id}'");
         }
         
-        $page = $data->fetch_array(MYSQLI_ASSOC);
+        if($data->Count() < 1)
+            die();
+        
+        $page = $data->Fetch();
         $this->title = $page['content-title-field'];
-        $this->permalink = $page['content-permalink-hidden'];
+        $this->permalink = Utils::PermalinkEncode($id);
         $this->date = Date::Create($page['content-date-date']);
         
         $this->tags = explode(',', $page['content-tags-field']);
@@ -234,7 +240,7 @@ class Page extends aContentObject
         }
         
         $result = $database->Retrieve('categories', 'title-field',  "id = '{$page['content-category-dropdown']}'");
-        $category = $result->fetch_array(MYSQLI_ASSOC);
+        $category = $result->Fetch();
         $this->category = $category['title-field'];
         
         
@@ -269,9 +275,9 @@ class Article extends Page
             $data = $database->Retrieve('content', '*',  "id = '{$id}'");
         }
         
-        $article = $data->fetch_array(MYSQLI_ASSOC);
+        $article = $data->Fetch();
         $result = $database->Retrieve('users', 'account-name-field',  "id = '{$article['content-category-dropdown']}'");
-        $author = $result->fetch_array(MYSQLI_ASSOC);
+        $author = $result->Fetch();
         $this->author = $author['account-name-field'];        
         
         parent::__construct($id, $data);
@@ -295,7 +301,7 @@ class Block extends aContentObject
             $data = $database->Retrieve('blocks', '*',  "id = '{$id}'");
         }
         
-        $block = $data->fetch_array(MYSQLI_ASSOC);
+        $block = $data->Fetch();
         $this->redirectLocation = $block['redirect_location-field'];
         
         
