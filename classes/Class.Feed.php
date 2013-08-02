@@ -28,7 +28,14 @@ static class Feed
     }
 }
 
- 
+// Feed Class Interface
+interface iFeed
+{
+    public static function FeedMimeType();
+    public function AddItem(FeedItem $item);
+    public function Render();
+}
+
 // Generic Feed Class
 abstract class aFeed
 {
@@ -44,18 +51,10 @@ abstract class aFeed
         $this->lastUpdated = Date::Create();
         $this->feedDescription = Configuration::Get('description');
     }
-
-    abstract public function AddItem(FeedItem $item)
-    {
-        $this->feedItems[] = $item;
-    }
-    
-    abstract public function Render();
-        
 }
 
 
-final class AtomFeed extends aFeed
+final class AtomFeed extends aFeed implements iFeed
 {
     private $feedUuid;
     
@@ -117,7 +116,7 @@ class FeedItem
     {
         $this->title = $article->Get('title');
         $this->url = $article->Get('titleMung');
-        $this->permalink = $article->Get('permalink');
+        $this->permalink = Utils::GenerateUri('articles',$article->Get('id'));
         $this->date = $article->Get('date');
         $this->author = $article->Get('author');
         $this->entryUuid = Feed::GenerateUuid();

@@ -13,7 +13,7 @@ static class Sitemap
         header("Content-Type: application/xml charset=utf-8");
         $database = Database::Connect();
         
-        $xml = "<\x3F".'xml version="1.0" encoding="utf-8'."\x3F>\n";
+        $xml = "<\x3Fxml version=\"1.0\" encoding=\"utf-8\"\x3F>\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
         $result = $database->Retrieve('categories', 'title_mung-field', "publish_flag-checkbox = 1");

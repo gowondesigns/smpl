@@ -48,7 +48,7 @@ static class Content
     //Do-nothing function
     public static function Stub($uri)
     {
-        return null;
+        return;
     }
     
     // Method to initiate all automatic actions
@@ -95,13 +95,26 @@ static class Content
         }
     }
     
-        
+    // May not be useful    
     public static function Status()
     {
         print_r(self, true);
         exit;        
     }
+    
+    public static function GetCategoryById($id)
+    {
+        $database = Database::Connect();
+        $result = $database->Retrieve('categories', '*',  "id = '{$id}'");
+        return $result->Fetch();
+    }
 
+    public static function GetAuthorById($id)
+    {
+        $database = Database::Connect();
+        $result = $database->Retrieve('users', '*',  "id = '{$id}'");
+        return $result->Fetch();
+    }
 /*
 First check is Space is MAIN (reserved) space.
 - Check to see if query is calling for default page.
@@ -211,9 +224,9 @@ abstract class aContentObject
 
 class Page extends aContentObject
 {
+    protected $id;
     protected $title;
-    protected $permalink;
-    protected $category;
+    protected $categoryMung;
     protected $date;
     protected $tags = null;
     
@@ -229,8 +242,8 @@ class Page extends aContentObject
             die();
         
         $page = $data->Fetch();
+        $this->id = $id;
         $this->title = $page['content-title-field'];
-        $this->permalink = Utils::PermalinkEncode($id);
         $this->date = Date::Create($page['content-date-date']);
         
         $this->tags = explode(',', $page['content-tags-field']);
@@ -238,11 +251,10 @@ class Page extends aContentObject
         {
             $this->tags[$key] = trim($value);
         }
-        
-        $result = $database->Retrieve('categories', 'title-field',  "id = '{$page['content-category-dropdown']}'");
-        $category = $result->Fetch();
-        $this->category = $category['title-field'];
-        
+
+        $category = Content::GetCategoryById($page['content-category-dropdown']);
+        $this->categoryMung = $category['title_mung-field']; 
+
         
         parent::__construct($page['content-title_mung-field'], $page['content-body-textarea']);
     }
@@ -265,6 +277,7 @@ class Page extends aContentObject
 class Article extends Page
 {
     protected $author;
+    protected $category;
     
     
     public function __construct($id, MySQLi_Result $data = null)
@@ -276,15 +289,20 @@ class Article extends Page
         }
         
         $article = $data->Fetch();
-        $result = $database->Retrieve('users', 'account-name-field',  "id = '{$article['content-category-dropdown']}'");
-        $author = $result->Fetch();
-        $this->author = $author['account-name-field'];        
+        $author = Content::GetAuthorById($article['content-author-dropdown']);
+        $this->author = $author['account-name-field'];
+        
+        $category = Content::GetCategoryById($article['content-category-dropdown']);
+        $this->category = $category['title-field'];        
         
         parent::__construct($id, $data);
     }
     
-    public function Summary() // [MUSTCHANGE]
+    public function Summary($size = 160) // [MUSTCHANGE]
     {
+        $summary = Utils::Strip($this->body);
+        $summary = Utils::Truncate($summary, $size);
+        return $summary
     }
 }
 

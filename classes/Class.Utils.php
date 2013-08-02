@@ -7,7 +7,11 @@
 
 static class Utils
 {
-      
+    // const $codeset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    // readable character set excluded (0,O,1,l)
+    // Simple Permalink mask for unique IDs, Base 58
+    private static $permalinkBase = "23456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ";
+          
     // Convert strings to SEO-friendly strings, with optional flags to remove integers
     public static function Munge($string, $length = 30, $removeIntegers = false)
     {
@@ -79,6 +83,8 @@ static class Utils
         return $string;
     }
     
+    
+    
     // Returns current URI in an array of assets
     public static function ParseUri()
     {
@@ -149,13 +155,6 @@ static class Utils
         
         return $html;
     }
-    
-    
-     //const $codeset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    //readable character set excluded (0,O,1,l)
-    // Base 58
-    // Simple Permalink mask for unique IDs
-    private static $permalinkBase = "23456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ";
 
     public static function PermalinkEncode($id)
     {
@@ -249,6 +248,20 @@ static class Utils
         
         return $id;
     }
+    
+    public static function Strip($data)
+    {
+        $search = array(
+            '@<script[^>]*?>.*?</script>@si',   // Strip out javascript 
+            '@<[\/\!]*?[^<>]*?>@si',            // Strip out HTML tags 
+            '@<style[^>]*?>.*?</style>@siU',    // Strip style tags properly 
+            '@<![\s\S]*?--[ \t\n\r]*>@'         // Strip multi-line comments including CDATA 
+        ); 
+        $data = preg_replace($search, ' ', $data);
+        $string = trim(preg_replace('/ {2,}/', ' ', $data)); 
+        return $data; 
+    } 
+    
 }
 
 ?>

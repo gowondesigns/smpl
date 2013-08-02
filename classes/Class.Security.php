@@ -7,9 +7,9 @@
 
 static class Security
 {
-    $currentSessionValid = null;
+    private static $currentSessionValid = null;
 
-    function GeneratePassword($length = 13, $useDashes = false, $useLowercase = true, $useUppercase = true, $useDigits = true, $useSymbols = true)
+    public static function GeneratePassword($length = 13, $useDashes = false, $useLowercase = true, $useUppercase = true, $useDigits = true, $useSymbols = true)
     {
     // Generates a strong password of N length containing at least one lower case letter,
     // one uppercase letter, one digit, and one special character. The remaining characters
@@ -143,7 +143,7 @@ static class Security
     // Check if a valid session is present.    
     public static function Authenticate()
     {
-        if (null === $this->currentSessionValid)
+        if (null === self::$currentSessionValid)
         {
                 // has a session already been started?
                 if (session_status() !== PHP_SESSION_ACTIVE)
@@ -165,7 +165,7 @@ static class Security
 
         }
         
-        return $this->currentSessionValid;
+        return self::$currentSessionValid;
     }
 
     //Check if user has permissions to access content
