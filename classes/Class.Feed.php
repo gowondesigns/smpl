@@ -7,11 +7,49 @@
 
 static class Feed
 {
-    public static function Create($type = null)
+    public static function Render()
     {
-        $type = (null === $type) ? 'AtomFeed': ucfirst($type).'Feed';
-        $feed = (class_exists($type)) ? new $type(): null;
-        return $feed;
+        $feed = null;
+        $type = Content::Get('feedDefaultType').'Feed';
+        $limit = 'ORDER BY publish-publish_date-date DESC LIMIT '. Content::Get('feedItemLimit');
+        $category = null;
+        $database = Database::Connect();
+                
+        // First analyze query string
+        // Default feed = /feed/
+        // OR /feed/<feed-type>/
+        if(Content::$uri[0] == 'feed')
+        {
+            if(isset(Content::$uri[1]))
+                $type = ucfirst(Content::$uri[1]).'Feed';
+            $feed = (class_exists($type)) ? new $type(): null; 
+        
+        }
+        // /<category-title>/feed/
+        // /<category-title>/feed/<feed-type>/
+        else if (Content::$uri[1] == 'feed')
+        {
+            if(isset(Content::$uri[2]))
+                $type = ucfirst(Content::$uri[2]).'Feed';
+            $feed = (class_exists($type)) ? new $type(): null;
+            
+            $result = $database->Retrieve('categories', 'id',  "title_mung-field = '.".Content::$uri[0]."'");
+            $category = $result->Fetch();
+        }
+
+        // Populate feed with proper articles
+        $byCategory = (isset($category['id'])) ? "AND content-category-dropdown = {$category['id']} AND content-in_category_flag-checkbox = 1": null;
+        $list = $database->Retrieve('content', 'id',  "publish-publish_flag-dropdown = 2 AND content-static_page_flag-checkbox = 0 {$byCategory}", $limit);
+        
+        while($id = $list->Fetch())
+        {
+            $item = new FeedItem(new Article($id));
+            $feed->AddItem($item);
+        }
+        
+        // Render then die
+        $feed=>Render();
+        exit;
     }
     
     public static function GenerateUuid($key = null, $prefix = '')

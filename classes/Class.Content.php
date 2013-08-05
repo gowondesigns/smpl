@@ -25,7 +25,7 @@ static class Content
         ),
         'head' => array(
             '*' => array(
-            'Content::HtmlHeader'
+                'Content::HtmlHeader'
             ),
             'articles' => 'Content::TagsKeywords',
             'pages' => 'Content::TagsKeywords'
@@ -55,7 +55,7 @@ static class Content
     public static function Update()
     {
         self::$uri = explode('/', $_SERVER['QUERY_STRING']);
-        
+        $database = Database::Connect();
         
         /* Make modifications to CMS, including various files if they're present on the server
         smpl-includes/	(for Redirect Blocks)
