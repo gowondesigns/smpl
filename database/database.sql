@@ -62,6 +62,9 @@ INSERT INTO `categories` VALUES (1, 'Uncategorized', 'uncategorized', TRUE);
 
 DROP TABLE IF EXISTS content;
 -- ---- Create content table:
+-- IN CATEGORY FLAG affects visibility and URI behavior
+-- Articles: If false, Article will not be listed in category view
+-- Pages: If true, Page URI default will be without category
 CREATE TABLE `content` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
   `content-title-field` VARCHAR(100) NOT NULL,
@@ -78,7 +81,7 @@ CREATE TABLE `content` (
   `publish-publish_date-date` BIGINT UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
   `publish-unpublish_date-date` BIGINT UNSIGNED NOT NULL,
-  FULLTEXT KEY `content` (`content-title-field`,`content-body-textarea`,`meta-description-field`,`meta-keywords-field`)
+  FULLTEXT (`content-title-field`, `content-body-textarea`, `content-tags-field`)
 );
 
 

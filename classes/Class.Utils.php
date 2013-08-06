@@ -99,7 +99,7 @@ static class Utils
     }
     
     // System-generated URIs  
-    public static function GenerateUri($stub) // $stub isn't used, it's just here to force at least one argument passed 
+    public static function GenerateUri($stub) // $stub isn't used, it's just here to force behavior that at least one argument passed 
     {
         $assets = array_slice(func_get_args());
         $uri = Configuration::Site();

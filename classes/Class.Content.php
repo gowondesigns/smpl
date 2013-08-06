@@ -8,17 +8,20 @@
 static class Content
 {
     private static $uri = null;
+    private static $suppressMainExec = false;
     
     private static $spaces = array(
-        'head' => null,
-        'main' => null
+//        'head' => null,
+//        'main' => null
     );
     
     private static $hooks = array(
         'pre' => array(
             '*' => array(
             ),
+            'tags' => 'Content::UpdateTagsUri',
             'sitemap' => 'Sitemap::RenderXML',
+            'permalink' => 'Content::Permalink',
             'feed' => 'Feed::Render',
             'api' => 'Content::Stub',
             'admin' => 'Admin::Render'
@@ -67,7 +70,7 @@ static class Content
         */
         foreach (glob("smpl-includes/class.*.php") as $filename)
         {
-        require_once($filename);
+            require_once($filename);
         }
         
         // Is not POST signature is present, any existing validation data should be unset
@@ -75,7 +78,6 @@ static class Content
         if (!isset($_POST[$key]))
             unset($_SESSION[$key]['validate']);
         
-        $database = Database::Connect();
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 1), "publish-publish_flag-dropdown = 2 AND publish-publish_date-date <= ".Date::CreateFlat() );
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::CreateFlat() );
     }
@@ -85,13 +87,14 @@ static class Content
     {
         // Run all wildcard '*' hooks
         foreach (self::$hooks['pre']['*'] as $action)
-            $action(self::$uri); 
+            $action(); 
 
         // Run any hooks triggerd by the URI
         foreach (self::$uri as $key)
         {
             if(array_key_exists($key, self::$hooks['pre'])))
-                self::$hooks['pre'][$key](self::$uri); 
+                foreach (self::$hooks['pre'][$key] as $action)
+                    $action();
         }
     }
     
@@ -115,6 +118,35 @@ static class Content
         $result = $database->Retrieve('users', '*',  "id = '{$id}'");
         return $result->Fetch();
     }
+    
+    public static function Permalink()
+    {
+        // Format: /permalink/<CONTENT_ID>/
+        $url = Utils::GenerateUri();
+        
+        $database = Database::Connect();
+        $result = $database->Retrieve('content', 'content-title_mung-field, content-category-dropdown, content-static_page_flag-checkbox, content-in_category_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
+        $content = $result->Fetch();
+        
+        if (isset($content['content-title_mung-field'])
+        {
+            $category = Content::GetCategoryByID($content['content-category-dropdown']);
+            $url = Utils::GenerateUri($category['title_mung-field'], 'articles', $content['content-title_mung-field']);
+            
+            //Check if content is a static page
+            if($content['content-static_page_flag-checkbox'] == true)
+            {
+                if($content['content-in_category_flag-checkbox'] == true)
+                     $url = Utils::GenerateUri($category['title_mung-field'], $content['content-title_mung-field']);
+                else
+                     $url = Utils::GenerateUri($content['content-title_mung-field']);
+            }
+                
+        }
+        
+        header('Location: ' . $url, true, 303);
+        exit;
+    }
 /*
 First check is Space is MAIN (reserved) space.
 - Check to see if query is calling for default page.
@@ -133,14 +165,115 @@ Otherwise, look for the space being called
 //*/       
     public static function Space($spaceName)
     {
-        if (!isset($this->spaces[$spaceName]) || null === $this->spaces[$spaceName])
+        // Check if space exists in database. Overrides any default mechanisms
+        if (isset($this->spaces[$spaceName]))
         {
-            $this->spaces[$spaceName] = new Space($spaceName);
+            self::$spaces[$spaceName]->Render();
+            return;
         }
-        else if (!isset($this->spaces[$spaceName]) || null === $this->spaces[$spaceName])
+        else
         {
+            $database = Database::Connect();
+            $data = $database->Retrieve('spaces', 'id',  "title_mung-field = '{$spaceName}'");
+            $results = $data->Fetch();
+            if(isset($results['id]'))
+            {
+                $space = new Space($results['id]'); 
+                self::$spaces[$spaceName] = $space;
+                $space->Render();
+                return;
+            }
         }
-        //return $this->spaces[$spaceName];
+        
+        // Default Head Space - execute hooks
+        if ($spaceName == 'head')
+        {
+            // Run all wildcard '*' hooks
+            foreach (self::$hooks['head']['*'] as $action)
+                $action(self::$uri); 
+
+            // Run any hooks triggerd by the URI
+            foreach (self::$uri as $key)
+            {
+                if(array_key_exists($key, self::$hooks['head'])))
+                    foreach (self::$hooks['head'][$key] as $action)
+                        $action(self::$uri); 
+            }
+            
+            return;
+        }
+/*
+TAGS Trigger:
+/tags/<search-phrase>/
+/tags/<search-phrase>/<index-number>/ (Seeking through results)
+/tags/<search-phrase>/date/ (sort results by date, most recent first)
+/tags/<search-phrase>/date/<index-number>/ (Seeking through results)
+
+CATEGORIES Trigger:
+/categories/<category-title>/
+/categories/<category-title>/<index-number>/
+
+ARTICLES Trigger:
+/articles/ (all active articles)
+/articles/<index-number>/
+
+Signature-Based Triggers:
+3-parameters, 2nd param = 'articles'
+/<category-title>/articles/<article-title>/ (Long-form URL, most helpful, default)
+
+2-parameters, 2nd param = 'articles'
+/<category-title>/articles/ (redirect to /categories/<category-title>/)
+
+2-parameters
+/<category-title>/<page-title>/ (Long-form URL)
+
+1-parameter
+/<page-title>/ (Articles cannot be accessed this way, they must have the "Static Content" flag to be treated like a page)
+
+ELSE
+
+/404/ (If the correct URI does not fetch a result, system redirects to this. Content can be injected by creating "404" block)
+//*/
+        //Default Main Space behavior
+        if ($spaceName == 'main')
+        {
+            // Run all wildcard '*' hooks
+            foreach (self::$hooks['main']['*'] as $action)
+                $action(self::$uri); 
+
+            // Run any hooks triggerd by the URI
+            foreach (self::$uri as $key)
+            {
+                if(array_key_exists($key, self::$hooks['main'])))
+                    foreach (self::$hooks['main'][$key] as $action)
+                        $action(self::$uri); 
+            }
+            
+            if (self::$suppressMainExec)
+                return;
+            
+            // Tag Searches
+            if(self::$uri[0] == 'tags')
+            {
+                $searchPhrase = preg_replace('-', ' ', self::$uri[1]);
+                $queryExtra = (self::$uri[2] == 'date') ? 'ORDER BY content-date-date DESC ': '';
+                
+                if (is_numeric(self::$uri[2]))
+                    $queryExtra .= 'LIMIT '.( (self::$uri[2] - 1) * intval(Configuration::Get('listMaxNum')) ).', '.Configuration::Get('listMaxNum');
+                else if (is_numeric(self::$uri[3]))
+                    $queryExtra .= 'LIMIT '.( (self::$uri[3] - 1) * intval(Configuration::Get('listMaxNum')) ).', '.Configuration::Get('listMaxNum');
+
+                $database = Database::Connect();
+                $result = $database->Retrieve('content', '*',  "MATCH(content-title-field, content-body-textarea, content-tags-field) AGAINST('{$searchPhrase}' IN BOOLEAN MODE) AND content-static_page_flag-checkbox = false AND publish-publish_flag-dropdown = 2", $queryExtra);
+
+                // Render results
+                while($article = $result->Fetch())
+                {
+                }
+            }
+            
+            return;
+        }        
     }
     
     public static function HtmlHeader()
@@ -179,11 +312,13 @@ Otherwise, look for the space being called
     public static function Breadcrumbs($seperator = "&bull;")
     {
         $l = LanguageFactory::Create(); // Grab language data
+        $database = Database::Connect();
+        
         $crumbs = array();
         $crumbs[] = '<li><a href="'.Utils::GenerateUri().'" title="'.$l->Phrase('Home').'">'.$l->Phrase('Home')."</a></li>\n";
         
         $html = "<ul class=\"breadcrumbs\">\n";
-        
+
         if (Security::Authenticate())
         {
             $crumbs[] = '<li><a href="'.Utils::GenerateUri($l->Phrase('admin')).'" title="'.$l->Phrase('Admnistration').'">'.$l->Phrase('Admnistration')."</a></li>\n";
@@ -200,6 +335,35 @@ Otherwise, look for the space being called
     
     
 }
+
+class Space
+{
+    private $blocks = array();
+    
+    public function __construct($id)
+    {
+        if($data->Count() < 1)
+            die();
+        
+        $page = $data->Fetch();
+        $this->id = $id;
+        $this->title = $page['content-title-field'];
+        $this->date = Date::Create($page['content-date-date']);
+        
+        $this->tags = explode(',', $page['content-tags-field']);
+        foreach ($this->tags as $key => $value)
+        {
+            $this->tags[$key] = trim($value);
+        }
+
+        $category = Content::GetCategoryById($page['content-category-dropdown']);
+        $this->categoryMung = $category['title_mung-field']; 
+
+        
+        parent::__construct($page['content-title_mung-field'], $page['content-body-textarea']);
+    }
+}
+
 
 interface iContentObject
 {
@@ -280,7 +444,7 @@ class Article extends Page
     protected $category;
     
     
-    public function __construct($id, MySQLi_Result $data = null)
+    public function __construct($id, iDatabaseResult $data = null)
     {
         if (null === $data)
         {
