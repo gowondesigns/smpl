@@ -5,7 +5,7 @@
 //*/
 
 
-static class Sitemap
+class Sitemap
 {
 
     public static function RenderXML()

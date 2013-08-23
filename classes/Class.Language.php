@@ -8,7 +8,7 @@
 //*/
 
 
-static class LanguageFactory
+class LanguageFactory
 {
     private static $langInstance = null;
     

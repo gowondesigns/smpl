@@ -5,7 +5,7 @@
 //*/
 
 
-static class Utils
+class Utils
 {
     // const $codeset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     // readable character set excluded (0,O,1,l)

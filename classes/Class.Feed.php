@@ -5,7 +5,7 @@
 //*/
 
 
-static class Feed
+class Feed
 {
     public static function Render()
     {
@@ -48,7 +48,7 @@ static class Feed
         }
         
         // Render then die
-        $feed=>Render();
+        $feed->Render();
         exit;
     }
     
@@ -95,6 +95,11 @@ abstract class aFeed
 final class AtomFeed extends aFeed implements iFeed
 {
     private $feedUuid;
+    
+    public static function FeedMimeType()
+    {
+        return "application/atom+xml";
+    }
     
     public function __construct()
     {

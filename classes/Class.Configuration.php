@@ -5,9 +5,9 @@
 //*/
 
 
-static class Configuration
+class Configuration
 {
-    private $database = array(
+    private static $database = array(
         'type' => 'MySql',
         'host' => 'localhost',
         'name' => 'smpl',
@@ -16,8 +16,8 @@ static class Configuration
         'prefix' => ''
         );
         
-    private $modRewrite = false;
-    private $sslCertificate = false;
+    private static $modRewrite = false;
+    private static $sslCertificate = false;
 
 
     public static function Site($domainOnly = false)                         // [MUSTCHANGE]
@@ -38,13 +38,13 @@ static class Configuration
     public static function Database($item = null)
     {
         if (null === $item)
-            return $this->database;
+            return self::$database;
         else
-            return $this->database[$item];
+            return self::$database[$item];
     }
     
     // Return data from the settings DB table
-    public static Get($settingName)
+    public static function Get($settingName)
     {
         $database = Database::Connect();
         $result = $database->Retrieve('settings', 'value-field',  "name-hidden = '{$settingName}'");
@@ -53,15 +53,15 @@ static class Configuration
         return $value['value-field'];
     }
     
-    public static ModRewrite()
+    public static function ModRewrite()
     {
-        return $this->modRewrite;
+        return self::$modRewrite;
     }
     
     
-    public static SslCertificate()
+    public static function SslCertificate()
     {
-        return $this->sslCertificate;
+        return self::$sslCertificate;
     }
       
 }

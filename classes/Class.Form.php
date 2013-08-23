@@ -5,7 +5,7 @@
 //*/
 
 
-static class Forms
+class Forms
 {
     private static $forms = array();
     
@@ -140,13 +140,13 @@ class Form
         return $this->elements;
     }
 
-    public function SetOptions($id, $action, $method='post', $enctype='application/x-www-form-urlencoded')
+    public function SetOptions($action, $method='post', $enctype='application/x-www-form-urlencoded')
     {
 
 
     }
     
-    public SetAttributes($attributes)
+    public function SetAttributes($attributes)
     {
         if (!is_array($attributes))
             return;
@@ -161,7 +161,7 @@ class Form
     
     }
     
-    protected RenderAttributes()
+    protected function RenderAttributes()
     {
         $attributes = null;
         
@@ -177,21 +177,25 @@ class Form
         return $attributes;
     }
     
-    public Render($postData = null)
+    public function Render($postData = null)
     {
-        // Create Session Variable for Initiation and Validation
-        // Output HTML 
+        $html = '<form name="'.$this->name.'" action="'.$this->action.'" method="'.$this->method.'" enctype="'.$this->enctype.'">   
+    
+        <fieldset id="content">';
+        
+        $html .= '</form>';
+        echo $html;
     } 
 
 }
 
 interface iFormElement
 {
-    public Render();
-    public Enable();
-    public Disable();
-    public IsEnabled();
-    public Validate($data);
+    public function Render();
+    public function Enable();
+    public function Disable();
+    public function IsEnabled();
+    public function Validate($data);
 }
 
 abstract class aFormElement
@@ -231,44 +235,44 @@ abstract class aFormElement
         'required'    
     );
     
-    public __construct($name, $id, $type)
+    public function __construct($name, $id, $type)
     {
         $this->name = $name;
         $this->id = $name;
         $this->type = $name;
     }
     
-    public Enable()
+    public function Enable()
     {
         $this->isEnabled = true;
     }
 
-    public Disable()
+    public function Disable()
     {
         $this->isEnabled = false;
     }
     
-    public IsEnabled()
+    public function IsEnabled()
     {
         return $this->isEnabled;
     }
     
-    public SetValue($value)
+    public function SetValue($value)
     {
         $this->value = htmlentities($value);
     }
 
-    public SetContent($content)
+    public function SetContent($content)
     {
         $this->content = $content;
     }
         
-    public SetLabel($label)
+    public function SetLabel($label)
     {
         $this->label = $label;
     }
     // Input must be an array
-    public SetAttributes($attributes)
+    public function SetAttributes($attributes)
     {
         if (!is_array($attributes))
             return;
@@ -284,7 +288,7 @@ abstract class aFormElement
     }
     
     // Garbage or nonstandard elements are ignored
-    protected RenderAttributes()
+    protected function RenderAttributes()
     {
         $attributes = null;
         
@@ -303,12 +307,12 @@ abstract class aFormElement
 
 class ButtonElement extends aFormElement implements iFormElement
 {   
-    public __construct($name, $type = 'button')
+    public function __construct($name, $type = 'button')
     {
         parent::__construct($name, $name, $type);
     }
     
-    public Render()
+    public function Render()
     {
         $html = '<button type="'.$this->type.'" name="'.$this->name.'" id="'.$this->id.'"';
         
@@ -324,7 +328,7 @@ class ButtonElement extends aFormElement implements iFormElement
     }
     
     // Buttons do not have any editable data to validate
-    public Validate($data)
+    public function Validate($data)
     {
         return true;
     }
@@ -332,7 +336,7 @@ class ButtonElement extends aFormElement implements iFormElement
 
 class InputElement extends aFormElement implements iFormElement
 {
-    public __construct($name, $id, $type)
+    public function __construct($name, $id, $type)
     {
         parent::__construct($name, $name, $type);
 
@@ -368,13 +372,13 @@ class InputElement extends aFormElement implements iFormElement
 
     }
     
-    public SetValue($value)
+    public function SetValue($value)
     {
         $this->value = htmlentities($value);
         $this->SetContent($this->value);
     }
     
-    public Render()
+    public function Render()
     {
         
         if ($this->type == 'checkbox')
@@ -399,7 +403,7 @@ class InputElement extends aFormElement implements iFormElement
     }
     
     // Buttons do not have any editable data to validate
-    public Validate($data)
+    public function Validate($data)
     {
         $valid = true;
         

@@ -5,7 +5,7 @@
 //*/
 
     
-static class Database
+class Database
 {
     private static $mainDatabaseInstance = null;
     
@@ -193,15 +193,36 @@ class MySqlDatabase extends MySQLi implements iDatabase
 
 }
 
-interface iDatabaseResult extends Iterator
+// Other database objects should also implement SeekableIterator for use in loop operators
+interface iDatabaseResult
 {
     public function Fetch();
     public function FetchAll();
     public function Count();
+    
+    /* Inhereted Methods (from SeekableIterator) //
+    abstract public void seek ( int $position )
+    abstract public mixed current ( void )
+    abstract public scalar key ( void )
+    abstract public void next ( void )
+    abstract public void rewind ( void )
+    abstract public boolean valid ( void )
+
+    //*/
 }
 
+// MySQLi_Result implements Traversible, does it need to implement Iterator?
 class MySqlDatabaseResult extends MySQLi_Result implements iDatabaseResult
 {
+    /* Inhereted Properties
+    int $current_field ;
+    int $field_count;
+    array $lengths;
+    int $num_rows;
+    $type;
+
+    //*/
+    
     public function Fetch()
     {
         return $this->fetch_assoc();
@@ -221,6 +242,25 @@ class MySqlDatabaseResult extends MySQLi_Result implements iDatabaseResult
     {
         return $this->num_rows;
     }
+
+    /* Inhereted Methods //    
+    __construct
+    close
+    free_result
+    
+    bool data_seek ( int $offset )
+    mixed fetch_all ([ int $resulttype = MYSQLI_NUM ] )
+    mixed fetch_array ([ int $resulttype = MYSQLI_BOTH ] )
+    array fetch_assoc ( void )
+    object fetch_field_direct ( int $fieldnr )
+    object fetch_field ( void )
+    array fetch_fields ( void )
+    object fetch_object ([ string $class_name [, array $params ]] )
+    mixed fetch_row ( void )
+    bool field_seek ( int $fieldnr )
+    void free ( void )
+
+    //*/
 }
 
 

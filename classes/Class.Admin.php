@@ -5,7 +5,7 @@
 //*/
 
 
-static class Admin
+class Admin
 {
 
 }

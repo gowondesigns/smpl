@@ -77,11 +77,11 @@ CREATE TABLE `content` (
   `content-date-date` BIGINT(14) UNSIGNED UNIQUE NOT NULL,
   `content-body-textarea` LONGTEXT DEFAULT NULL,
   `content-tags-field` VARCHAR(255) DEFAULT NULL,
-  `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 2,
+  `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
   `publish-publish_date-date` BIGINT UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
-  `publish-unpublish_date-date` BIGINT UNSIGNED NOT NULL,
-  FULLTEXT (`content-title-field`, `content-body-textarea`, `content-tags-field`)
+  `publish-unpublish_date-date` BIGINT UNSIGNED NOT NULL
+  -- FULLTEXT (`content-title-field`, `content-body-textarea`, `content-tags-field`)  -- #1214 - The used table type doesn't support FULLTEXT indexes 
 );
 
 
@@ -102,11 +102,11 @@ CREATE TABLE `blocks` (
  	`content-title-field` VARCHAR(100) NOT NULL,
  	`content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
   `content-space-dropdown` INT NOT NULL DEFAULT 1,
-  `content-priority-dropdown` ENUM('LOW', 'MED', 'HIGH') NOT NULL DEFAULT 1,
+  `content-priority-dropdown` ENUM('LOW', 'MED', 'HIGH') NOT NULL DEFAULT 'LOW',
   `content-redirect_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
   `content-redirect_location-field` VARCHAR(255) DEFAULT NULL,    
   `content-body-textarea` LONGTEXT DEFAULT NULL,
-  `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 2,
+  `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
   `publish-publish_date-date` BIGINT(14) UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
   `publish-unpublish_date-date` BIGINT(14) UNSIGNED NOT NULL

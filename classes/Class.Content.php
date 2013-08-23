@@ -5,7 +5,7 @@
 //*/
 
 
-static class Content
+class Content
 {
     private static $uri = null;
     private static $suppressMainExec = false;
@@ -18,6 +18,7 @@ static class Content
     private static $hooks = array(
         'pre' => array(
             '*' => array(
+                'Content::Stub'
             ),
             'tags' => 'Content::UpdateTagsUri',
             'sitemap' => 'Sitemap::RenderXML',
@@ -49,8 +50,9 @@ static class Content
 
 
     //Do-nothing function
-    public static function Stub($uri)
+    public static function Stub()
     {
+        //echo "\n\nStub\n\n";
         return;
     }
     
@@ -82,20 +84,42 @@ static class Content
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::CreateFlat() );
     }
 
-    // Change the behavior of the system based on any hooks defined in the URI [MUSTCHANGE]
-    public static function Hook()
+
+    private static function ParseHook($hooks)
     {
         // Run all wildcard '*' hooks
-        foreach (self::$hooks['pre']['*'] as $action)
-            $action(); 
+        foreach($hooks['*'] as $trigger)
+        {
+            $action = explode("::", $trigger);
+            $action[0]::$action[1](self::$uri);
+        } 
 
         // Run any hooks triggerd by the URI
         foreach (self::$uri as $key)
         {
-            if(array_key_exists($key, self::$hooks['pre'])))
-                foreach (self::$hooks['pre'][$key] as $action)
-                    $action();
+            if(array_key_exists($key, $hooks))
+            {
+                if (is_array($hooks[$key]))
+                {                        
+                    foreach($hooks[$key] as $trigger)
+                    {
+                        $action = explode("::", $trigger);
+                        $action[0]::$action[1](self::$uri);
+                    }
+                }
+                else
+                {
+                    $action = explode("::", $hooks[$key]);
+                    $action[0]::$action[1](self::$uri);
+                }
+            } 
         }
+    }
+        
+    // Change the behavior of the system based on any hooks defined in the URI [MUSTCHANGE]
+    public static function Hook()
+    {
+        self::ParseHook(self::$hooks['pre']);
     }
     
     // May not be useful    
@@ -128,7 +152,7 @@ static class Content
         $result = $database->Retrieve('content', 'content-title_mung-field, content-category-dropdown, content-static_page_flag-checkbox, content-in_category_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
         $content = $result->Fetch();
         
-        if (isset($content['content-title_mung-field'])
+        if (isset($content['content-title_mung-field']))
         {
             $category = Content::GetCategoryByID($content['content-category-dropdown']);
             $url = Utils::GenerateUri($category['title_mung-field'], 'articles', $content['content-title_mung-field']);
@@ -166,7 +190,7 @@ Otherwise, look for the space being called
     public static function Space($spaceName)
     {
         // Check if space exists in database. Overrides any default mechanisms
-        if (isset($this->spaces[$spaceName]))
+        if (isset(self::$spaces[$spaceName]))
         {
             self::$spaces[$spaceName]->Render();
             return;
@@ -176,9 +200,9 @@ Otherwise, look for the space being called
             $database = Database::Connect();
             $data = $database->Retrieve('spaces', 'id',  "title_mung-field = '{$spaceName}'");
             $results = $data->Fetch();
-            if(isset($results['id]'))
+            if(isset($results['id']))
             {
-                $space = new Space($results['id]'); 
+                $space = new Space($results['id']); 
                 self::$spaces[$spaceName] = $space;
                 $space->Render();
                 return;
@@ -188,18 +212,7 @@ Otherwise, look for the space being called
         // Default Head Space - execute hooks
         if ($spaceName == 'head')
         {
-            // Run all wildcard '*' hooks
-            foreach (self::$hooks['head']['*'] as $action)
-                $action(self::$uri); 
-
-            // Run any hooks triggerd by the URI
-            foreach (self::$uri as $key)
-            {
-                if(array_key_exists($key, self::$hooks['head'])))
-                    foreach (self::$hooks['head'][$key] as $action)
-                        $action(self::$uri); 
-            }
-            
+            self::ParseHook(self::$hooks['head']);
             return;
         }
 /*
@@ -237,17 +250,7 @@ ELSE
         //Default Main Space behavior
         if ($spaceName == 'main')
         {
-            // Run all wildcard '*' hooks
-            foreach (self::$hooks['main']['*'] as $action)
-                $action(self::$uri); 
-
-            // Run any hooks triggerd by the URI
-            foreach (self::$uri as $key)
-            {
-                if(array_key_exists($key, self::$hooks['main'])))
-                    foreach (self::$hooks['main'][$key] as $action)
-                        $action(self::$uri); 
-            }
+            self::ParseHook(self::$hooks['main']);
             
             if (self::$suppressMainExec)
                 return;
@@ -255,27 +258,43 @@ ELSE
             // Tag Searches
             if(self::$uri[0] == 'tags')
             {
+                $i = 0;
+                $uriIndex = 2;
+                $queryExtra = null;
                 $searchPhrase = preg_replace('-', ' ', self::$uri[1]);
-                $queryExtra = (self::$uri[2] == 'date') ? 'ORDER BY content-date-date DESC ': '';
                 
-                if (is_numeric(self::$uri[2]))
-                    $queryExtra .= 'LIMIT '.( (self::$uri[2] - 1) * intval(Configuration::Get('listMaxNum')) ).', '.Configuration::Get('listMaxNum');
-                else if (is_numeric(self::$uri[3]))
-                    $queryExtra .= 'LIMIT '.( (self::$uri[3] - 1) * intval(Configuration::Get('listMaxNum')) ).', '.Configuration::Get('listMaxNum');
+                $l = LanguageFactory::Create();
+                $html = '<h1>'.$l->Phrase("tagSearch")."</h1>\n";
+                                
+                if (self::$uri[2] == 'date')
+                {
+                    $queryExtra = 'ORDER BY content-date-date DESC ';
+                    $uriIndex++;
+                }
+                
+                if (is_numeric(self::$uri[$uriIndex]))
+                    $queryExtra .= 'LIMIT '.( (self::$uri[$uriIndex] - 1) * intval(Configuration::Get('listMaxNum')) ).', '.Configuration::Get('listMaxNum');
 
                 $database = Database::Connect();
-                $result = $database->Retrieve('content', '*',  "MATCH(content-title-field, content-body-textarea, content-tags-field) AGAINST('{$searchPhrase}' IN BOOLEAN MODE) AND content-static_page_flag-checkbox = false AND publish-publish_flag-dropdown = 2", $queryExtra);
+                $data = $database->Retrieve('content', 'id', "MATCH(content-title-field, content-body-textarea, content-tags-field) AGAINST('{$searchPhrase}' IN BOOLEAN MODE) AND content-static_page_flag-checkbox = false AND publish-publish_flag-dropdown = 2", $queryExtra);
+                $results = $data->FetchAll();
 
                 // Render results
-                while($article = $result->Fetch())
+                foreach($results as $id)
                 {
+                    $article = new Article($id);
+                    $html .= "<article>\n<h3>".$article->Get('title')."</h3>\n<p>".$article->Summary()."</p>\n</article>\n\n";
                 }
+                
+                $html .= "<p>Pagination 1 2 3</p>";
+                echo $html;
+                return;
             }
             
             return;
         }        
     }
-    
+    //            Content::HtmlHeader()
     public static function HtmlHeader()
     {
         $html = '<title>'.Configuration::Get('title')."</title>\n";
@@ -381,7 +400,7 @@ abstract class aContentObject
         $this->body = $body;
     }
 
-    abstract public function Display();
+    abstract public function Render();
         
 }
 
@@ -402,7 +421,7 @@ class Page extends aContentObject
             $data = $database->Retrieve('content', '*',  "id = '{$id}'");
         }
         
-        if($data->Count() < 1)
+        if($data->Count() < 1) //[MUSTCHANGE]
             die();
         
         $page = $data->Fetch();
@@ -423,9 +442,9 @@ class Page extends aContentObject
         parent::__construct($page['content-title_mung-field'], $page['content-body-textarea']);
     }
     
-    public function Display()
+    public function Render()
     {
-        return null; // [MUSTCHANGE]
+        echo $this->body; // [MUSTCHANGE]
     }
     
     public function Get($data)
@@ -466,7 +485,7 @@ class Article extends Page
     {
         $summary = Utils::Strip($this->body);
         $summary = Utils::Truncate($summary, $size);
-        return $summary
+        return $summary;
     }
 }
 
@@ -489,6 +508,12 @@ class Block extends aContentObject
         
         parent::__construct($block['content-title_mung-field'], $block['content-body-textarea']);
     }
+    
+    public function Render() //[MUSTCHANGE]
+    {
+        return false;
+    }
+    
 }
 
 ?>

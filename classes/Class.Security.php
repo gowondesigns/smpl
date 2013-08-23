@@ -5,7 +5,7 @@
 //*/
 
 
-static class Security
+class Security
 {
     private static $currentSessionValid = null;
 
@@ -158,7 +158,7 @@ static class Security
                 }
                 else
                 { 
-                    $this->currentSessionValid = false;
+                    self::$currentSessionValid = false;
                     Security::DestroySession();
                 }
 

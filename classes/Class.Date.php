@@ -7,7 +7,7 @@
 
 //SMPL Date Strings are always stored in the following format: YYYYMMDDHHMMSS
 
-static class Date
+class Date
 {
     // Create new DateData or generate DateData from SMPL Date Strings
     public static function Create($fromSmplDateString = null)
@@ -21,14 +21,10 @@ static class Date
     // Flatten DateData into a printable/passable string (Default to SMPL Date String format) 
     public static function CreateFlat(DateData $dateData = null, $stringFormat = null)
     {
-        if (null === $stringFormat)
-            $stringFormat = "YmdHis";
-        
         if (null === $dateData)
-            $dateData = new DateData();
+            $dateData = new DateData(date("YmdHis"));
         
-        $date = $dateData->Get();
-        return date($stringFormat, mktime($date['hours'], $date['minutes'], $date['seconds'], $date['month'], $date['day'], $date['year']));
+        return $dateData->Flatten($stringFormat);
     }
 }
 
@@ -55,8 +51,6 @@ class DateData
     public function Get($item = null)
     {
         if (null === $item)
-            return $this->$item;
-        else
             return array(
                 'year' => $this->year,
                 'month' => $this->month,
@@ -64,6 +58,17 @@ class DateData
                 'hours' => $this->hours,
                 'minutes' => $this->minutes,
                 'seconds' => $this->seconds);
+        else
+            return $this->$item;
+    }
+    
+    // Return date string in specified format. If null, default to SMPL Date Format
+    public function Flatten($stringFormat = null)
+    {
+        if (null === $stringFormat)
+            $stringFormat = "YmdHis";
+        
+        return date($stringFormat, mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year));
     }
 }
 ?>
