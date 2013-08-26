@@ -51,11 +51,12 @@ class Database
 interface iDatabase
 {
     //public function __construct($host, $name, $username, $password, $prefix);
+    //[MUSTCHANGE] MUST CREATE A CONNECT METHOD
     public function Query($queryString);    // Custom Queries that cant be handled by the basic handlers
     public function Create($insertToTables, $insertItems, $insertExtra = null);   // Create (Insert) Queries
     public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null); // Retrieve (Select) Queries
     public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null);   // Update Queries
-    public function Delete($deleteFromTables, $deleteWhereClause, $selectExtra = null);   // Delete Queries
+    public function Delete($deleteFromTables, $deleteWhereClause, $delectExtra = null);   // Delete Queries
 }
 
 class MySqlDatabase extends MySQLi implements iDatabase
@@ -86,30 +87,33 @@ class MySqlDatabase extends MySQLi implements iDatabase
     // $insertItems must be an array
     public function Create($insertToTables, $insertItems, $insertExtra = null) 
     {
-        $insertString = array();
+        $cells = array();
+        $values = array();
         if (is_array($insertToTables))
         {
             foreach ($insertToTables as $key => $value)
                 $insertToTables[$key] = $this->prefix.$value;
         
-            $tableString = implode(', ', $insertToTables);  
+            $tables = implode(', ', $insertToTables);  
         }
         else
-            $tableString = $this->prefix.$insertToTables;
+            $tables = $this->prefix.$insertToTables;
 
-        
-        for ($i = 0; $i < count($insertItems); $i++)
+        // Seperate and format all of the values
+        foreach ($insertItems as $key => $value)
         {
+            $cells[] = "`{$key}`";
             if (is_numeric($value))
-                $insertString[] = $insertItems[$i];
+                $values[] = $value;
             else
-                $insertString[] = "'{$insertItems[$i]}'";
+                $values[] = "'{$value}'";
         }
         
-        $insertString = implode(', ', $insertItems);
+        $insertCells = implode(',', $cells);
+        $insertValues = implode(',', $values);
             
         // Method will return TRUE on success, FALSE on failure
-        return $this->query('INSERT INTO '.$tableString.' VALUES (SET '.$insertString.') '.$insertExtra);
+        return $this->query("INSERT INTO {$tables} ({$insertCells}) VALUES ({$insertValues}) ".$insertExtra);
 
     }
     
@@ -172,10 +176,10 @@ class MySqlDatabase extends MySQLi implements iDatabase
             
         
         // Method will return TRUE on success, FALSE on failure
-        return $this->query('UPDATE '.$tableString.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$selectExtra);
+        return $this->query('UPDATE '.$tableString.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$updateExtra);
     }
     
-    public function Delete($deleteFromTables, $deleteWhereClause, $selectExtra = null)
+    public function Delete($deleteFromTables, $deleteWhereClause, $deleteExtra = null)
     {
         if (is_array($deleteFromTables))
         {
@@ -188,7 +192,7 @@ class MySqlDatabase extends MySQLi implements iDatabase
             $tableString = $this->prefix.$deleteFromTables;
         
         // Method will return TRUE on success, FALSE on failure
-        return $this->query('DELETE FROM '.$tableString.' WHERE '.$selectWhereClause.' '.$selectExtra);
+        return $this->query('DELETE FROM '.$tableString.' WHERE '.$deleteWhereClause.' '.$deleteExtra);
     }
 
 }

@@ -10,30 +10,30 @@ class Feed
     public static function Render()
     {
         $feed = null;
-        $type = Content::Get('feedDefaultType').'Feed';
-        $limit = 'ORDER BY publish-publish_date-date DESC LIMIT '. Content::Get('feedItemLimit');
+        $type = Configuration::Get('feedDefaultType').'Feed';
+        $limit = 'ORDER BY publish-publish_date-date DESC LIMIT '. Configuration::Get('feedItemLimit');
         $category = null;
         $database = Database::Connect();
                 
         // First analyze query string
         // Default feed = /feed/
         // OR /feed/<feed-type>/
-        if(Content::$uri[0] == 'feed')
+        if(Content::Uri()[0] == 'feed')
         {
-            if(isset(Content::$uri[1]))
-                $type = ucfirst(Content::$uri[1]).'Feed';
+            if(isset(Content::Uri()[1]))
+                $type = ucfirst(Content::Uri()[1]).'Feed';
             $feed = (class_exists($type)) ? new $type(): null; 
         
         }
         // /<category-title>/feed/
         // /<category-title>/feed/<feed-type>/
-        else if (Content::$uri[1] == 'feed')
+        else if (Content::Uri()[1] == 'feed')
         {
-            if(isset(Content::$uri[2]))
-                $type = ucfirst(Content::$uri[2]).'Feed';
+            if(isset(Content::Uri()[2]))
+                $type = ucfirst(Content::Uri()[2]).'Feed';
             $feed = (class_exists($type)) ? new $type(): null;
             
-            $result = $database->Retrieve('categories', 'id',  "title_mung-field = '.".Content::$uri[0]."'");
+            $result = $database->Retrieve('categories', 'id',  "title_mung-field = '.".Content::Uri()[0]."'");
             $category = $result->Fetch();
         }
 

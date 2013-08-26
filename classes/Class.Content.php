@@ -56,6 +56,12 @@ class Content
         return;
     }
     
+    // Getter for URI
+    public static function Uri()
+    {
+        return self::$uri;
+    }
+        
     // Method to initiate all automatic actions
     public static function Update()
     {

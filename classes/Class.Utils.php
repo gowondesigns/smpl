@@ -8,7 +8,7 @@
 class Utils
 {
     // const $codeset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    // readable character set excluded (0,O,1,l)
+    // readable character set excludes (0,O,1,l)
     // Simple Permalink mask for unique IDs, Base 58
     private static $permalinkBase = "23456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ";
           
@@ -101,7 +101,7 @@ class Utils
     // System-generated URIs  
     public static function GenerateUri($stub) // $stub isn't used, it's just here to force behavior that at least one argument passed 
     {
-        $assets = array_slice(func_get_args());
+        $assets = func_get_args();
         $uri = Configuration::Site();
         $uri .= (Configuration::ModRewrite()) ? '': '?';
         $uri .= implode('/', $assets).'/';
