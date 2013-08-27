@@ -204,7 +204,7 @@ Otherwise, look for the space being called
         else
         {
             $database = Database::Connect();
-            $data = $database->Retrieve('spaces', 'id',  "title_mung-field = '{$spaceName}'");
+            $data = $database->Retrieve('spaces', 'id', "`title_mung-field` = '{$spaceName}'");
             $results = $data->Fetch();
             if(isset($results['id']))
             {

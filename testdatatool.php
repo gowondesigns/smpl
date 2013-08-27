@@ -8,6 +8,8 @@ function __autoload($class_name)
 
 IncludeFromFolder("classes/");
 
+
+
 $html = '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,6 +36,11 @@ $html .= "<h2>$statusMessage</h2>
 </html>";
 
 echo $html;
+/*
+$database = Database::Connect();
+$database->Queries();
+var_dump(get_class_methods($database));
+*/
 
 function GenerateNewData()
 {

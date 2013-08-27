@@ -57,6 +57,7 @@ interface iDatabase
     public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null); // Retrieve (Select) Queries
     public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null);   // Update Queries
     public function Delete($deleteFromTables, $deleteWhereClause, $delectExtra = null);   // Delete Queries
+    public function Queries();
 }
 
 class MySqlDatabase extends MySQLi implements iDatabase
@@ -66,6 +67,7 @@ class MySqlDatabase extends MySQLi implements iDatabase
     protected $username;
     protected $password;
     protected $prefix;
+    protected $queries = array();
 
     public function __construct($host, $name, $username, $password, $prefix)
     {
@@ -77,9 +79,15 @@ class MySqlDatabase extends MySQLi implements iDatabase
         
         parent::__construct($host, $username, $password, $name);
     }
+    
+    public function Queries()
+    {
+        echo var_dump($this->queries);
+    }
 
     public function Query($query)
     {
+        $this->queries[] = $query;
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
@@ -113,7 +121,7 @@ class MySqlDatabase extends MySQLi implements iDatabase
         $insertValues = implode(',', $values);
             
         // Method will return TRUE on success, FALSE on failure
-        return $this->query("INSERT INTO {$tables} ({$insertCells}) VALUES ({$insertValues}) ".$insertExtra);
+        return $this->Query("INSERT INTO {$tables} ({$insertCells}) VALUES ({$insertValues}) ".$insertExtra);
 
     }
     
@@ -125,23 +133,31 @@ class MySqlDatabase extends MySQLi implements iDatabase
             foreach ($selectFromTables as $key => $value)
                 $selectFromTables[$key] = $this->prefix.$value;
         
-            $tableString = implode(', ', $selectFromTables);  
+            $tableString = '`'.implode('`,`', $selectFromTables).'`';  
         }
         else
-            $tableString = $this->prefix.$selectFromTables;
+            $tableString = '`'.$this->prefix.$selectFromTables.'`';
         
         if (null === $selectItems)
         {
             $selectItems = '*';
         }
+        else if (is_array($selectItems))
+        {
+            foreach ($selectItems as $key => $value)
+                $selectItems[$key] = $this->prefix.$value;
+        
+            $selectItems = '`'.implode('`,`', $selectItems).'`';  
+        }
+        else
+            $selectItems = '`'.$this->prefix.$selectItems.'`';
         
         if (isset($selectWhereClause))
         {
             $selectWhereClause = ' WHERE '.$selectWhereClause;
         }
-        
-        $this->real_query('SELECT '.$selectItems.' FROM '.$tableString.$selectWhereClause.' '.$selectExtra);
-        return new MySqlDatabaseResult($this);
+
+        return $this->Query('SELECT '.$selectItems.' FROM '.$tableString.$selectWhereClause.' '.$selectExtra);
     }
     
     public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null)    // $updateItems must be an array
@@ -176,7 +192,7 @@ class MySqlDatabase extends MySQLi implements iDatabase
             
         
         // Method will return TRUE on success, FALSE on failure
-        return $this->query('UPDATE '.$tableString.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$updateExtra);
+        return $this->Query('UPDATE '.$tableString.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$updateExtra);
     }
     
     public function Delete($deleteFromTables, $deleteWhereClause, $deleteExtra = null)
@@ -192,7 +208,7 @@ class MySqlDatabase extends MySQLi implements iDatabase
             $tableString = $this->prefix.$deleteFromTables;
         
         // Method will return TRUE on success, FALSE on failure
-        return $this->query('DELETE FROM '.$tableString.' WHERE '.$deleteWhereClause.' '.$deleteExtra);
+        return $this->Query('DELETE FROM '.$tableString.' WHERE '.$deleteWhereClause.' '.$deleteExtra);
     }
 
 }
