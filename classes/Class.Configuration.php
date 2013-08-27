@@ -47,7 +47,7 @@ class Configuration
     public static function Get($settingName)
     {
         $database = Database::Connect();
-        $result = $database->Retrieve('settings', 'value-field',  "`name-hidden` = '{$settingName}'"); //RETRIEVE COMMAND NOT WORKING
+        $result = $database->Retrieve('settings', 'value-field',  "`name-hidden` = '{$settingName}'");
         $value = $result->Fetch();
         //echo var_dump($result);
         return $value['value-field'];

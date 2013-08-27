@@ -57,7 +57,6 @@ interface iDatabase
     public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null); // Retrieve (Select) Queries
     public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null);   // Update Queries
     public function Delete($deleteFromTables, $deleteWhereClause, $delectExtra = null);   // Delete Queries
-    public function Queries();
 }
 
 class MySqlDatabase extends MySQLi implements iDatabase
@@ -67,7 +66,6 @@ class MySqlDatabase extends MySQLi implements iDatabase
     protected $username;
     protected $password;
     protected $prefix;
-    protected $queries = array();
 
     public function __construct($host, $name, $username, $password, $prefix)
     {
@@ -79,14 +77,10 @@ class MySqlDatabase extends MySQLi implements iDatabase
         
         parent::__construct($host, $username, $password, $name);
     }
-    
-    public function Queries()
-    {
-        echo var_dump($this->queries);
-    }
 
     public function Query($query)
     {
+        Debug::Message("SQL Query: ".$query);
         $this->queries[] = $query;
         $this->real_query($query);
         return new MySqlDatabaseResult($this);

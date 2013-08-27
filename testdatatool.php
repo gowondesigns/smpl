@@ -1,5 +1,10 @@
 <?php
-error_reporting(-1); // #1 Report all Errors
+error_reporting(-1); //Report all Errors
+set_error_handler(array('Debug', 'ErrorHandler'));
+register_shutdown_function(array('Debug', 'EndOfExecution'));
+
+// public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null)
+Debug::Set(true, false, false, false);
 
 function __autoload($class_name)
 {
