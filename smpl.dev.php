@@ -38,7 +38,7 @@ Security::EnforceHttps();
 
 Security::Authenticate();
 
-Content::Update();
+Content::Initialize();
 
 Content::Hook();
 

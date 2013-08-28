@@ -27,8 +27,6 @@ class Debug
     // Send a message to the debug log
     public static function Message($msg = null)
     {
-        if(self::$debugMode)
-        {
             $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
             array_shift($stack); // Remove top level of stack, redundant info
             $message = array(
@@ -37,7 +35,6 @@ class Debug
                 'stack' => $stack
                 );           
             array_push(self::$log, $message);
-        }
         
         return;
     }
@@ -46,21 +43,29 @@ class Debug
         // The following error types cannot be handled with a user defined function:
         $criticalErrors = array(E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING);
         $error = error_get_last(); // Check if a fatal error killed the process
+        $lastError = null;
         if (in_array($error['type'], $criticalErrors))
         {
-            print_r($error);
+            $lastError = "<b>EXECUTION ENDED BY FATAL ERROR</b> in <b>{$error['file']}({$error['line']}):</b> {$error['message']}\n";
             self::$isVerbose = true;
+            self::$debugMode = true;
         }
         
         
         /* Output error and debug messages */
         echo (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
-        echo "PHP " . PHP_VERSION . " (" . PHP_OS . ")\n";        
+        echo $lastError;
+        if(self::$debugMode)
+            echo "Server Specs: PHP " . PHP_VERSION . " (" . PHP_OS . ")\n"; // Should this include information about the database? Is so, need to make interface
+        $idx = 1;        
         
         for($i = 0; $i < count(self::$log); $i++)
         {
             $msg = self::$log[$i];
-            $text = "\n\n#".($i + 1).' ';
+            if(!self::$debugMode && $msg['type'] == 0)
+                continue;
+                
+            $text = "\n\n#".($idx++).' ';
             switch($msg['type'])
             {
                 case 0:
