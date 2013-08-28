@@ -24,12 +24,13 @@ class Debug
         self::$logPath = $logPath;
     }
     
+    // Send a message to the debug log
     public static function Message($msg = null)
     {
         if(self::$debugMode)
         {
             $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-            array_shift($stack);
+            array_shift($stack); // Remove top level of stack, redundant info
             $message = array(
                 'type' => 0,
                 'message' => $msg,
@@ -44,15 +45,64 @@ class Debug
     public static function EndOfExecution() {
         // The following error types cannot be handled with a user defined function:
         $criticalErrors = array(E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING);
-        $error = error_get_last();
-        if (in_array($error['type'], $criticalErrors)) {
+        $error = error_get_last(); // Check if a fatal error killed the process
+        if (in_array($error['type'], $criticalErrors))
+        {
             print_r($error);
+            self::$isVerbose = true;
         }
         
-        //[MUSTCHANGE] This whole section is lazy
+        
+        /* Output error and debug messages */
         echo (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
-        echo "PHP " . PHP_VERSION . " (" . PHP_OS . ")\n";
-        print_r(Debug::$log); //[MUSTCHANGE] lazy
+        echo "PHP " . PHP_VERSION . " (" . PHP_OS . ")\n";        
+        
+        for($i = 0; $i < count(self::$log); $i++)
+        {
+            $msg = self::$log[$i];
+            $text = "\n\n#".($i + 1).' ';
+            switch($msg['type'])
+            {
+                case 0:
+                    $text .= "MESSAGE\t- ";
+                    break;
+                case E_WARNING:
+                    $text .= "WARNING\t- ";
+                    break;
+                case E_ERROR:                
+                case E_PARSE:
+                case E_NOTICE:
+                case E_CORE_ERROR:
+                case E_CORE_WARNING:
+                case E_COMPILE_ERROR:
+                case E_COMPILE_WARNING:
+                case E_USER_ERROR:
+                case E_USER_WARNING:
+                case E_USER_NOTICE:
+                case E_STRICT:
+                case E_RECOVERABLE_ERROR:
+                case E_DEPRECATED:
+                case E_USER_DEPRECATED:
+                    $text .= "ERROR\t- ";
+                    break;
+            }
+            
+            $text .= $msg['message']."\n\t\tStack trace:";
+
+            for($j = 0; $j < count($msg['stack']); $j++)
+            {
+                $stack = $msg['stack'][$j];
+                $text .= "\n\t\t#".($j + 1)." {$stack['file']}({$stack['line']}): ";
+                if(isset($stack['class']))
+                    $text .= $stack['class'];
+                if(isset($stack['type']))
+                    $text .= $stack['type'];
+                $text .= $stack['function'].'()';
+            }
+            
+            echo $text;
+        }
+
         echo (self::$isVerbose) ? "\n</pre>": "\n-->";
         
         // If Log is to be stored, do that.
@@ -78,7 +128,7 @@ class Debug
     
         case E_WARNING:
         case E_USER_WARNING:
-            $message['message'] = "<b>WARNING</b> in <b>{$err_file}({$err_line}):</b> $err_msg<br />\n";
+            $message['message'] = "<b>WARNING</b> in <b>{$err_file}({$err_line}):</b> $err_msg";
             $message['stack'] = $stack;            
             array_push(self::$log, $message);
             break;
@@ -88,23 +138,24 @@ class Debug
         case E_DEPRECATED:
         case E_USER_DEPRECATED:
         case E_STRICT:
-            $message['message'] = "<b>NOTICE</b> in <b>{$err_file}({$err_line}):</b> $err_msg<br />\n";
+            $message['message'] = "<b>NOTICE</b> in <b>{$err_file}({$err_line}):</b> $err_msg";
             $message['stack'] = $stack;            
             array_push(self::$log, $message);
             break;
             
         default:
-            echo "<b>UNKOWN ERROR TYPE</b> in <b>{$err_file}({$err_line}):</b> $err_msg<br />\n";
+            echo "<b>UNKOWN ERROR TYPE</b> in <b>{$err_file}({$err_line}):</b> $err_msg";
             break;
         }
         
-        //debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        //Debug::ThrowException($err_severity, $err_msg, $err_file, $err_line, $err_context);
+        if(self::$isStrict)
+            Debug::ThrowException($err_severity, $err_msg, $err_file, $err_line, $err_context);
+
         // Don't execute PHP internal error handler
         return true;
     }
 
-    // error handler to throw exceptions
+    // Throw Exceptions based on error type
     public static function ThrowException($err_severity, $err_msg, $err_file, $err_line, array $err_context)
     {
         // error was suppressed with the @-operator

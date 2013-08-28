@@ -1,10 +1,14 @@
 <?php
-error_reporting(-1); //Report all Errors
+define("DEBUG_MODE", false);
+define("DEBUG_STRICT", false);
+define("DEBUG_VERBOSE", true);
+define("DEBUG_LOGGING", false);
+
+
+error_reporting(-1);
 set_error_handler(array('Debug', 'ErrorHandler'));
 register_shutdown_function(array('Debug', 'EndOfExecution'));
-
-// public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null)
-Debug::Set(true, false, false, false);
+Debug::Set(DEBUG_MODE, DEBUG_STRICT, DEBUG_VERBOSE, DEBUG_LOGGING);
 
 function __autoload($class_name)
 {
@@ -130,9 +134,15 @@ function GenerateNewData()
     $errors[] = $database->Create('settings', $setting);
     $setting = array('name-hidden' => 'title', 'title-label' => 'Site Title', 'value-field' => 'My SMPL Site');
     $errors[] = $database->Create('settings', $setting);
+    $setting = array('name-hidden' => 'description', 'title-label' => 'Site Description', 'value-field' => 'My SMPL Site Description');
+    $errors[] = $database->Create('settings', $setting);
     $setting = array('name-hidden' => 'listMaxNum', 'title-label' => 'Max # of items per page listed in categorical view', 'value-field' => 10);
     $errors[] = $database->Create('settings', $setting);
     $setting = array('name-hidden' => 'feedDefaultType', 'title-label' => 'Default feed format', 'value-field' => 'Atom');
+    $errors[] = $database->Create('settings', $setting);
+    $setting = array('name-hidden' => 'feedItemLimit', 'title-label' => 'Max # items in feed', 'value-field' => 5);
+    $errors[] = $database->Create('settings', $setting);
+    $setting = array('name-hidden' => 'permalinkSalt', 'title-label' => 'Max # items in feed', 'value-field' => rand());
     $errors[] = $database->Create('settings', $setting);
     
     /* Pass along any errors*/

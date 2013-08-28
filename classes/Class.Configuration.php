@@ -12,7 +12,7 @@ class Configuration
         'host' => 'localhost',
         'name' => 'smpl',
         'username' => 'root',
-        'password' => '',
+        'password' => 'root',
         'prefix' => ''
         );
         
