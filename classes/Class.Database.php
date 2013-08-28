@@ -80,7 +80,7 @@ class MySqlDatabase extends MySQLi implements iDatabase
 
     public function Query($query)
     {
-        Debug::Message("SQL Query: ".$query);
+        Debug::Message("MySqlDatabase\Query: ".$query);
         $this->queries[] = $query;
         $this->real_query($query);
         return new MySqlDatabaseResult($this);

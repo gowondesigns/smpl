@@ -63,10 +63,38 @@ class Content
     }
         
     // Method to initiate all automatic actions
-    public static function Update()
+    public static function Initialize()
     {
+        $l = LanguageFactory::Create();
         self::$uri = explode('/', $_SERVER['QUERY_STRING']);
-        $database = Database::Connect();
+        self::$hooks = array(
+            'pre' => array(
+                '*' => array(
+                    'Content::Stub'
+                ),
+                'tags' => 'Content::UpdateTagsUri',
+                'sitemap' => 'Sitemap::RenderXML',
+                'permalink' => 'Content::Permalink',
+                'feed' => 'Feed::Render',
+                'api' => 'Content::Stub',
+                'admin' => 'Admin::Render'
+            ),
+            'head' => array(
+                '*' => array(
+                    'Content::HtmlHeader'
+                ),
+                'articles' => 'Content::TagsKeywords',
+                'pages' => 'Content::TagsKeywords'
+            ),
+            'main' => array(
+                '*' => array(
+                ),
+                'tags' => 'Content::ListByTags',
+                'categories' => 'Content::ListByCategory',
+                'articles' => 'Content::RenderArticle'
+            )
+        );
+        
         
         /* Make modifications to CMS, including various files if they're present on the server
         smpl-includes/	(for Redirect Blocks)
@@ -78,6 +106,7 @@ class Content
         */
         foreach (glob("smpl-includes/class.*.php") as $filename)
         {
+            Debug::Message("Content\Including additional class found at: ".$filename);
             require_once($filename);
         }
         
@@ -86,6 +115,7 @@ class Content
         if (!isset($_POST[$key]))
             unset($_SESSION[$key]['validate']);
         
+        $database = Database::Connect();
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 1), "publish-publish_flag-dropdown = 2 AND publish-publish_date-date <= ".Date::CreateFlat() );
         $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::CreateFlat() );
     }
@@ -103,6 +133,8 @@ class Content
         // Run any hooks triggerd by the URI
         foreach (self::$uri as $key)
         {
+            //[MUSTCHANGE] Need to pass along the index where the hook appears in the URI
+            //$index = array_search('lang', Content::Uri());
             if(array_key_exists($key, $hooks))
             {
                 if (is_array($hooks[$key]))
