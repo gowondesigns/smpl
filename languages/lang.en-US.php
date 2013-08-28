@@ -30,6 +30,7 @@ $SMPL_LANG_PHRASES = array(
   "api" => "api",
   "feed" => "feed",
   "articles" => "articles",
+  "pages" => "pages",
   //"categories" => "categories",
   
   // Control Panel - General Elements

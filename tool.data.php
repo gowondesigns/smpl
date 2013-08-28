@@ -1,5 +1,5 @@
 <?php
-define("DEBUG_MODE", false);
+define("DEBUG_MODE", true);
 define("DEBUG_STRICT", false);
 define("DEBUG_VERBOSE", true);
 define("DEBUG_LOGGING", false);
