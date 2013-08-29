@@ -12,7 +12,7 @@ To get started, checkout [https://github.com/gowondesigns/smpl](https://github.c
 
 Two quick start options are available:
 
-* [Download the latest release](https://github.com/gowondesigns/smpl/zipball/master).
+* [Download the latest development release](https://github.com/gowondesigns/smpl/zipball/development).
 * Clone the repo: `git clone git://https://github.com/gowondesigns/smpl.git`.
 
 
