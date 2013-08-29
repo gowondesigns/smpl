@@ -51,64 +51,84 @@ class Debug
             self::$debugMode = true;
         }
         
+        // Show messages if a warning occurs or log is set in debug mode
+        $showMessages = false;
+        if(self::$debugMode && isset(self::$log))
+        {
+            $showMessages = true;
+        }
+        else
+        {
+            foreach(self::$log as $msg)
+            {
+                if($msg['type'] > 0)
+                {
+                    $showMessages = true;
+                    break;
+                }
+            }
+        }
         
         /* Output error and debug messages */
-        echo (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
-        echo $lastError;
         if(self::$debugMode)
-            echo "Server Specs: PHP " . PHP_VERSION . " (" . PHP_OS . ")\n"; // Should this include information about the database? Is so, need to make interface
-        $idx = 1;        
-        
-        for($i = 0; $i < count(self::$log); $i++)
         {
-            $msg = self::$log[$i];
-            if(!self::$debugMode && $msg['type'] == 0)
-                continue;
+            echo (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
+            echo $lastError;
+            echo "Server Specs: PHP " . PHP_VERSION . " (" . PHP_OS . ")\n"; // Should this include information about the database? Is so, need to make interface
+            $idx = 1;        
+            
+            for($i = 0; $i < count(self::$log); $i++)
+            {
+                $msg = self::$log[$i];
+                if(!self::$debugMode && $msg['type'] == 0)
+                    continue;
+                    
+                $text = "\n\n#".($idx++).' ';
+                switch($msg['type'])
+                {
+                    case 0:
+                        $text .= "MESSAGE\t- ";
+                        break;
+                    case E_WARNING:
+                        $text .= "WARNING\t- ";
+                        break;
+                    case E_ERROR:                
+                    case E_PARSE:
+                    case E_NOTICE:
+                    case E_CORE_ERROR:
+                    case E_CORE_WARNING:
+                    case E_COMPILE_ERROR:
+                    case E_COMPILE_WARNING:
+                    case E_USER_ERROR:
+                    case E_USER_WARNING:
+                    case E_USER_NOTICE:
+                    case E_STRICT:
+                    case E_RECOVERABLE_ERROR:
+                    case E_DEPRECATED:
+                    case E_USER_DEPRECATED:
+                        $text .= "ERROR\t- ";
+                        break;
+                }
                 
-            $text = "\n\n#".($idx++).' ';
-            switch($msg['type'])
-            {
-                case 0:
-                    $text .= "MESSAGE\t- ";
-                    break;
-                case E_WARNING:
-                    $text .= "WARNING\t- ";
-                    break;
-                case E_ERROR:                
-                case E_PARSE:
-                case E_NOTICE:
-                case E_CORE_ERROR:
-                case E_CORE_WARNING:
-                case E_COMPILE_ERROR:
-                case E_COMPILE_WARNING:
-                case E_USER_ERROR:
-                case E_USER_WARNING:
-                case E_USER_NOTICE:
-                case E_STRICT:
-                case E_RECOVERABLE_ERROR:
-                case E_DEPRECATED:
-                case E_USER_DEPRECATED:
-                    $text .= "ERROR\t- ";
-                    break;
+                $text .= $msg['message']."\n\t\tStack trace:";
+    
+                for($j = 0; $j < count($msg['stack']); $j++)
+                {
+                    $stack = $msg['stack'][$j];
+                    $text .= "\n\t\t#".($j + 1)." {$stack['file']}({$stack['line']}): ";
+                    if(isset($stack['class']))
+                        $text .= $stack['class'];
+                    if(isset($stack['type']))
+                        $text .= $stack['type'];
+                    $text .= $stack['function'].'()';
+                }
+                
+                echo $text;
             }
-            
-            $text .= $msg['message']."\n\t\tStack trace:";
-
-            for($j = 0; $j < count($msg['stack']); $j++)
-            {
-                $stack = $msg['stack'][$j];
-                $text .= "\n\t\t#".($j + 1)." {$stack['file']}({$stack['line']}): ";
-                if(isset($stack['class']))
-                    $text .= $stack['class'];
-                if(isset($stack['type']))
-                    $text .= $stack['type'];
-                $text .= $stack['function'].'()';
-            }
-            
-            echo $text;
+    
+            echo (self::$isVerbose) ? "\n</pre>": "\n-->";
         }
-
-        echo (self::$isVerbose) ? "\n</pre>": "\n-->";
+        
         
         // If Log is to be stored, do that.
     }

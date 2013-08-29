@@ -6,9 +6,9 @@
   Licence:        SMPL is licensed under the Open Software License 3.0.
                   http://www.opensource.org/licenses/osl-3.0.php
 ------------------------------------------------------------------------------*/
-define("DEBUG_MODE", false);
+define("DEBUG_MODE", true);
 define("DEBUG_STRICT", false);
-define("DEBUG_VERBOSE", true);
+define("DEBUG_VERBOSE", false);
 define("DEBUG_LOGGING", false);
 
 

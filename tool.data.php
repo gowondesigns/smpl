@@ -144,6 +144,8 @@ function GenerateNewData()
     $errors[] = $database->Create('settings', $setting);
     $setting = array('name-hidden' => 'permalinkSalt', 'title-label' => 'Max # items in feed', 'value-field' => rand());
     $errors[] = $database->Create('settings', $setting);
+    $setting = array('name-hidden' => 'languageDefault', 'title-label' => 'Default language', 'value-field' => 'en-US');
+    $errors[] = $database->Create('settings', $setting);
     
     /* Pass along any errors*/
     $msg = null;
