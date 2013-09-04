@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Sample XML response from version ping
+      Validate using http://www.w3.org/2001/03/webdata/xsv -->
+<smpl xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:noNamespaceSchemaLocation="#smplSchema">
+    <!-- START OF SCHEMA -->
+    <xs:schema id="smplSchema" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+        <!-- definition of simple elements -->
+        <xs:element name="notice" type="xs:string"/>
+        
+        <!-- definition of attributes -->
+        <xs:attribute name="version" type="xs:string"/>
+        
+        <!-- definition of complex elements -->
+        <xs:element name="smpl">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:any processContents="skip" namespace="http://www.w3.org/2001/XMLSchema"
+              minOccurs="0" maxOccurs="1"/>
+              <xs:element ref="current" minOccurs="1" maxOccurs="1"/>
+              <xs:element ref="security" minOccurs="0" maxOccurs="1"/>
+              <xs:element ref="changelog" minOccurs="1" maxOccurs="1"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="current">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="release" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="security">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="notice" minOccurs="0" maxOccurs="1"/>
+              <xs:element ref="risk" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="changelog">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="item" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute ref="version" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="release">
+          <xs:complexType>
+              <xs:attribute name="version" type="xs:string" use="required"/>
+              <xs:attribute name="pre" default="none" use="optional">
+                  <xs:simpleType>
+                      <xs:restriction base="xs:NMTOKEN">
+                          <xs:enumeration value="alpha"/>
+                          <xs:enumeration value="beta"/>
+                          <xs:enumeration value="rc"/>
+                          <xs:enumeration value="rc1"/>
+                          <xs:enumeration value="rc2"/>
+                          <xs:enumeration value="none"/>
+                      </xs:restriction>
+                  </xs:simpleType>
+              </xs:attribute>
+              <xs:attribute name="href" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="risk">
+          <xs:complexType>
+              <xs:attribute name="version" type="xs:string" use="required"/>
+              <xs:attribute name="fix" type="xs:string" use="optional"/>
+              <xs:attribute name="href" type="xs:string" use="optional"/>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="item">
+          <xs:complexType>
+              <xs:simpleContent>
+                <xs:extension base="xs:string">
+                  <xs:attribute name="type" use="required">
+                      <xs:simpleType>
+                          <xs:restriction base="xs:NMTOKEN">
+                              <xs:enumeration value="add"/>
+                              <xs:enumeration value="remove"/>
+                              <xs:enumeration value="minor"/>
+                          </xs:restriction>
+                      </xs:simpleType>
+                  </xs:attribute>
+                </xs:extension>
+              </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>    
+    </xs:schema> 
+    <!-- END OF SCHEMA -->
+    
+    <current>
+        <!-- Always provide link to latest stable release -->
+        <release version="0.2.0" href="http://smply.it/?0.2.0"/>
+        <!-- send all pre-release options of latest development version -->
+        <release version="0.2.1" pre="rc2" href="http://smply.it/?0.2.0-rc2"/>
+        <release version="0.2.1" pre="beta" href="http://smply.it/?0.2.0-beta"/>
+    </current>
+        
+    <security>
+        <notice>Optional security notice.</notice>
+        <risk version="0.1.14" fix="0.1.15" href="http://smply.it/?0.1.15"/>
+        <risk version="0.1.5"/>
+        <risk version="0.1.0" fix="0.1.1" href="http://smply.it/?0.1.1"/>
+    </security>
+    
+    <changelog version="0.2.0">
+        <item type="add">System Additions and Fixes</item>
+        <item type="remove">System Removals</item>
+        <item type="minor">Minor System Change</item>
+    </changelog>
+</smpl>
