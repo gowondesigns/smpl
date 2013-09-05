@@ -2,7 +2,14 @@
 #mydomain.com/about-us/
 
 # Set default 404 to SMPL 404
+# [MUSTCHANGE] Cannot use relative paths
 ErrorDocument 404 /index.php?404
+
+# Possible Alternative
+# rewriteengine on
+# rewritecond %{request_filename} !-f
+# rewriterule ^(.+).jpg$ program.php?i=$1.jpg [L]
+
 
 # Enable Rewriting  
 RewriteEngine on  

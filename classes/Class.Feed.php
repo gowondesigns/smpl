@@ -7,14 +7,14 @@
 
 class Feed
 {
-    public static function Render()
+    public static function Retrieve()
     {
         $feed = null;
         $type = Configuration::Get('feedDefaultType').'Feed';
         $limit = 'ORDER BY publish-publish_date-date DESC LIMIT '. Configuration::Get('feedItemLimit');
-        $category = null;
+        $category = null;                                                                                       
         $database = Database::Connect();
-                
+              
         // First analyze query string
         // Default feed = /feed/
         // OR /feed/<feed-type>/
@@ -22,8 +22,6 @@ class Feed
         {
             if(isset(Content::Uri()[1]))
                 $type = ucfirst(Content::Uri()[1]).'Feed';
-            $feed = (class_exists($type)) ? new $type(): null; 
-        
         }
         // /<category-title>/feed/
         // /<category-title>/feed/<feed-type>/
@@ -31,11 +29,13 @@ class Feed
         {
             if(isset(Content::Uri()[2]))
                 $type = ucfirst(Content::Uri()[2]).'Feed';
-            $feed = (class_exists($type)) ? new $type(): null;
-            
+
             $result = $database->Retrieve('categories', 'id',  "title_mung-field = '.".Content::Uri()[0]."'");
             $category = $result->Fetch();
         }
+
+        Debug::Message("Feed\Render: Creating new feed object of type ".$type);
+        $feed = (class_exists($type)) ? new $type(): null;
 
         // Populate feed with proper articles
         $byCategory = (isset($category['id'])) ? "AND content-category-dropdown = {$category['id']} AND content-in_category_flag-checkbox = 1": null;
@@ -48,6 +48,7 @@ class Feed
         }
         
         // Render then die
+        //header("Expires: Sat, 26 Jul 2020 05:00:00 GMT"); // Date in the future
         $feed->Render();
         exit;
     }
@@ -86,7 +87,7 @@ abstract class aFeed
     protected function __construct()
     {
         $this->title = Configuration::Get('title');
-        $this->lastUpdated = Date::Create();
+        $this->lastUpdated = Date::Now();
         $this->feedDescription = Configuration::Get('description');
     }
 }
@@ -117,12 +118,12 @@ final class AtomFeed extends aFeed implements iFeed
     {
         header("Content-Type: application/atom+xml charset=utf-8");
         
-        $xml = "<\x3F".'xml version="1.0" encoding="utf-8'."\x3F>\n";
+        $xml = "<\x3F".'xml version="1.0" encoding="utf-8"'."\x3F>\n";
         $xml .= '<feed xmlns="http://www.w3.org/2005/Atom">'."\n\n\t";
         $xml .= "<title>{$this->title}</title>\n\t<subtitle>{$this->feedDescription}</subtitle>\n\t";
-        $xml .= '<link href="'.$this->feedUrl.'" />'."\n\t"; 
+        $xml .= '<link href="'.$this->feedUrl.'" rel="self" type="application/atom+xml"/>'."\n\t"; 
         $xml .= "<id>urn:uuid:{$this->feedUuid}</id>\n\t";
-        $xml .= "<updated>".Date::CreateFlat($this->lastUpdated, "Y-m-d\x54H:i:sP")."</updated>\n\n\n";
+        $xml .= "<updated>".$this->lastUpdated->ToString("Y-m-d\TH:i:s").Date::Offset()."</updated>\n\n\n";
       
         foreach ($this->feedItems as $value)
         {
@@ -132,7 +133,7 @@ final class AtomFeed extends aFeed implements iFeed
             $xml .= '<link href="'.$entry['url'].'" />'."\n\t\t";
             $xml .= '<link href="'.$entry['permalink'].'" rel="alternate" type="text/html" />'."\n\t\t"; 
             $xml .= "<id>urn:uuid:{$entry['uuid']}</id>\n\t\t";
-            $xml .= "<updated>".Date::CreateFlat($entry['date'], "Y-m-d\x54H:i:sP")."</updated>\n\t\t";
+            $xml .= "<updated>".Date::FromString($entry['date'])->ToString("Y-m-d\x54H:i:s").Date::Offset()."</updated>\n\t\t";
             $xml .= "<summary>{$entry['summary']}</summary>\n\t\t";
             $xml .= "<author>\n\t\t\t<name>{$entry['author']}</name>\n\t\t</author>\n";
             $xml .= "\t</entry>\n\n";

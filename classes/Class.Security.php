@@ -151,9 +151,9 @@ class Security
                 
                 $key = md5(Configuration::Get('siteURL'));
                 // User authentication period is still active, then update 
-                if (isset($_SESSION[$key]['auth']['period']) && $_SESSION[$key]['auth']['period'] > Date::CreateFlat())
+                if (isset($_SESSION[$key]['auth']['period']) && $_SESSION[$key]['auth']['period'] > Date::Now()->ToInt())
                 {
-                    $_SESSION[$key]['auth']['period'] = (int) Date::CreateFlat() + 10000;
+                    $_SESSION[$key]['auth']['period'] = Date::Now()->ToInt() + 10000;
                     $this->currentSessionValid = true;
                 }
                 else
@@ -212,7 +212,7 @@ class Security
         $key = md5(Configuration::Get('siteURL'));
         $_SESSION[$key]['auth']['id'] = $sessionData['id'];
         $_SESSION[$key]['auth']['username'] = $sessionData['account-user_name-hash'];
-        $_SESSION[$key]['auth']['period'] = (int) Date::CreateFlat() + 10000;
+        $_SESSION[$key]['auth']['period'] = Date::Now()->ToInt() + 10000;
         $_SESSION[$key]['auth']['access']['system'] = $sessionData['permissions-access_system-checkbox'];
         $_SESSION[$key]['auth']['access']['users'] = $sessionData['permissions-access_users-checkbox'];
         $_SESSION[$key]['auth']['access']['content'] = $sessionData['permissions-access_content-checkbox'];

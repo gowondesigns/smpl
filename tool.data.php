@@ -30,6 +30,8 @@ $html = '<!DOCTYPE html>
 
     <h1>SMPL Test Data Tool</h1>
     <form action="?" method="post">
+          Create Tables
+          <button type="submit" name="create">Click Here</button><br/>
           Generate New Data & Fill Database
           <button type="submit" name="fill">Click Here</button><br/>
           Clear Database
@@ -142,9 +144,11 @@ function GenerateNewData()
     $errors[] = $database->Create('settings', $setting);
     $setting = array('name-hidden' => 'feedItemLimit', 'title-label' => 'Max # items in feed', 'value-field' => 5);
     $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'permalinkSalt', 'title-label' => 'Max # items in feed', 'value-field' => rand());
+    $setting = array('name-hidden' => 'permalinkSalt', 'title-label' => 'Salt integer for unique permalinks', 'value-field' => rand(0,62));
     $errors[] = $database->Create('settings', $setting);
     $setting = array('name-hidden' => 'languageDefault', 'title-label' => 'Default language', 'value-field' => 'en-US');
+    $errors[] = $database->Create('settings', $setting);
+    $setting = array('name-hidden' => 'dateOffset', 'title-label' => 'Date Timezone Offset', 'value-field' => rand(-12,14));
     $errors[] = $database->Create('settings', $setting);
     
     /* Pass along any errors*/

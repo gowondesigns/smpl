@@ -15,33 +15,7 @@ class Content
 //        'main' => null
     );
     
-    private static $hooks = array(
-        'pre' => array(
-            '*' => array(
-                'Content::Stub'
-            ),
-            'tags' => 'Content::UpdateTagsUri',
-            'sitemap' => 'Sitemap::RenderXML',
-            'permalink' => 'Content::Permalink',
-            'feed' => 'Feed::Render',
-            'api' => 'Content::Stub',
-            'admin' => 'Admin::Render'
-        ),
-        'head' => array(
-            '*' => array(
-                'Content::HtmlHeader'
-            ),
-            'articles' => 'Content::TagsKeywords',
-            'pages' => 'Content::TagsKeywords'
-        ),
-        'main' => array(
-            '*' => array(
-            ),
-            'tags' => 'Content::ListByTags',
-            'categories' => 'Content::ListByCategory',
-            'articles' => 'Content::RenderArticle'
-        )
-    );
+    private static $hooks = array();
     
     // [MUSTCHANGE]
     // Hooks define the behavior the CMS will take when a trigger is defined
@@ -65,8 +39,12 @@ class Content
     // Method to initiate all automatic actions
     public static function Initialize()
     {
+        // Set script timezone to UTC for uniform dates regardless of server settings
+        // Date objects will handle offset internally
+        date_default_timezone_set('UTC');
+        
         $l = LanguageFactory::Create();
-        self::$uri = explode('/', $_SERVER['QUERY_STRING']);
+        self::$uri = array_filter(explode('/', $_SERVER['QUERY_STRING']), 'strlen'); // Filter out any empty/null/false
         self::$hooks = array(
             'pre' => array(
                 '*' => array(
@@ -75,7 +53,7 @@ class Content
                 'tags' => 'Content::UpdateTagsUri',
                 'sitemap' => 'Sitemap::RenderXML',
                 'permalink' => 'Content::Permalink',
-                'feed' => 'Feed::Render',
+                'feed' => 'Feed::Retrieve',
                 'api' => 'Content::Stub',
                 'admin' => 'Admin::Render'
             ),
@@ -107,17 +85,17 @@ class Content
         foreach (glob("smpl-includes/class.*.php") as $filename)
         {
             Debug::Message("Content\Including additional class found at: ".$filename);
-            require_once($filename);
+            include_once($filename);
         }
         
-        // Is not POST signature is present, any existing validation data should be unset
+        // Is no POST signature is present, any existing validation data should be unset
         $key = md5(Configuration::Get('siteURL'));
         if (!isset($_POST[$key]))
             unset($_SESSION[$key]['validate']);
         
         $database = Database::Connect();
-        $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 1), "publish-publish_flag-dropdown = 2 AND publish-publish_date-date <= ".Date::CreateFlat() );
-        $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::CreateFlat() );
+        $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 1), "publish-publish_flag-dropdown = 2 AND publish-publish_date-date <= ".Date::Now()->ToString() );
+        $database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::Now()->ToString() );
     }
 
 
@@ -405,7 +383,7 @@ class Space
         $page = $data->Fetch();
         $this->id = $id;
         $this->title = $page['content-title-field'];
-        $this->date = Date::Create($page['content-date-date']);
+        $this->date = Date::FromString($page['content-date-date']);
         
         $this->tags = explode(',', $page['content-tags-field']);
         foreach ($this->tags as $key => $value)
@@ -465,7 +443,7 @@ class Page extends aContentObject
         $page = $data->Fetch();
         $this->id = $id;
         $this->title = $page['content-title-field'];
-        $this->date = Date::Create($page['content-date-date']);
+        $this->date = Date::FromString($page['content-date-date']);
         
         $this->tags = explode(',', $page['content-tags-field']);
         foreach ($this->tags as $key => $value)

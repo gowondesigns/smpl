@@ -29,7 +29,7 @@ class Sitemap
         {
             $xml .= "\n\t<url>";
             $xml .= "\n\t\t<loc>".Utils::GenerateUri($pages['content-title_mung-field']).'</loc>';
-            $xml .= "\n\t\t<lastmod>".Date::CreateFlat(Date::Create($pages['content-date-date']), "Y-m-d\x54H:i:sP").'</lastmod>';
+            $xml .= "\n\t\t<lastmod>".Date::FromString($pages['content-date-date'])->ToString("Y-m-d\x54H:i:s").Date::Offset().'</lastmod>';
             $xml .= "\n\t</url>\n";
         }
         
