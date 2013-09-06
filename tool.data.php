@@ -128,8 +128,46 @@ function GenerateNewData()
     }
     
     /* Generate Content */    
+/*
+  `content-title-field` VARCHAR(100) NOT NULL,
+  `content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
+  `content-static_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `content-in_category_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
+  `content-default_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `content-category-dropdown` INT NOT NULL DEFAULT 1,
+  `content-author-dropdown` INT NOT NULL DEFAULT 1,
+  `content-date-date` BIGINT(14) UNSIGNED UNIQUE NOT NULL,
+  `content-body-textarea` LONGTEXT DEFAULT NULL,
+  `content-tags-field` VARCHAR(255) DEFAULT NULL,
+  `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
+  `publish-publish_date-date` BIGINT UNSIGNED NOT NULL,
+  `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `publish-unpublish_date-date` BIGINT UNSIGNED NOT NULL
+//*/    
+    $titleWords = array('The','as','is','a','Orange','Blue','Man','Woman','Cat','Dog', 2, '&hearts;');
+    shuffle($titleWords);
     
-    $titleWords = array('The','as','is','a','Orange','Blue','Man','Woman','Cat','Dog', 2);    
+    $title = implode(' ', $titleWords);
+        
+    $data = array(
+        'content-title-field' => $title,
+        'content-title_mung-field' => Utils::Munge($title),
+        'content-static_page_flag-checkbox' => true,
+        'content-in_category_flag-checkbox' => true,
+        'content-default_page_flag-checkbox' => true,
+        'content-category-dropdown' => 1,
+        'content-author-dropdown' => 1,
+        'content-date-date' => Date::Now()->ToString(),
+        'content-body-textarea' => $database->real_escape_string(lipsum(4,20)),
+        'content-tags-field' => null,
+        'publish-publish_flag-dropdown' => 'PUBLISHED',
+        'publish-publish_date-date' => Date::Now()->ToString(),
+        'publish-unpublish_flag-checkbox' => true,
+        'publish-unpublish_date-date' => Date::Now()->AddTime(3600)->ToString()
+    );
+    
+    $errors[] = $database->Create('content', $data);
+    
     
     /* Generate Settings */
     $setting = array('name-hidden' => 'siteURL', 'title-label' => 'Site URL', 'value-field' => 'http://localhost/smpl/');

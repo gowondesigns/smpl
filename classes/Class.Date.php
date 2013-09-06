@@ -68,21 +68,23 @@ class Date
         return $offset;
     }
     
-    public function Get($item = null)
+    // Shift date in seconds
+    public function AddTime($timeshift)
     {
-        if (null === $item)
-            return array(
-                'year' => $this->year,
-                'month' => $this->month,
-                'day' => $this->day,
-                'hours' => $this->hours,
-                'minutes' => $this->minutes,
-                'seconds' => $this->seconds
-                );
-        else
-            return $this->$item;
+        $time = mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year);
+        $time += $timeshift; // Add time shift (subtract by using a negative amount)
+        
+        $date = date("YmdHis", $time);
+        $this->year = substr($date, 0, 4);
+        $this->month = substr($date, 4, 2);
+        $this->day = substr($date, 6, 2);
+        $this->hours = substr($date, 8, 2);
+        $this->minutes = substr($date, 10, 2);
+        $this->seconds = substr($date, 12, 2);
+        
+        return $this;
     }
-    
+        
     // Return date string in specified format. If null, default to SMPL Date Format
     public function ToString($stringFormat = null, $offset = false)
     {
