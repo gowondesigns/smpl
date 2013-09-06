@@ -1,4 +1,4 @@
-<img src="https://raw.github.com/gowondesigns/smpl/master/images/smpl.png" alt="SMPL CMS" />
+<img src="https://raw.github.com/gowondesigns/smpl/development/images/smpl.png" alt="SMPL CMS" />
 
 # [SMPL CMS](https://github.com/gowondesigns/smpl)
 
