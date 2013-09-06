@@ -29,8 +29,8 @@ function IncludeFromFolder($folder)
 
 function __autoload($class_name)
 {
-    require_once('classes/Class.'.$class_name.'.php');
-}
+    include_once('classes/Class.'.$class_name.'.php');
+} 
 //////////////////////////////////////////////////////////////
 // Always update the database, un/publishing content based on the current date
 

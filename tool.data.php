@@ -17,7 +17,18 @@ function __autoload($class_name)
 
 IncludeFromFolder("classes/");
 
-
+$database = Database::Connect();
+$query = $database::NewQuery()
+    ->Select()
+    ->Using("users")
+    ->Item("id")->Item("account-name-field","name")
+    ->Match("permissions-access_content-checkbox", true)
+    ->OrWhere()->Match("permissions-access_blocks-checkbox", true)
+    ->AndWhere()->Match("permissions-access_system-checkbox", true)
+    ->Limit(3)
+    ->OrderBy("name");
+var_dump($query);
+echo $query;    
 
 $html = '<!DOCTYPE html>
 <html lang="en">
@@ -157,13 +168,13 @@ function GenerateNewData()
         'content-default_page_flag-checkbox' => true,
         'content-category-dropdown' => 1,
         'content-author-dropdown' => 1,
-        'content-date-date' => Date::Now()->ToString(),
+        'content-date-date' => Date::Now()->ToInt(),
         'content-body-textarea' => $database->real_escape_string(lipsum(4,20)),
         'content-tags-field' => null,
         'publish-publish_flag-dropdown' => 'PUBLISHED',
-        'publish-publish_date-date' => Date::Now()->ToString(),
+        'publish-publish_date-date' => Date::Now()->ToInt(),
         'publish-unpublish_flag-checkbox' => true,
-        'publish-unpublish_date-date' => Date::Now()->AddTime(3600)->ToString()
+        'publish-unpublish_date-date' => Date::Now()->AddTime(3600)->ToInt()
     );
     
     $errors[] = $database->Create('content', $data);
@@ -212,13 +223,13 @@ function ClearAllData()
     $configurations = Configuration::Database();
     $database = Database::Connect();
     
-    $database->Query("TRUNCATE TABLE {$configurations['prefix']}api");
-    $database->Query("TRUNCATE TABLE {$configurations['prefix']}blocks");
-    $database->Query("TRUNCATE TABLE {$configurations['prefix']}categories");
-    $database->Query("TRUNCATE TABLE {$configurations['prefix']}content");
-    $database->Query("TRUNCATE TABLE {$configurations['prefix']}settings");
-    $database->Query("TRUNCATE TABLE {$configurations['prefix']}spaces");
-    $database->Query("TRUNCATE TABLE {$configurations['prefix']}users");
+    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}api");
+    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}blocks");
+    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}categories");
+    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}content");
+    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}settings");
+    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}spaces");
+    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}users");
     
     return "All Data Clear";
 }
