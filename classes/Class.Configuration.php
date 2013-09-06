@@ -49,7 +49,8 @@ class Configuration
         $database = Database::Connect();
         $result = $database->Retrieve('settings', 'value-field',  "`name-hidden` = '{$settingName}'");
         $value = $result->Fetch();
-        //echo var_dump($result);
+        if(is_null($value))
+            throw new WarningException("Could not find setting '{$value}'");
         return $value['value-field'];
     }
     
