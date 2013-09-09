@@ -47,7 +47,14 @@ class Configuration
     public static function Get($settingName)
     {
         $database = Database::Connect();
-        $result = $database->Retrieve('settings', 'value-field',  "`name-hidden` = '{$settingName}'");
+        //$result = $database->Retrieve('settings', 'value-field',  "`name-hidden` = '{$settingName}'");
+        $result = $database::NewQuery()
+            ->Select()
+            ->UsingTable("settings")
+            ->Item("value-field")
+            ->Match("name-hidden", $settingName)
+            ->Execute($database);
+        
         $value = $result->Fetch();
         if(is_null($value))
             throw new WarningException("Could not find setting '{$value}'");

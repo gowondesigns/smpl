@@ -7,7 +7,7 @@
 
 class Feed
 {
-    public static function Retrieve()
+    public static function Generate()
     {
         $feed = null;
         $type = Configuration::Get('feedDefaultType').'Feed';
@@ -30,7 +30,13 @@ class Feed
             if(isset(Content::Uri()[2]))
                 $type = ucfirst(Content::Uri()[2]).'Feed';
 
-            $result = $database->Retrieve('categories', 'id',  "title_mung-field = '.".Content::Uri()[0]."'");
+            //$result = $database->Retrieve('categories', 'id',  "title_mung-field = '.".Content::Uri()[0]."'");
+            $result = $database::NewQuery()
+                ->Select()
+                ->UsingTable("categories")
+                ->Item("id")
+                ->Match("title_mung-field", Content::Uri()[0])
+                ->Execute($database);
             $category = $result->Fetch();
         }
 
@@ -40,6 +46,13 @@ class Feed
         // Populate feed with proper articles
         $byCategory = (isset($category['id'])) ? "AND content-category-dropdown = {$category['id']} AND content-in_category_flag-checkbox = 1": null;
         $list = $database->Retrieve('content', 'id',  "publish-publish_flag-dropdown = 2 AND content-static_page_flag-checkbox = 0 {$byCategory}", $limit);
+        /*$result = $database::NewQuery()
+            ->Select()
+            ->UsingTable("content")
+            ->Item("id")
+            ->Match("publish-publish_flag-dropdown", 2)
+            ->AndWhere()->Match("content-static_page_flag-checkbox", 0)
+            ->Execute($database); //*/        
         
         while($id = $list->Fetch())
         {

@@ -148,14 +148,24 @@ class Content
     public static function GetCategoryById($id)
     {
         $database = Database::Connect();
-        $result = $database->Retrieve('categories', '*',  "id = '{$id}'");
+        $result = $database::NewQuery()
+            ->Select()
+            ->UsingTable("categories")
+            ->Match("id", $id)
+            ->Execute($database);
+            
         return $result->Fetch();
     }
 
     public static function GetAuthorById($id)
     {
         $database = Database::Connect();
-        $result = $database->Retrieve('users', '*',  "id = '{$id}'");
+        $result = $database::NewQuery()
+            ->Select()
+            ->UsingTable("users")
+            ->Match("id", $id)
+            ->Execute($database);
+        
         return $result->Fetch();
     }
     
@@ -214,7 +224,13 @@ Otherwise, look for the space being called
         else
         {
             $database = Database::Connect();
-            $data = $database->Retrieve('spaces', 'id', "`title_mung-field` = '{$spaceName}'");
+            $data = $database::NewQuery()
+                ->Select()
+                ->UsingTable("spaces")
+                ->Item("id")
+                ->Match("title_mung-field", $spaceName)
+                ->Execute($database);
+            
             $results = $data->Fetch();
             if(isset($results['id']))
             {

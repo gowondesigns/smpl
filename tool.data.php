@@ -20,15 +20,42 @@ IncludeFromFolder("classes/");
 $database = Database::Connect();
 $query = $database::NewQuery()
     ->Select()
-    ->Using("users")
-    ->Item("id")->Item("account-name-field","name")
+    ->UsingTable("users")
+    ->Item("id")->Item("account-name-field","name")->Item("users.permissions-access_system-checkbox", "sys")
     ->Match("permissions-access_content-checkbox", true)
     ->OrWhere()->Match("permissions-access_blocks-checkbox", true)
-    ->AndWhere()->Match("permissions-access_system-checkbox", true)
+    ->AndWhere()->Match("users.permissions-access_system-checkbox", true)
+    ->Offset(1)
     ->Limit(3)
     ->OrderBy("name");
-var_dump($query);
-echo $query;    
+//var_dump($query);
+//echo $query;
+
+$query = $database::NewQuery()
+    ->Create()
+    ->UsingTable("settings")
+    ->Item("name-hidden")->SetValue("dummySetting")
+    ->Item("title-label")->SetValue("This is a dummy setting")
+    ->Item("value-field")->SetValue(0);
+//var_dump($query);
+//echo $query;
+
+$query = $database::NewQuery()
+    ->Update()
+    ->UsingTable("settings")
+    ->Item("value-field")->SetValue(1)
+    ->Match("name-hidden", "dummySetting")
+    ->OrderBy("name-hidden")
+    ->Limit(2);
+//var_dump($query);
+//echo $query;
+
+$query = $database::NewQuery()
+    ->Delete()
+    ->UsingTable("settings")
+    ->Match("name-hidden", "dummySetting");
+//var_dump($query);
+//echo $query;
 
 $html = '<!DOCTYPE html>
 <html lang="en">

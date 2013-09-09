@@ -52,7 +52,7 @@ interface iDatabase
 {
     //[MUSTCHANGE] MUST CREATE A CONNECT METHOD
     public static function NewQuery();    // Instatiate new query object
-    public function Exec(iQuery $query);
+    public function Query($query);
     public function Create($insertToTables, $insertItems, $insertExtra = null);   // Create (Insert) Queries
     public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null); // Retrieve (Select) Queries
     public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null);   // Update Queries
@@ -89,7 +89,18 @@ class MySqlDatabase extends MySQLi implements iDatabase
             throw new StrictException("Query object must be of type MySqlDatabaseQuery");
         return;
     }
-    
+
+    public function Query($query)
+    {
+        if(!($query instanceof MySqlDatabaseQuery))
+            throw new StrictException("Query object must be of type MySqlDatabaseQuery");
+        
+        Debug::Message("MySqlDatabase\Query: ".$query->ToString());
+        //$this->queries[] = $query;
+        $this->real_query($query->ToString());
+        return new MySqlDatabaseResult($this);
+    }
+        
     public function CustomQuery($query)
     {
         Debug::Message("MySqlDatabase\Query: ".$query);
@@ -294,6 +305,7 @@ class MySqlDatabaseResult extends MySQLi_Result implements iDatabaseResult
 */
 interface iQuery
 {
+    public function Execute(iDatabase $database); // possible name, ToDatabase()?
     public function ToString();
     
     /* Action Methods */
@@ -303,9 +315,12 @@ interface iQuery
     public function Delete();
     public function Custom($query);
     
-    /* Table Selection Methods*/
-    public function Using($table, $tableAlias);
+    /* Selection Methods*/
+    public function UsingTable($table, $tableAlias);
     public function Item($item, $itemAlias);
+    
+    /* Create/Update Methods*/
+    public function SetValue($value);
 
     /* Where Clause Methods*/
     public function OrWhere();
@@ -318,8 +333,9 @@ interface iQuery
     public function GreaterThanOrEq($item, $condition);
     
     /* Query Optimization Methods */
-    public function orderBy($item, $direction);
-    public function Limit($count, $offset);
+    public function orderBy($item, $ascending);
+    public function Limit($count);
+    public function Offset($amount);
 }
 
 class MySqlDatabaseQuery implements iQuery
@@ -327,11 +343,12 @@ class MySqlDatabaseQuery implements iQuery
     protected $action = null;   // Query Action: Select, Create (Insert), Update, Delete
     protected $tables = array();  // Tables to be accessed in the query (Using)
     protected $items = array();
+    protected $itemValues = array();
     protected $whereClauses = array();
     protected $whereClausesLogic = array();
     protected $orderByLogic = array();
     protected $resultLimit = null;
-    protected $resultSkip = null;
+    protected $resultOffset = null;
     protected $custom = null;
 
     public function __construct()
@@ -344,6 +361,11 @@ class MySqlDatabaseQuery implements iQuery
         return $this->ToString();
     }
     
+    public function Execute(iDatabase $database)
+    {
+        return $database->Query($this);
+    }
+    
     public function ToString()
     {
         if(isset($this->custom))
@@ -354,20 +376,22 @@ class MySqlDatabaseQuery implements iQuery
         switch ($this->action)
         {
             case "SELECT":
-                $sql = $this->action;
+                $sql = "SELECT";
                 
                 /* Select Items */
                 if(empty($this->items))
-                    $sql .= " * ";
+                    $sql .= " *";
                 else
                 {
                     $items = array();
                     foreach($this->items as $key => $value)
                     {
+                        $expanded = explode('.', $value);
+                        $expanded = implode('`.`', $expanded);
                         if($key == $value)
-                            $items[] .= "`{$key}`";
+                            $items[] .= "`{$expanded}`";
                         else
-                            $items[] .= "`{$value}` AS `{$key}`";
+                            $items[] .= "`{$expanded}` AS `{$key}`";
                     }
                     
                     $sql .= ' '.implode(', ', $items);
@@ -386,7 +410,7 @@ class MySqlDatabaseQuery implements iQuery
                 $sql .= ' FROM '.implode(', ', $tables);
                 
                 /* Where Clauses*/
-                if(isset($this->whereClauses))
+                if(!empty($this->whereClauses))
                 {
                     $sql .= ' WHERE';
                     foreach($this->whereClauses as $key => $clause)
@@ -396,8 +420,76 @@ class MySqlDatabaseQuery implements iQuery
                     }
                 }
                 
-                /* Select Optimizers [MUSTCHANGE] */
+                /* Select Optimizers */
+                if(!empty($this->orderByLogic))
+                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);                
                 
+                if(isset($this->resultLimit))
+                    $sql .= ' LIMIT '.$this->resultLimit;
+                
+                if(isset($this->resultOffset))
+                    $sql .= ' OFFSET '.$this->resultOffset;
+                                    
+                return $sql.PHP_EOL;
+                break;
+                
+            case "INSERT":
+                $sql = "INSERT INTO `".array_values($this->tables)[0]."`";
+                $sql .= " (`".implode('`,`', $this->items)."`)";
+                $sql .= " VALUES('".implode("','", $this->itemValues)."')";
+                
+                return $sql.PHP_EOL;
+                break;
+            case "UPDATE":
+                $sql = "UPDATE `".implode("`,`", $this->tables)."`";
+
+                $items = array();
+                foreach(array_values($this->items) as $key => $column)
+                {
+                    $items[] = " `{$column}` = '".$this->itemValues[$key]."'";
+                }
+                $sql .= ' SET'.implode(",", $items);
+                                
+                /* Where Clauses */
+                if(!empty($this->whereClauses))
+                {
+                    $sql .= ' WHERE';
+                    foreach($this->whereClauses as $key => $clause)
+                    {
+                        $sql .= " {$clause}";
+                        $sql .= (isset($this->whereClausesLogic[$key])) ? " {$this->whereClausesLogic[$key]}": null;
+                    }
+                }
+                
+                /* Select Optimizers */
+                if(!empty($this->orderByLogic))
+                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);                
+                
+                if(isset($this->resultLimit))
+                    $sql .= ' LIMIT '.$this->resultLimit;
+                
+                return $sql.PHP_EOL;
+                break;
+            case "DELETE":
+                $sql = "DELETE FROM `".array_values($this->tables)[0]."`";
+
+                /* Where Clauses */
+                if(!empty($this->whereClauses))
+                {
+                    $sql .= ' WHERE';
+                    foreach($this->whereClauses as $key => $clause)
+                    {
+                        $sql .= " {$clause}";
+                        $sql .= (isset($this->whereClausesLogic[$key])) ? " {$this->whereClausesLogic[$key]}": null;
+                    }
+                }
+                
+                /* Select Optimizers */
+                if(!empty($this->orderByLogic))
+                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);                
+                
+                if(isset($this->resultLimit))
+                    $sql .= ' LIMIT '.$this->resultLimit;
                 
                 return $sql.PHP_EOL;
                 break;
@@ -437,9 +529,8 @@ class MySqlDatabaseQuery implements iQuery
         return $this;
     }
     
-    /* Table Selection Methods*/
-    // [MUSTCHANGE] to make them work with strings or arrays of strings
-    public function Using($table, $tableAlias = null)
+    /* Selection Methods*/
+    public function UsingTable($table, $tableAlias = null)
     {
         if(isset($tableAlias))
             $this->tables[$tableAlias] = $table;
@@ -454,8 +545,23 @@ class MySqlDatabaseQuery implements iQuery
             $this->items[$itemAlias] = $item;
         else
             $this->items[$item] = $item;
+            
+        $this->itemValues[] = null;
         return $this;
     }    
+    
+    /* Create/Update Methods */
+    public function SetValue($value)
+    {
+        $count = count($this->items);
+        if($count < 1)
+            return $this;
+            
+        $this->itemValues[($count - 1)] = $value;
+                          
+        return $this;
+    }
+    
     /* Where Clause Methods*/
     public function OrWhere()
     {
@@ -484,8 +590,10 @@ class MySqlDatabaseQuery implements iQuery
     public function Match($item, $condition)
     {
         if(is_string($condition))
-            $condition = "`{$condition}`";
+            $condition = "'{$condition}'";
         
+        $expanded = explode('.', $item);
+        $item = implode('`.`', $expanded);
         $where = "`{$item}` = ".$condition;
         
         $this->whereClauses[] = $where;
@@ -503,8 +611,10 @@ class MySqlDatabaseQuery implements iQuery
     public function NotMatch($item, $condition)
     {
         if(is_string($condition))
-            $condition = "`{$condition}`";
+            $condition = "'{$condition}'";
         
+        $expanded = explode('.', $item);
+        $item = implode('`.`', $expanded);
         $where = "`{$item}` != ".$condition;
         $this->whereClauses[] = $where;
         $this->whereClausesLogic[] = null;
@@ -523,6 +633,8 @@ class MySqlDatabaseQuery implements iQuery
         if(!is_numeric($condition))
             throw new StrictException("Condition must be numeric");
         
+        $expanded = explode('.', $item);
+        $item = implode('`.`', $expanded);
         $where = "`{$item}` < ".$condition;
         $this->whereClauses[] = $where;
         $this->whereClausesLogic[] = null;
@@ -541,6 +653,8 @@ class MySqlDatabaseQuery implements iQuery
         if(!is_numeric($condition))
             throw new StrictException("Condition must be numeric");
         
+        $expanded = explode('.', $item);
+        $item = implode('`.`', $expanded);
         $where = "`{$item}` > ".$condition;
         $this->whereClauses[] = $where;
         $this->whereClausesLogic[] = null;
@@ -559,6 +673,8 @@ class MySqlDatabaseQuery implements iQuery
         if(!is_numeric($condition))
             throw new StrictException("Condition must be numeric");
         
+        $expanded = explode('.', $item);
+        $item = implode('`.`', $expanded);
         $where = "`{$item}` <= ".$condition;
         $this->whereClauses[] = $where;
         $this->whereClausesLogic[] = null;
@@ -577,6 +693,8 @@ class MySqlDatabaseQuery implements iQuery
         if(!is_numeric($condition))
             throw new StrictException("Condition must be numeric");
         
+        $expanded = explode('.', $item);
+        $item = implode('`.`', $expanded);
         $where = "`{$item}` >= ".$condition;
         $this->whereClauses[] = $where;
         $this->whereClausesLogic[] = null;
@@ -591,21 +709,26 @@ class MySqlDatabaseQuery implements iQuery
     }
     
     /* Query Optimization Methods */
-    public function orderBy($item, $direction = "ASC")
+    public function orderBy($item, $ascending = true)
     {
+        $direction = ($ascending) ? 'ASC': 'DESC';
+        $expanded = explode('.', $item);
+        $item = implode('`.`', $expanded);
         $order = "`{$item}` ".$direction;
         $this->orderByLogic[] = $order;
         
         return $this;
     }
     
-    public function Limit($count, $offset = null)
+    public function Limit($count)
     {
-        if(!empty($offset))
-            $this->resultSkip = $offset;
-        
         $this->resultLimit = $count;
-
+        return $this;
+    }
+    
+    public function Offset($amount)
+    {
+        $this->resultOffset = $amount;
         return $this;
     }
 
