@@ -16,12 +16,11 @@ class Sitemap
         $xml = "<\x3Fxml version=\"1.0\" encoding=\"utf-8\"\x3F>\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-        $result = $database::NewQuery()
-            ->Select()
+        $result = $database->Retrieve()
             ->UsingTable("categories")
             ->Item("title_mung-field")
             ->Match("publish_flag-checkbox", 1)
-            ->Execute($database);
+            ->Execute();
 
         while($category = $result->Fetch())
         {
@@ -30,12 +29,11 @@ class Sitemap
             $xml .= "\n\t</url>\n";
         }
         
-        $result = $database::NewQuery()
-            ->Select()
+        $result = $database->Retrieve()
             ->UsingTable("content")
             ->Match("content-static_page_flag-checkbox", 1)
             ->AndWhere()->Match("publish-publish_flag-dropdown", 2)
-            ->Execute($database);
+            ->Execute();
             
         while($pages = $result->Fetch())
         {

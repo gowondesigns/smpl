@@ -2,32 +2,33 @@
 /* SMPL Language Classes
 // 
 // Example Use:
-// $l = LanguageFactory::Create("en-US");
+// $l = Language::Create("en-US");
 // echo $l->Phrase("Author");
 //
 //*/
 
 
-class LanguageFactory
+class Language
 {
     private static $langInstance = null;
     
     
     public static function Create($languageCode = null)
     {
+        if(isset($languageCode))
+            return new LanguageSet($languageCode);
+        
         if (null === self::$langInstance)
         {
-            if (null === $languageCode)
-                $languageCode = Configuration::Get("languageDefault");
-            
-            Debug::Message("LanguageFactory\Initializing system language to: ".$languageCode);
-            self::$langInstance = new Language($languageCode);
+            $languageCode = Configuration::Get("languageDefault");
+            Debug::Message("Language\Initializing system language to: ".$languageCode);
+            self::$langInstance = new LanguageSet($languageCode);
         }
 
         return self::$langInstance;
     }
     
-    public static function LangHook()
+    public static function Hook()
     {
         $key = array_search('lang', Content::Uri());
         self::Reset(Content::Uri()[($key + 1)] );
@@ -38,14 +39,14 @@ class LanguageFactory
         if (null === $languageCode)
             $languageCode = Configuration::Get("languageDefault");
         
-        Debug::Message("LanguageFactory\Resetting system language to: ".$languageCode);
-        self::$langInstance = new Language($languageCode);
+        Debug::Message("Language\Resetting system language to: ".$languageCode);
+        self::$langInstance = new LanguageSet($languageCode);
         return self::$langInstance;
     }
 }
 
 
-class Language
+class LanguageSet
 {
     private $language = null;
     private $languageCode = null;
@@ -205,13 +206,9 @@ class Language
     public function Phrase($key)
     {
         if (isset($this->languagePhrases[$key]))
-        {
             return $this->languagePhrases[$key];
-        }
         else
-        {
-            return false; // REPLACE with Exception: Phrase Does not exist in <Language>-<Language Code>
-        }
+            throw new UserErrorException("Phrase \"{$key}\" does not exist in {$this->language}-{$this->languageCode}"); 
     }
     
     // Add/Update/Remove the content of a particular phrase, the changes are global    

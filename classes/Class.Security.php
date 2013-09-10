@@ -187,8 +187,7 @@ class Security
         $password = md5(Security::FilterXSS($password) );
 
         $database = Database::Connect();
-        $result = $database::NewQuery()
-            ->Select()
+        $result = $database->Retrieve()
             ->UsingTable("users")
             ->Match("account-user_name-hash", $username)
             ->AndWhere()->Match("account-password-hash", $password)

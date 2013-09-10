@@ -48,18 +48,20 @@ class Database
 }
 
 
-interface iDatabase
+interface IDatabase
 {
     //[MUSTCHANGE] MUST CREATE A CONNECT METHOD
-    public static function NewQuery();    // Instatiate new query object
-    public function Query($query);
-    public function Create($insertToTables, $insertItems, $insertExtra = null);   // Create (Insert) Queries
-    public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null); // Retrieve (Select) Queries
-    public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null);   // Update Queries
-    public function Delete($deleteFromTables, $deleteWhereClause, $delectExtra = null);   // Delete Queries
+    public static function NewQuery($database = null);    // Instatiate new query object
+    
+    //public function Query($query); // Process direct query
+    public function Create();   // Create (Insert) Query
+    public function Retrieve(); // Retrieve (Select) Query
+    public function Update();   // Update Queries
+    public function Delete();   // Delete Query
+    public function Custom($queryString);
 }
 
-class MySqlDatabase extends MySQLi implements iDatabase
+class MySqlDatabase extends MySQLi implements IDatabase
 {
     protected $host;
     protected $name;
@@ -78,26 +80,15 @@ class MySqlDatabase extends MySQLi implements iDatabase
         parent::__construct($host, $username, $password, $name);
     }
 
-    public static function NewQuery()
+    public static function NewQuery($database = null)
     {
-        return new MySqlDatabaseQuery();
-    }
-    
-    public function Exec(iQuery $query)
-    {
-        if(!($query instanceof MySqlDatabaseQuery))
-            throw new StrictException("Query object must be of type MySqlDatabaseQuery");
-        return;
+        return new MySqlDatabaseQuery($database);
     }
 
     public function Query($query)
     {
-        if(!($query instanceof MySqlDatabaseQuery))
-            throw new StrictException("Query object must be of type MySqlDatabaseQuery");
-        
-        Debug::Message("MySqlDatabase\Query: ".$query->ToString());
-        //$this->queries[] = $query;
-        $this->real_query($query->ToString());
+        Debug::Message("MySqlDatabase\Query: ".$query);
+        $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
         
@@ -108,126 +99,36 @@ class MySqlDatabase extends MySQLi implements iDatabase
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
-    // $insertToTables can be a single string, or an array of strings for the tables
-    // $insertItems must be an array
-    public function Create($insertToTables, $insertItems, $insertExtra = null) 
+
+    public function Create() 
     {
-        $cells = array();
-        $values = array();
-        if (is_array($insertToTables))
-        {
-            foreach ($insertToTables as $key => $value)
-                $insertToTables[$key] = $this->prefix.$value;
-        
-            $tables = implode(', ', $insertToTables);  
-        }
-        else
-            $tables = $this->prefix.$insertToTables;
-
-        // Seperate and format all of the values
-        foreach ($insertItems as $key => $value)
-        {
-            $cells[] = "`{$key}`";
-            if (is_numeric($value))
-                $values[] = $value;
-            else
-                $values[] = "'{$value}'";
-        }
-        
-        $insertCells = implode(',', $cells);
-        $insertValues = implode(',', $values);
-            
-        // Method will return TRUE on success, FALSE on failure
-        return $this->CustomQuery("INSERT INTO {$tables} ({$insertCells}) VALUES ({$insertValues}) ".$insertExtra);
-
+        $query = new MySqlDatabaseQuery($this);
+        return $query->Create();
     }
     
-    // Retrieve specific item (not meant for queries that return multiple results)
-    public function Retrieve($selectFromTables, $selectItems = null,  $selectWhereClause = null, $selectExtra = null)
+    public function Retrieve()
     {
-        if (is_array($selectFromTables))
-        {
-            foreach ($selectFromTables as $key => $value)
-                $selectFromTables[$key] = $this->prefix.$value;
-        
-            $tableString = '`'.implode('`,`', $selectFromTables).'`';  
-        }
-        else
-            $tableString = '`'.$this->prefix.$selectFromTables.'`';
-        
-        if (null === $selectItems)
-        {
-            $selectItems = '*';
-        }
-        else if (is_array($selectItems))
-        {
-            foreach ($selectItems as $key => $value)
-                $selectItems[$key] = $this->prefix.$value;
-        
-            $selectItems = '`'.implode('`,`', $selectItems).'`';  
-        }
-        else
-            $selectItems = '`'.$this->prefix.$selectItems.'`';
-        
-        if (isset($selectWhereClause))
-        {
-            $selectWhereClause = ' WHERE '.$selectWhereClause;
-        }
-
-        return $this->CustomQuery('SELECT '.$selectItems.' FROM '.$tableString.$selectWhereClause.' '.$selectExtra);
+        $query = new MySqlDatabaseQuery($this);
+        return $query->Select();
     }
     
-    public function Update($updateToTables, $updateItems, $updateWhereClause, $updateExtra = null)    // $updateItems must be an array
+    public function Update()
     {
-        $i = 0;
-        $updateString = array();
-        
-        if (is_array($updateToTables))
-        {
-            foreach ($updateToTables as $key => $value)
-                $updateToTables[$key] = $this->prefix.$value;
-        
-            $tableString = implode(', ', $updateToTables);  
-        }
-        else
-            $tableString = $this->prefix.$updateToTables;
-        
-        foreach ($updateItems as $key => $value)
-        {
-            $updateString[$i] = $key.' = ';
-            if (is_numeric($value))
-            {
-                $updateString[$i++] .= $value;
-            }
-            else
-            {
-                $updateString[$i++] .= "'{$value}'";
-            }
-        }
-        
-        $updateString = implode(', ', $updateString);
-            
-        
-        // Method will return TRUE on success, FALSE on failure
-        return $this->CustomQuery('UPDATE '.$tableString.' SET '.$updateString.' WHERE '.$updateWhereClause.' '.$updateExtra);
+        $query = new MySqlDatabaseQuery($this);
+        return $query->Update();
     }
     
-    public function Delete($deleteFromTables, $deleteWhereClause, $deleteExtra = null)
+    public function Delete()
     {
-        if (is_array($deleteFromTables))
-        {
-            foreach ($deleteFromTables as $key => $value)
-                $deleteFromTables[$key] = $this->prefix.$value;
-        
-            $tableString = implode(', ', $deleteFromTables);  
-        }
-        else
-            $tableString = $this->prefix.$deleteFromTables;
-        
-        // Method will return TRUE on success, FALSE on failure
-        return $this->CustomQuery('DELETE FROM '.$tableString.' WHERE '.$deleteWhereClause.' '.$deleteExtra);
+        $query = new MySqlDatabaseQuery($this);
+        return $query->Create();
     }
 
+    public function Custom($queryString)
+    {
+        $query = new MySqlDatabaseQuery($this);
+        return $query->Custom($queryString);
+    }
 }
 
 // Other database objects should also implement SeekableIterator for use in loop operators
@@ -303,9 +204,9 @@ class MySqlDatabaseResult extends MySQLi_Result implements IDatabaseResult
 /*  Database Query Fluent Interface 
     Abstracts away the syntax in creating simple DB queries
 */
-interface iQuery
+interface ISqlQuery
 {
-    public function Execute(iDatabase $database); // possible name, ToDatabase()?
+    public function Execute(IDatabase $database); // possible name, ToDatabase()?
     public function ToString();
     
     /* Action Methods */
@@ -339,8 +240,9 @@ interface iQuery
     public function Offset($amount);
 }
 
-class MySqlDatabaseQuery implements iQuery
+class MySqlDatabaseQuery implements ISqlQuery
 {
+    protected $database = null;
     protected $action = null;   // Query Action: Select, Create (Insert), Update, Delete
     protected $tables = array();  // Tables to be accessed in the query (Using)
     protected $items = array();
@@ -352,9 +254,10 @@ class MySqlDatabaseQuery implements iQuery
     protected $resultOffset = null;
     protected $custom = null;
 
-    public function __construct()
+    public function __construct(MySqlDatabase $database = null)
     {
-        //return $this;
+        if(isset($database))
+            $this->database = $database;
     }
     
     public function __toString()
@@ -362,9 +265,14 @@ class MySqlDatabaseQuery implements iQuery
         return $this->ToString();
     }
     
-    public function Execute(iDatabase $database)
+    public function Execute(IDatabase $database = null)
     {
-        return $database->Query($this);
+        if(isset($database) && $database instanceof MySqlDatabase)
+            return $database->Query($this->ToString());
+        elseif(isset($this->database))
+            return $this->database->Query($this->ToString());
+        else
+            throw new ErrorException("No database was set up.");
     }
     
     public function ToString()

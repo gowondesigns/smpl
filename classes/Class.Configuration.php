@@ -47,12 +47,11 @@ class Configuration
     public static function Get($settingName)
     {
         $database = Database::Connect();
-        $result = $database::NewQuery()
-            ->Select()
+        $result = $database->Retrieve()
             ->UsingTable("settings")
             ->Item("value-field")
             ->Match("name-hidden", $settingName)
-            ->Execute($database);
+            ->Execute();
         
         $value = $result->Fetch();
         if(is_null($value))

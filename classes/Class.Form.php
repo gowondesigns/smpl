@@ -47,7 +47,7 @@ class Forms
     // May not be necessary
     public static function CreatePanelElement($panelItem)
     {
-        $l = LanguageFactory::Create();
+        $l = Language::Create();
         $panel = explode( ',', $panelItem); 
         
         switch (count($panel)) {

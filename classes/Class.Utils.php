@@ -130,7 +130,7 @@ class Utils
 
     public static function Pagination($setAmount, $currentPosition, $showPageNumbers = false, $totalPageNumbers = null, $seperator = "&#124;")
     {
-        $l = LanguageFactory::Create(); // Grab language data
+        $l = Language::Create(); // Grab language data
         $html = '<div class="smpl-pagination"><ul>';
         
         if($currentPosition > $setAmount || $currentPosition < 1)
@@ -251,6 +251,7 @@ class Utils
     
     public static function Strip($data)
     {
+        // replaced \x3F = ?
         $search = array(
             '@<script[^>]*?>.*?</script>@si',   // Strip out javascript 
             '@<[\/\!]*?[^<>]*?>@si',            // Strip out HTML tags 
@@ -259,7 +260,7 @@ class Utils
         ); 
         $data = preg_replace($search, ' ', $data);
         $string = trim(preg_replace('/ {2,}/', ' ', $data)); 
-        return $data; 
+        return $string; 
     } 
     
 }

@@ -43,7 +43,7 @@ class Content
         // Date objects will handle offset internally
         date_default_timezone_set('UTC');
         
-        $l = LanguageFactory::Create();
+        $l = Language::Create();
         self::$uri = array_filter(explode('/', $_SERVER['QUERY_STRING']), 'strlen'); // Filter out any empty/null/false
         self::$hooks = array(
             'pre' => array(
@@ -53,6 +53,7 @@ class Content
                 'tags' => 'Content::UpdateTagsUri',
                 'sitemap' => 'Sitemap::RenderXML',
                 'link' => 'Content::Permalink',
+                'lang' => 'Language::Hook',
                 'feed' => 'Feed::Generate',
                 'api' => 'Content::Stub',
                 'admin' => 'Admin::Render'
@@ -94,25 +95,21 @@ class Content
             unset($_SESSION[$key]['validate']);
         
         $database = Database::Connect();
-        //$database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 1), "publish-publish_flag-dropdown = 2 AND publish-publish_date-date <= ".Date::Now()->ToString() );
-        //$database->Update(array('content', 'blocks'), array('publish-publish_flag-dropdown' => 0, 'publish-unpublish_flag-checkbox' => 0), "publish-unpublish_flag-checkbox = 1 AND publish-unpublish_date-date <= ".Date::Now()->ToString() );
-        $database::NewQuery()
-            ->Update()
+        $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
             ->Item("publish-publish_flag-dropdown")->SetValue(1)
             ->Match("publish-publish_flag-dropdown", 2)
             ->AndWhere()->LessThanOrEq("publish-publish_date-date", Date::Now()->ToInt())
-            ->Execute($database);
-        $database::NewQuery()
-            ->Update()
+            ->Execute();
+        $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
             ->Item("publish-publish_flag-dropdown")->SetValue(0)
             ->Item("publish-unpublish_flag-checkbox")->SetValue(0)
             ->Match("publish-unpublish_flag-checkbox", 1)
             ->AndWhere()->LessThanOrEq("publish-unpublish_date-date", Date::Now()->ToInt())
-            ->Execute($database);
+            ->Execute();
     }
 
 
@@ -152,7 +149,15 @@ class Content
     // Change the behavior of the system based on any hooks defined in the URI [MUSTCHANGE]
     public static function Hook()
     {
-        self::ParseHook(self::$hooks['pre']);
+        try
+        {
+            self::ParseHook(self::$hooks['pre']);
+        }
+        catch (Exception $e)
+        {
+            echo 'Caught exception: ',  $e->getMessage(), "\n";
+            die;
+        }
     }
     
     // May not be useful    
@@ -165,11 +170,10 @@ class Content
     public static function GetCategoryById($id)
     {
         $database = Database::Connect();
-        $result = $database::NewQuery()
-            ->Select()
+        $result = $database->Retrieve()
             ->UsingTable("categories")
             ->Match("id", $id)
-            ->Execute($database)->Fetch();
+            ->Execute()->Fetch();
             
         return $result['title-field'];
     }
@@ -177,11 +181,10 @@ class Content
     public static function GetAuthorById($id)
     {
         $database = Database::Connect();
-        $result = $database::NewQuery()
-            ->Select()
+        $result = $database->Retrieve()
             ->UsingTable("users")
             ->Match("id", $id)
-            ->Execute($database)->Fetch();
+            ->Execute()->Fetch();
         
         return $result['account-name-field'];
     }
@@ -193,13 +196,12 @@ class Content
         
         $database = Database::Connect();
         //$result = $database->Retrieve('content', 'content-title_mung-field, content-category-dropdown, content-static_page_flag-checkbox, content-in_category_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
-        $result = $database::NewQuery()
-                ->Select()
+        $result = $database->Retrieve()
                 ->UsingTable("content")
                 ->Item('content-title_mung-field')->Item('content-category-dropdown')->Item('content-static_page_flag-checkbox')->Item('content-in_category_flag-checkbox')
                 ->Match("publish-publish_flag-dropdown", 2)
                 ->AndWhere()->Match("id", self::$uri[1])
-                ->Execute($database);
+                ->Execute();
         $content = $result->Fetch();
         
         if (isset($content['content-title_mung-field']))
@@ -248,12 +250,11 @@ Otherwise, look for the space being called
         else
         {
             $database = Database::Connect();
-            $data = $database::NewQuery()
-                ->Select()
+            $data = $database->Retrieve()
                 ->UsingTable("spaces")
                 ->Item("id")
                 ->Match("title_mung-field", $spaceName)
-                ->Execute($database);
+                ->Execute();
             
             $results = $data->Fetch();
             if(isset($results['id']))
@@ -317,12 +318,11 @@ ELSE
                 $tagIndex = count(self::$uri) - 1;
                 $searchPhrase = preg_replace('-', ' ', self::$uri[1]);
                 
-                $l = LanguageFactory::Create();
+                $l = Language::Create();
                 $database = Database::Connect();
                 $html = '<h1>'.$l->Phrase("tagSearch")."</h1>\n";
                 //$data = $database->Retrieve('content', 'id', "MATCH(content-title-field, content-body-textarea, content-tags-field) AGAINST('{$searchPhrase}' IN BOOLEAN MODE) AND content-static_page_flag-checkbox = false AND publish-publish_flag-dropdown = 2", $queryExtra);
-                $query = $database::NewQuery()
-                ->Select()
+                $query = $database->Retrieve()
                 ->UsingTable("content")
                 ->Item("id")
                 ->FindIn(array("content-title-field", "content-body-textarea", "content-tags-field"), $searchPhrase)
@@ -336,7 +336,7 @@ ELSE
                     $query->Limit(Configuration::Get('listMaxNum'))
                         ->Offset(( (self::$uri[$tagIndex] - 1) * intval(Configuration::Get('listMaxNum')) ));
 
-                $results = $query->Execute($database)->FetchAll();
+                $results = $query->Execute()->FetchAll();
 
                 // Render results
                 foreach($results as $id)
@@ -372,7 +372,7 @@ ELSE
         {
             $site = Configuration::Site();
             $html = null;
-            $l = LanguageFactory::Create(); // Grab language data
+            $l = Language::Create(); // Grab language data
 
             $html .= '<div class="block_admin"><ul>';
             $html .= '<li><a href="'.Utils::GenerateUri($l->Phrase('admin')).'" title="'.$l->Phrase('Admnistration').'">'.$l->Phrase('Admnistration').'</a></li>';
@@ -389,7 +389,7 @@ ELSE
 
     public static function Breadcrumbs($seperator = "&bull;")
     {
-        $l = LanguageFactory::Create(); // Grab language data
+        $l = Language::Create(); // Grab language data
         $database = Database::Connect();
         
         $crumbs = array();
@@ -465,11 +465,10 @@ class Page implements IContentObject
         $database = Database::Connect();
         if(is_numeric($data))
         {
-            $page = $database::NewQuery()
-                ->Select()
+            $page = $database->Retrieve()
                 ->UsingTable("content")
                 ->Match("id", $data)
-                ->Execute($database)->Fetch();
+                ->Execute()->Fetch();
         }
         elseif($data instanceof IDatabaseResult)
         {
@@ -488,11 +487,10 @@ class Page implements IContentObject
             $this->tags[$key] = trim($value);
         }
 
-        $category = $database::NewQuery()
-                ->Select()
+        $category = $database->Retrieve()
                 ->UsingTable("categories")
                 ->Match("id", $page['content-category-dropdown'])
-                ->Execute($database)->Fetch();
+                ->Execute()->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
 
         
@@ -526,11 +524,10 @@ class Article extends Page
         
         if(is_numeric($data))
         { 
-            $article = $database::NewQuery()
-                ->Select()
+            $article = $database->Retrieve()
                 ->UsingTable("content")
                 ->Match("id", $data)
-                ->Execute($database)->Fetch();
+                ->Execute()->Fetch();
         }
         elseif($data instanceof IDatabaseResult)
         {
@@ -554,15 +551,14 @@ class Article extends Page
             $this->tags[$key] = trim($value);
         }
 
-        $category = $database::NewQuery()
-                ->Select()
+        $category = $database->Retrieve()
                 ->UsingTable("categories")
                 ->Match("id", $article['content-category-dropdown'])
-                ->Execute($database)->Fetch();
+                ->Execute()->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
     }
     
-    public function Summary($size = 160) // [MUSTCHANGE]
+    public function Summary($size = 160)
     {
         $summary = Utils::Strip($this->body);
         $summary = Utils::Truncate($summary, $size);
@@ -582,11 +578,10 @@ class Block implements IContentObject
         if (null === $result)
         {
             $database = Database::Connect();
-            $data = $database::NewQuery()
-                ->Select()
+            $data = $database->Retrieve()
                 ->UsingTable("blocks")
                 ->Match("id", $id)
-                ->Execute($database);
+                ->Execute();
         }
         
         $block = $data->Fetch();

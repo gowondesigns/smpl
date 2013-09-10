@@ -1,5 +1,5 @@
 <?php
-define("DEBUG_MODE", false);
+define("DEBUG_MODE", true);
 define("DEBUG_STRICT", false);
 define("DEBUG_VERBOSE", false);
 define("DEBUG_LOGGING", false);
@@ -46,11 +46,6 @@ $html .= "<h2>$statusMessage</h2>
 </html>";
 
 echo $html;
-/*
-$database = Database::Connect();
-$database->Queries();
-var_dump(get_class_methods($database));
-*/
 
 function GenerateNewData()
 {
@@ -66,7 +61,7 @@ function GenerateNewData()
         $bin = decbin(15 - $i);
         $permissions = substr("0000",0,4 - strlen($bin)) . $bin;
         
-        $errors[] = $database::NewQuery()->Create()
+        $errors[] = $database->Create()
             ->UsingTable("users")
             ->Item('account-user_name-hash')->SetValue(md5('user'.$i))
             ->Item('account-password-hash')->SetValue(md5('password'))
@@ -76,14 +71,14 @@ function GenerateNewData()
             ->Item('permissions-access_users-checkbox')->SetValue($permissions[1])
             ->Item('permissions-access_content-checkbox')->SetValue($permissions[2])
             ->Item('permissions-access_blocks-checkbox')->SetValue($permissions[3])
-            ->Execute($database);   
+            ->Execute();   
     }
 
 
     /* Generate Categories */
     $categories = array(
         'Uncategorized' => 1,
-        'Articles' => 1,
+        'Tips & Tricks' => 1,
         'Disabled' => 0,
         'Misc Stuff' => 1,
         'A 5th Category' => 0 
@@ -91,12 +86,12 @@ function GenerateNewData()
     
     foreach ($categories as $key => $value)
     {
-        $errors[] = $database::NewQuery()->Create()
+        $errors[] = $database->Create()
             ->UsingTable("categories")
             ->Item('title-field')->SetValue($key)
             ->Item('title_mung-field')->SetValue(Utils::Munge($key))
             ->Item('publish_flag-checkbox')->SetValue($value)
-            ->Execute($database); 
+            ->Execute(); 
     }
     
     
@@ -110,12 +105,12 @@ function GenerateNewData()
     
     foreach ($spaces as $key => $value)
     {
-        $errors[] = $database::NewQuery()->Create()
+        $errors[] = $database->Create()
             ->UsingTable("spaces")
             ->Item('title-field')->SetValue($key)
             ->Item('title_mung-field')->SetValue(Utils::Munge($key))
             ->Item('publish_flag-checkbox')->SetValue($value)
-            ->Execute($database); 
+            ->Execute(); 
     }
     
     /* Generate Content */    
@@ -124,10 +119,10 @@ function GenerateNewData()
     {
         $titleWords = array('The','as','is','a','Orange','Blue','Man','Woman','Cat','Dog', 2, '&hearts;');
         shuffle($titleWords);
-        $title = implode(' ', array_slice($titleWords, 0, 5));
+        $title = implode(' ', array_slice($titleWords, 0, 7));
         $default = ($i == 0);
 
-        $errors[] = $database::NewQuery()->Create()
+        $errors[] = $database->Create()
             ->UsingTable("content")
             ->Item('content-title-field')->SetValue($title)
             ->Item('content-title_mung-field')->SetValue(Utils::Munge($title))
@@ -142,29 +137,55 @@ function GenerateNewData()
             ->Item('publish-publish_date-date')->SetValue(Date::Now()->AddTime($i)->ToInt())
             ->Item('publish-unpublish_flag-checkbox')->SetValue(rand(0,1))
             ->Item('publish-unpublish_date-date')->SetValue(Date::Now()->AddTime(120 + $i)->ToInt())
-            ->Execute($database);   
+            ->Execute();   
     }
     
     
     /* Generate Settings */
-    $setting = array('name-hidden' => 'siteURL', 'title-label' => 'Site URL', 'value-field' => 'http://localhost/smpl/');
-    $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'title', 'title-label' => 'Site Title', 'value-field' => 'My SMPL Site');
-    $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'description', 'title-label' => 'Site Description', 'value-field' => 'My SMPL Site Description');
-    $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'listMaxNum', 'title-label' => 'Max # of items per page listed in categorical view', 'value-field' => 10);
-    $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'feedDefaultType', 'title-label' => 'Default feed format', 'value-field' => 'Atom');
-    $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'feedItemLimit', 'title-label' => 'Max # items in feed', 'value-field' => 5);
-    $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'permalinkSalt', 'title-label' => 'Salt integer for unique permalinks', 'value-field' => rand(0,62));
-    $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'languageDefault', 'title-label' => 'Default language', 'value-field' => 'en-US');
-    $errors[] = $database->Create('settings', $setting);
-    $setting = array('name-hidden' => 'dateOffset', 'title-label' => 'Date Timezone Offset', 'value-field' => rand(-12,14));
-    $errors[] = $database->Create('settings', $setting);
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('siteURL')
+        ->Item('title-label')->SetValue('Site URL')
+        ->Item('value-field')->SetValue('http://localhost/smpl/')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('title')
+        ->Item('title-label')->SetValue('Site Title')
+        ->Item('value-field')->SetValue('My SMPL Site')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('description')
+        ->Item('title-label')->SetValue('Site Description')
+        ->Item('value-field')->SetValue('My SMPL Site is a website that hosts pages and articles.')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('listMaxNum')
+        ->Item('title-label')->SetValue('Max # of items per page listed in categorical view')
+        ->Item('value-field')->SetValue(10)->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('feedDefaultType')
+        ->Item('title-label')->SetValue('Default feed format')
+        ->Item('value-field')->SetValue('Atom')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('feedItemLimit')
+        ->Item('title-label')->SetValue('Max # items in feed')
+        ->Item('value-field')->SetValue(5)->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('permalinkSalt')
+        ->Item('title-label')->SetValue('Salt integer for unique permalinks')
+        ->Item('value-field')->SetValue(rand(0,62))->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('languageDefault')
+        ->Item('title-label')->SetValue('Default language')
+        ->Item('value-field')->SetValue('en-US')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('dateOffset')
+        ->Item('title-label')->SetValue('Date Timezone Offset')
+        ->Item('value-field')->SetValue(rand(-12,14))->Execute();
     
     /* Pass along any errors*/
     $msg = null;
@@ -189,13 +210,13 @@ function ClearAllData()
     $configurations = Configuration::Database();
     $database = Database::Connect();
     
-    $database::NewQuery()->Custom("TRUNCATE TABLE {$configurations['prefix']}api")->Execute($database);
-    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}blocks");
-    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}categories");
-    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}content");
-    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}settings");
-    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}spaces");
-    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}users");
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}api")->Execute();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}blocks")->Execute();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}categories")->Execute();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}content")->Execute();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}settings")->Execute();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}spaces")->Execute();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}users")->Execute();
     
     return "All Data Clear";
 }
@@ -220,7 +241,7 @@ function gibberish($numParagraphs = 1, $wordsPerParagragh = 10, $maxWordLength =
         $paragraphs[] = implode(' ', $words);
     }
     
-    return '<p>'.implode(".</p>\n\n<p>", $paragraphs).'</p>';
+    return '<p>'.implode(".</p>\n\n<p>", $paragraphs).'.</p>';
 }
 
 function IncludeFromFolder($folder)

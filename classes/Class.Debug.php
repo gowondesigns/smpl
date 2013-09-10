@@ -74,7 +74,7 @@ class Debug
         {
             echo (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
             echo $lastError;
-            echo "Server Specs: PHP " . PHP_VERSION . " (" . PHP_OS . ")\n"; // Should this include information about the database? Is so, need to make interface
+            echo "Server Specs: PHP " . PHP_VERSION . " (" . PHP_OS . "); PEAK MEM USAGE: ".(memory_get_peak_usage() / 1024)."kb\n"; // Should this include information about the database? Is so, need to make interface
             $idx = 1;        
             
             for($i = 0; $i < count(self::$log); $i++)
