@@ -64,6 +64,7 @@ class Language
             "feed" => "feed",
             "articles" => "articles",
             "pages" => "pages",
+            "permalink" => "link",
             //"categories" => "categories",
             
             // Control Panel - General Elements
