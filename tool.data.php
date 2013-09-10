@@ -95,34 +95,27 @@ function GenerateNewData()
 {
     ClearAllData();
     $database = Database::Connect();
+    $queries = array();
     $errors = array();
 
     
     /* Generate Users */
-    $users = array(
-        'account-user_name-hash' => null,
-        'account-password-hash' => md5('password'),
-        'account-name-field' => null,
-        'account-email-field' => 'fake_email@domain.com',
-        'permissions-access_system-checkbox' => null,
-        'permissions-access_users-checkbox' => null,
-        'permissions-access_content-checkbox' => null,
-        'permissions-access_blocks-checkbox' => null
-    );
-
     for($i = 0; $i < 16; $i++)
     {
         $bin = decbin(15 - $i);
         $permissions = substr("0000",0,4 - strlen($bin)) . $bin;
         
-        $users['account-user_name-hash'] = md5('user'.$i);
-        $users['account-name-field'] = "User {$i}";
-        $users['permissions-access_system-checkbox'] = $permissions[0];
-        $users['permissions-access_users-checkbox'] = $permissions[1];
-        $users['permissions-access_content-checkbox'] = $permissions[2];
-        $users['permissions-access_blocks-checkbox'] = $permissions[3];
-        
-        $errors[] = $database->Create('users', $users);    
+        $errors[] = $database::NewQuery()->Create()
+            ->UsingTable("users")
+            ->Item('account-user_name-hash')->SetValue(md5('user'.$i))
+            ->Item('account-password-hash')->SetValue(md5('password'))
+            ->Item('account-name-field')->SetValue(md5("User {$i}"))
+            ->Item('account-email-field')->SetValue('fake_email@domain.com')
+            ->Item('permissions-access_system-checkbox')->SetValue($permissions[0])
+            ->Item('permissions-access_users-checkbox')->SetValue($permissions[1])
+            ->Item('permissions-access_content-checkbox')->SetValue($permissions[2])
+            ->Item('permissions-access_blocks-checkbox')->SetValue($permissions[3])
+            ->Execute($database);   
     }
 
 
@@ -131,18 +124,18 @@ function GenerateNewData()
         'Uncategorized' => 1,
         'Articles' => 1,
         'Disabled' => 0,
-        'Misc Stuff' => 1 
+        'Misc Stuff' => 1,
+        'A 5th Category' => 0 
     );
     
     foreach ($categories as $key => $value)
     {
-        $data = array(
-            'title-field' => $key,
-            'title_mung-field' => Utils::Munge($key),
-            'publish_flag-checkbox' => $value
-        );
-        
-        $errors[] = $database->Create('categories', $data);
+        $errors[] = $database::NewQuery()->Create()
+            ->UsingTable("categories")
+            ->Item('title-field')->SetValue($key)
+            ->Item('title_mung-field')->SetValue(Utils::Munge($key))
+            ->Item('publish_flag-checkbox')->SetValue($value)
+            ->Execute($database); 
     }
     
     
@@ -156,55 +149,40 @@ function GenerateNewData()
     
     foreach ($spaces as $key => $value)
     {
-        $data = array(
-            'title-field' => $key,
-            'title_mung-field' => Utils::Munge($key),
-            'publish_flag-checkbox' => $value
-        );
-        
-        $errors[] = $database->Create('spaces', $data);
+        $errors[] = $database::NewQuery()->Create()
+            ->UsingTable("spaces")
+            ->Item('title-field')->SetValue($key)
+            ->Item('title_mung-field')->SetValue(Utils::Munge($key))
+            ->Item('publish_flag-checkbox')->SetValue($value)
+            ->Execute($database); 
     }
     
     /* Generate Content */    
-/*
-  `content-title-field` VARCHAR(100) NOT NULL,
-  `content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
-  `content-static_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
-  `content-in_category_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
-  `content-default_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
-  `content-category-dropdown` INT NOT NULL DEFAULT 1,
-  `content-author-dropdown` INT NOT NULL DEFAULT 1,
-  `content-date-date` BIGINT(14) UNSIGNED UNIQUE NOT NULL,
-  `content-body-textarea` LONGTEXT DEFAULT NULL,
-  `content-tags-field` VARCHAR(255) DEFAULT NULL,
-  `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
-  `publish-publish_date-date` BIGINT UNSIGNED NOT NULL,
-  `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
-  `publish-unpublish_date-date` BIGINT UNSIGNED NOT NULL
-//*/    
-    $titleWords = array('The','as','is','a','Orange','Blue','Man','Woman','Cat','Dog', 2, '&hearts;');
-    shuffle($titleWords);
-    
-    $title = implode(' ', $titleWords);
-        
-    $data = array(
-        'content-title-field' => $title,
-        'content-title_mung-field' => Utils::Munge($title),
-        'content-static_page_flag-checkbox' => true,
-        'content-in_category_flag-checkbox' => true,
-        'content-default_page_flag-checkbox' => true,
-        'content-category-dropdown' => 1,
-        'content-author-dropdown' => 1,
-        'content-date-date' => Date::Now()->ToInt(),
-        'content-body-textarea' => $database->real_escape_string(lipsum(4,20)),
-        'content-tags-field' => null,
-        'publish-publish_flag-dropdown' => 'PUBLISHED',
-        'publish-publish_date-date' => Date::Now()->ToInt(),
-        'publish-unpublish_flag-checkbox' => true,
-        'publish-unpublish_date-date' => Date::Now()->AddTime(3600)->ToInt()
-    );
-    
-    $errors[] = $database->Create('content', $data);
+
+    for($i = 0; $i < 10; $i++)
+    {
+        $titleWords = array('The','as','is','a','Orange','Blue','Man','Woman','Cat','Dog', 2, '&hearts;');
+        shuffle($titleWords);
+        $title = implode(' ', array_slice($titleWords, 0, 5));
+        $default = ($i == 0);
+
+        $errors[] = $database::NewQuery()->Create()
+            ->UsingTable("content")
+            ->Item('content-title-field')->SetValue($title)
+            ->Item('content-title_mung-field')->SetValue(Utils::Munge($title))
+            ->Item('content-static_page_flag-checkbox')->SetValue(rand(0,1))
+            ->Item('content-in_category_flag-checkbox')->SetValue(rand(0,1))
+            ->Item('content-default_page_flag-checkbox')->SetValue($default)
+            ->Item('content-category-dropdown')->SetValue(rand(1,5))
+            ->Item('content-author-dropdown')->SetValue(rand(1,16))
+            ->Item('content-date-date')->SetValue(Date::Now()->AddTime($i)->ToInt())
+            ->Item('content-body-textarea')->SetValue($database->real_escape_string(gibberish(4,20)))
+            ->Item('publish-publish_flag-dropdown')->SetValue(2)
+            ->Item('publish-publish_date-date')->SetValue(Date::Now()->AddTime($i)->ToInt())
+            ->Item('publish-unpublish_flag-checkbox')->SetValue(rand(0,1))
+            ->Item('publish-unpublish_date-date')->SetValue(Date::Now()->AddTime(120 + $i)->ToInt())
+            ->Execute($database);   
+    }
     
     
     /* Generate Settings */
@@ -250,7 +228,7 @@ function ClearAllData()
     $configurations = Configuration::Database();
     $database = Database::Connect();
     
-    $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}api");
+    $database::NewQuery()->Custom("TRUNCATE TABLE {$configurations['prefix']}api")->Execute($database);
     $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}blocks");
     $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}categories");
     $database->CustomQuery("TRUNCATE TABLE {$configurations['prefix']}content");
@@ -261,7 +239,7 @@ function ClearAllData()
     return "All Data Clear";
 }
 
-function lipsum($numParagraphs = 1, $wordsPerParagragh = 10, $maxWordLength = 20)
+function gibberish($numParagraphs = 1, $wordsPerParagragh = 10, $maxWordLength = 20)
 {
     $bank = array_merge(range('a', 'z'), range('A', 'Z'));
     $paragraphs = array();

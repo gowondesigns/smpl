@@ -331,6 +331,7 @@ interface iQuery
     public function GreaterThan($item, $condition);
     public function LessThanOrEq($item, $condition);
     public function GreaterThanOrEq($item, $condition);
+    public function FindIn($items, $text);
     
     /* Query Optimization Methods */
     public function orderBy($item, $ascending);
@@ -696,6 +697,36 @@ class MySqlDatabaseQuery implements iQuery
         $expanded = explode('.', $item);
         $item = implode('`.`', $expanded);
         $where = "`{$item}` >= ".$condition;
+        $this->whereClauses[] = $where;
+        $this->whereClausesLogic[] = null;
+        
+        // Default to logical AND to join WHERE clauses        
+        $count = count($this->whereClausesLogic);
+        if($count > 1)
+            if(!isset($this->whereClausesLogic[($count - 2)]))
+                $this->whereClausesLogic[($count - 2)] = "AND";
+                
+        return $this;
+    }
+    
+    public function FindIn($items, $text)
+    {
+        if(is_array($items))
+        {
+            foreach($items as $key => $item)
+            {
+                $expanded = explode('.', $item);
+                $items[$key] = implode('`.`', $expanded);            
+            }
+            $match = implode(', ', $items);
+        }
+        else
+        {
+            $expanded = explode('.', $items);
+            $match = implode('`.`', $expanded);
+        }
+
+        $where = "MATCH({$match}) AGAINST('{$text}' IN BOOLEAN MODE)";
         $this->whereClauses[] = $where;
         $this->whereClausesLogic[] = null;
         

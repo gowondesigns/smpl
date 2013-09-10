@@ -11,7 +11,6 @@ class Feed
     {
         $feed = null;
         $type = Configuration::Get('feedDefaultType').'Feed';
-        $limit = 'ORDER BY publish-publish_date-date DESC LIMIT '. Configuration::Get('feedItemLimit');
         $category = null;                                                                                       
         $database = Database::Connect();
               
@@ -30,7 +29,6 @@ class Feed
             if(isset(Content::Uri()[2]))
                 $type = ucfirst(Content::Uri()[2]).'Feed';
 
-            //$result = $database->Retrieve('categories', 'id',  "title_mung-field = '.".Content::Uri()[0]."'");
             $result = $database::NewQuery()
                 ->Select()
                 ->UsingTable("categories")
@@ -41,28 +39,36 @@ class Feed
         }
 
         Debug::Message("Feed\Render: Creating new feed object of type ".$type);
-        $feed = (class_exists($type)) ? new $type(): null;
+        if(class_exists($type) && is_subclass_of($type,'IFeed'))
+            $feed = new $type;
+        else
+            throw new ErrorException("{$type} is not a compatible IFeed object or does not exist.");
 
         // Populate feed with proper articles
-        $byCategory = (isset($category['id'])) ? "AND content-category-dropdown = {$category['id']} AND content-in_category_flag-checkbox = 1": null;
-        $list = $database->Retrieve('content', 'id',  "publish-publish_flag-dropdown = 2 AND content-static_page_flag-checkbox = 0 {$byCategory}", $limit);
-        /*$result = $database::NewQuery()
+        $query = $database::NewQuery()
             ->Select()
             ->UsingTable("content")
             ->Item("id")
             ->Match("publish-publish_flag-dropdown", 2)
             ->AndWhere()->Match("content-static_page_flag-checkbox", 0)
-            ->Execute($database); //*/        
+            ->OrderBy("publish-publish_date-date", false)
+            ->Limit(Configuration::Get('feedItemLimit'));
         
-        while($id = $list->Fetch())
+        if(isset($category['id']))
+            $query->AndWhere()->Match("content-category-dropdown",$category['id'])
+                ->AndWhere()->Match("content-in_category_flag-checkbox", 1);
+        
+        $list = $query->Execute($database);
+        
+        while($item = $list->Fetch())
         {
-            $item = new FeedItem(new Article($id));
-            $feed->AddItem($item);
+            $feed->Add(new Article($item['id']));
         }
         
         // Render then die
         //header("Expires: Sat, 26 Jul 2020 05:00:00 GMT"); // Date in the future
         $feed->Render();
+        var_dump($feed);
         exit;
     }
     
@@ -81,10 +87,10 @@ class Feed
 }
 
 // Feed Class Interface
-interface iFeed
+interface IFeed
 {
     public static function FeedMimeType();
-    public function AddItem(FeedItem $item);
+    public function Add(Article $article);
     public function Render();
 }
 
@@ -95,7 +101,7 @@ abstract class aFeed
     protected $feedUrl;
     protected $lastUpdated;
     protected $feedDescription;
-    protected $feedItems = array();
+    protected $articles = array();
     
     protected function __construct()
     {
@@ -106,7 +112,7 @@ abstract class aFeed
 }
 
 
-final class AtomFeed extends aFeed implements iFeed
+final class AtomFeed extends aFeed implements IFeed
 {
     private $feedUuid;
     
@@ -122,9 +128,9 @@ final class AtomFeed extends aFeed implements iFeed
         parent::__construct();
     }
     
-    public function AddItem(FeedItem $item)
+    public function Add(Article $article)
     {
-        $this->feedItems[] = $item;
+        $this->articles[] = $article;
     }
     
     public function Render()
@@ -138,9 +144,19 @@ final class AtomFeed extends aFeed implements iFeed
         $xml .= "<id>urn:uuid:{$this->feedUuid}</id>\n\t";
         $xml .= "<updated>".$this->lastUpdated->ToString("Y-m-d\TH:i:s").Date::Offset()."</updated>\n\n\n";
       
-        foreach ($this->feedItems as $value)
+        foreach ($this->articles as $value)
         {
-            $entry = $value->Details();
+        
+    /*{
+        $this->title = $article->Get('title');
+        $this->url = $article->Get('titleMung');
+        $this->permalink = Utils::GenerateUri('articles',$article->Get('id'));
+        $this->date = $article->Get('date');
+        $this->author = $article->Get('author');
+        $this->entryUuid = Feed::GenerateUuid();
+        $this->summary = $article->Summary();
+    }*/
+
             $xml .= "\t<entry>\n\t\t";
             $xml .= "<title>{$entry['title']}</title>\n\t\t";
             $xml .= '<link href="'.$entry['url'].'" />'."\n\t\t";
@@ -150,47 +166,11 @@ final class AtomFeed extends aFeed implements iFeed
             $xml .= "<summary>{$entry['summary']}</summary>\n\t\t";
             $xml .= "<author>\n\t\t\t<name>{$entry['author']}</name>\n\t\t</author>\n";
             $xml .= "\t</entry>\n\n";
-        }
+        }//*/
         
         $xml .= "</feed>";
         
         echo $xml;
-    }
-}
-
-
-class FeedItem
-{
-    private $title;
-    private $url;
-    private $permalink;
-    private $entryUuid;
-    private $date;
-    private $summary;
-    private $author;
-    
-    public function __construct(Article $article)
-    {
-        $this->title = $article->Get('title');
-        $this->url = $article->Get('titleMung');
-        $this->permalink = Utils::GenerateUri('articles',$article->Get('id'));
-        $this->date = $article->Get('date');
-        $this->author = $article->Get('author');
-        $this->entryUuid = Feed::GenerateUuid();
-        $this->summary = $article->Summary();
-    } 
-    
-    
-    public function Details()
-    {
-        return array(
-        'title' => $this->title,
-        'url' => $this->url,
-        'permalink' => $this->permalink,
-        'uuid' => $this->entryUuid,
-        'date' => $this->date,
-        'summary' => $this->summary,
-        'author' => $this->author);
     }
 }
 

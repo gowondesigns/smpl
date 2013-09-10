@@ -107,7 +107,7 @@ class Date
         if ($offset)
             $time += (intval(Configuration::Get('dateOffset')) * 3600); // Add offset
         
-        return intval(date("YmdHis", $time));
+        return floatval(date("YmdHis", $time));
     }
     
     // Return date in Unix timestamp format
