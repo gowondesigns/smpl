@@ -1,7 +1,7 @@
 <?php
-define("DEBUG_MODE", true);
+define("DEBUG_MODE", false);
 define("DEBUG_STRICT", false);
-define("DEBUG_VERBOSE", true);
+define("DEBUG_VERBOSE", false);
 define("DEBUG_LOGGING", false);
 
 
@@ -18,45 +18,6 @@ function __autoload($class_name)
 IncludeFromFolder("classes/");
 
 $database = Database::Connect();
-$query = $database::NewQuery()
-    ->Select()
-    ->UsingTable("users")
-    ->Item("id")->Item("account-name-field","name")->Item("users.permissions-access_system-checkbox", "sys")
-    ->Match("permissions-access_content-checkbox", true)
-    ->OrWhere()->Match("permissions-access_blocks-checkbox", true)
-    ->AndWhere()->Match("users.permissions-access_system-checkbox", true)
-    ->Offset(1)
-    ->Limit(3)
-    ->OrderBy("name");
-//var_dump($query);
-//echo $query;
-
-$query = $database::NewQuery()
-    ->Create()
-    ->UsingTable("settings")
-    ->Item("name-hidden")->SetValue("dummySetting")
-    ->Item("title-label")->SetValue("This is a dummy setting")
-    ->Item("value-field")->SetValue(0);
-//var_dump($query);
-//echo $query;
-
-$query = $database::NewQuery()
-    ->Update()
-    ->UsingTable("settings")
-    ->Item("value-field")->SetValue(1)
-    ->Match("name-hidden", "dummySetting")
-    ->OrderBy("name-hidden")
-    ->Limit(2);
-//var_dump($query);
-//echo $query;
-
-$query = $database::NewQuery()
-    ->Delete()
-    ->UsingTable("settings")
-    ->Match("name-hidden", "dummySetting");
-//var_dump($query);
-//echo $query;
-
 $html = '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -109,7 +70,7 @@ function GenerateNewData()
             ->UsingTable("users")
             ->Item('account-user_name-hash')->SetValue(md5('user'.$i))
             ->Item('account-password-hash')->SetValue(md5('password'))
-            ->Item('account-name-field')->SetValue(md5("User {$i}"))
+            ->Item('account-name-field')->SetValue("User {$i}")
             ->Item('account-email-field')->SetValue('fake_email@domain.com')
             ->Item('permissions-access_system-checkbox')->SetValue($permissions[0])
             ->Item('permissions-access_users-checkbox')->SetValue($permissions[1])

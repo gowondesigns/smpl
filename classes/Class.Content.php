@@ -52,7 +52,7 @@ class Content
                 ),
                 'tags' => 'Content::UpdateTagsUri',
                 'sitemap' => 'Sitemap::RenderXML',
-                'permalink' => 'Content::Permalink',
+                'link' => 'Content::Permalink',
                 'feed' => 'Feed::Generate',
                 'api' => 'Content::Stub',
                 'admin' => 'Admin::Render'
@@ -169,9 +169,9 @@ class Content
             ->Select()
             ->UsingTable("categories")
             ->Match("id", $id)
-            ->Execute($database);
+            ->Execute($database)->Fetch();
             
-        return $result->Fetch();
+        return $result['title-field'];
     }
 
     public static function GetAuthorById($id)
@@ -181,15 +181,15 @@ class Content
             ->Select()
             ->UsingTable("users")
             ->Match("id", $id)
-            ->Execute($database);
+            ->Execute($database)->Fetch();
         
-        return $result->Fetch();
+        return $result['account-name-field'];
     }
     
     public static function Permalink()
     {
         // Format: /permalink/<CONTENT_ID>/
-        $url = Utils::GenerateUri();
+        $uri = Utils::GenerateUri();
         
         $database = Database::Connect();
         //$result = $database->Retrieve('content', 'content-title_mung-field, content-category-dropdown, content-static_page_flag-checkbox, content-in_category_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
@@ -218,7 +218,7 @@ class Content
                 
         }
         
-        header('Location: ' . $url, true, 303);
+        header('Location: ' . $url, true, 302);
         exit;
     }
 /*
@@ -443,52 +443,42 @@ class Space
 }
 
 
-interface iContentObject
+interface IContentObject
 {
+    public function Get($item);
     public function Render();
 }
-// Structure for all content elements
-abstract class aContentObject
-{
-    protected $titleMung;
-    protected $body;
-    
-    protected function __construct($titleMung, $body)
-    {
-        $this->titleMung = $titleMung;
-        $this->body = $body;
-    }
-
-    abstract public function Render();
-        
-}
 
 
-class Page extends aContentObject
+class Page implements IContentObject
 {
     protected $id;
     protected $title;
+    protected $titleMung;
+    protected $body;
     protected $categoryMung;
     protected $date;
     protected $tags = null;
     
-    public function __construct($id, iDatabaseResult $data = null)
+    public function __construct($data)
     {
-        if (null === $data)
+        $database = Database::Connect();
+        if(is_numeric($data))
         {
-            $database = Database::Connect();
-            $data = $database::NewQuery()
+            $page = $database::NewQuery()
                 ->Select()
                 ->UsingTable("content")
-                ->Match("id", $id)
-                ->Execute($database);
+                ->Match("id", $data)
+                ->Execute($database)->Fetch();
         }
-        
-        if($data->Count() < 1) //[MUSTCHANGE]
-            die();
-        
-        $page = $data->Fetch();
-        $this->id = $id;
+        elseif($data instanceof IDatabaseResult)
+        {
+            $page = $data->Fetch();
+        }
+        else
+            throw new ErrorException("Passed argument not numeric or of type IDatabaseResult");
+            
+        $this->id = $page['id'];
         $this->title = $page['content-title-field'];
         $this->date = Date::FromString($page['content-date-date']);
         
@@ -498,16 +488,15 @@ class Page extends aContentObject
             $this->tags[$key] = trim($value);
         }
 
-        $category = Content::GetCategoryById($page['content-category-dropdown']);
+        $category = $database::NewQuery()
+                ->Select()
+                ->UsingTable("categories")
+                ->Match("id", $page['content-category-dropdown'])
+                ->Execute($database)->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
 
         
-        parent::__construct($page['content-title_mung-field'], $page['content-body-textarea']);
-    }
-    
-    public function Render()
-    {
-        echo $this->body; // [MUSTCHANGE]
+        //parent::__construct($page['content-title_mung-field'], $page['content-body-textarea']);
     }
     
     public function Get($data)
@@ -516,6 +505,11 @@ class Page extends aContentObject
             return implode(', ', $this->tags);
             
         return $this->$data;
+    }
+    
+    public function Render()
+    {
+        echo $this->body; // [MUSTCHANGE]
     }
 }
 
@@ -526,26 +520,46 @@ class Article extends Page
     protected $category;
     
     
-    public function __construct($id, iDatabaseResult $data = null)
+    public function __construct($data)
     {
-        if (null === $data)
-        {
-            $database = Database::Connect();
-            $data = $database::NewQuery()
+        $database = Database::Connect(); 
+        
+        if(is_numeric($data))
+        { 
+            $article = $database::NewQuery()
                 ->Select()
                 ->UsingTable("content")
-                ->Match("id", $id)
-                ->Execute($database);
+                ->Match("id", $data)
+                ->Execute($database)->Fetch();
         }
+        elseif($data instanceof IDatabaseResult)
+        {
+            $article = $data->Fetch();
+        }
+        else
+            throw new ErrorException("Passed argument not numeric or of type IDatabaseResult");
+
+        $this->id = $article['id'];
+        $this->title = $article['content-title-field'];
+        $this->titleMung = $article['content-title_mung-field'];
+        $this->body = $article['content-body-textarea'];
+        $this->date = Date::FromString($article['content-date-date']);
+        $this->author = Content::GetAuthorById($article['content-author-dropdown']);
+        $this->category = Content::GetCategoryById($article['content-category-dropdown']); 
         
-        $article = $data->Fetch();
-        $author = Content::GetAuthorById($article['content-author-dropdown']);
-        $this->author = $author['account-name-field'];
         
-        $category = Content::GetCategoryById($article['content-category-dropdown']);
-        $this->category = $category['title-field'];        
-        
-        parent::__construct($id, $data);
+        $this->tags = explode(',', $article['content-tags-field']);
+        foreach ($this->tags as $key => $value)
+        {
+            $this->tags[$key] = trim($value);
+        }
+
+        $category = $database::NewQuery()
+                ->Select()
+                ->UsingTable("categories")
+                ->Match("id", $article['content-category-dropdown'])
+                ->Execute($database)->Fetch();
+        $this->categoryMung = $category['title_mung-field']; 
     }
     
     public function Summary($size = 160) // [MUSTCHANGE]
@@ -557,8 +571,10 @@ class Article extends Page
 }
 
 
-class Block extends aContentObject
+class Block implements IContentObject
 {
+    protected $titleMung;
+    protected $body;
     private $redirectLocation = null;
     
     public function __construct($id, MySQLi_Result $data = null)
@@ -577,12 +593,20 @@ class Block extends aContentObject
         $this->redirectLocation = $block['redirect_location-field'];
         
         
-        parent::__construct($block['content-title_mung-field'], $block['content-body-textarea']);
+        //parent::__construct($block['content-title_mung-field'], $block['content-body-textarea']);
     }
     
-    public function Render() //[MUSTCHANGE]
+    public function Get($data)
     {
-        return false;
+        if($data == 'tags')
+            return implode(', ', $this->tags);
+            
+        return $this->$data;
+    }
+    
+    public function Render()
+    {
+        echo $this->body; // [MUSTCHANGE]
     }
     
 }

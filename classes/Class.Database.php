@@ -231,7 +231,7 @@ class MySqlDatabase extends MySQLi implements iDatabase
 }
 
 // Other database objects should also implement SeekableIterator for use in loop operators
-interface iDatabaseResult
+interface IDatabaseResult
 {
     public function Fetch();
     public function FetchAll();
@@ -249,7 +249,7 @@ interface iDatabaseResult
 }
 
 // MySQLi_Result implements Traversible, does it need to implement Iterator?
-class MySqlDatabaseResult extends MySQLi_Result implements iDatabaseResult
+class MySqlDatabaseResult extends MySQLi_Result implements IDatabaseResult
 {
     /* Inhereted Properties
     int $current_field ;

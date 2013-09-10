@@ -68,7 +68,6 @@ class Feed
         // Render then die
         //header("Expires: Sat, 26 Jul 2020 05:00:00 GMT"); // Date in the future
         $feed->Render();
-        var_dump($feed);
         exit;
     }
     
@@ -144,7 +143,7 @@ final class AtomFeed extends aFeed implements IFeed
         $xml .= "<id>urn:uuid:{$this->feedUuid}</id>\n\t";
         $xml .= "<updated>".$this->lastUpdated->ToString("Y-m-d\TH:i:s").Date::Offset()."</updated>\n\n\n";
       
-        foreach ($this->articles as $value)
+        foreach ($this->articles as $entry)
         {
         
     /*{
@@ -156,15 +155,15 @@ final class AtomFeed extends aFeed implements IFeed
         $this->entryUuid = Feed::GenerateUuid();
         $this->summary = $article->Summary();
     }*/
-
+            $permalink = Utils::GenerateUri('link',$entry->Get('id'));
             $xml .= "\t<entry>\n\t\t";
-            $xml .= "<title>{$entry['title']}</title>\n\t\t";
-            $xml .= '<link href="'.$entry['url'].'" />'."\n\t\t";
-            $xml .= '<link href="'.$entry['permalink'].'" rel="alternate" type="text/html" />'."\n\t\t"; 
-            $xml .= "<id>urn:uuid:{$entry['uuid']}</id>\n\t\t";
-            $xml .= "<updated>".Date::FromString($entry['date'])->ToString("Y-m-d\x54H:i:s").Date::Offset()."</updated>\n\t\t";
-            $xml .= "<summary>{$entry['summary']}</summary>\n\t\t";
-            $xml .= "<author>\n\t\t\t<name>{$entry['author']}</name>\n\t\t</author>\n";
+            $xml .= '<title type="html">'.$entry->Get('title')."</title>\n\t\t";
+            $xml .= '<link href="'.$entry->Get('titleMung').'" />'."\n\t\t";
+            $xml .= '<link href="'.$permalink.'" rel="alternate" type="text/html" />'."\n\t\t"; 
+            $xml .= "<id>urn:uuid:".Feed::GenerateUuid($entry->Get('id'))."</id>\n\t\t";
+            $xml .= "<updated>".$entry->Get('date')->ToString("Y-m-d\TH:i:s").Date::Offset()."</updated>\n\t\t";
+            $xml .= "<summary>".$entry->Summary()."</summary>\n\t\t";
+            $xml .= "<author>\n\t\t\t<name>".$entry->Get('author')."</name>\n\t\t</author>\n";
             $xml .= "\t</entry>\n\n";
         }//*/
         
