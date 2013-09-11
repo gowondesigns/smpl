@@ -564,6 +564,23 @@ class Article extends Page
         $summary = Utils::Truncate($summary, $size);
         return $summary;
     }
+
+    public function Render() 
+    {
+        $formatTags = array( 
+            "[title]" => $this->title, 
+            "[url]" => Utils::GenerateUri($this->categoryMung, 'articles', $this->titleMung), 
+            "[body]" => $this->body, 
+            "[category]" => $this->category, 
+            "[category_url]" => Utils::GenerateUri('categories', $this->categoryMung), 
+            "[author]" => $this->author, 
+            "[date]" => $this->date->ToString(), 
+            "[tags]" => "TAGSLIST" 
+        );
+         
+        $formattedString = str_replace(array_keys($formatTags), array_values($formatTags), Configuration::Get('articleFormat')); 
+        echo $formattedString; 
+    }
 }
 
 

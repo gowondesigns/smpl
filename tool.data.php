@@ -186,6 +186,11 @@ function GenerateNewData()
         ->Item('name-hidden')->SetValue('dateOffset')
         ->Item('title-label')->SetValue('Date Timezone Offset')
         ->Item('value-field')->SetValue(rand(-12,14))->Execute();
+
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('articleFormat')
+        ->Item('title-label')->SetValue('Article Format')
+        ->Item('value-field')->SetValue("<h1>[category]&nbsp;/&nbsp;[title]</h1>\n<p>[body]</p>")->Execute();
     
     /* Pass along any errors*/
     $msg = null;
