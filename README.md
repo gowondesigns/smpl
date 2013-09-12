@@ -45,4 +45,4 @@ Have a bug or a feature request? [Please open a new issue](https://github.com/go
 
 Copyright &copy; 2013 Gowon Patterson, Gowon Designs.
 
-License pending.
+This program is distributed under the terms of the [GNU General Public License Version 3] (http://www.gnu.org/licenses/gpl-3.0.html).

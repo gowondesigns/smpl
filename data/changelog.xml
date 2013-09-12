@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--  Sample XML response from version ping
+<!--  Sample XML response from changelog ping
       Validate using http://www.w3.org/2001/03/webdata/xsv -->
 <smpl xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
  xsi:noNamespaceSchemaLocation="#smplSchema">

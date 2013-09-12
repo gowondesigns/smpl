@@ -51,13 +51,13 @@ class Feed
             ->UsingTable("content")
             ->Item("id")
             ->Match("publish-publish_flag-dropdown", 2)
-            ->AndWhere()->Match("content-static_page_flag-checkbox", 0)
+            ->AndWhere()->Match("meta-static_page_flag-checkbox", 0)
             ->OrderBy("publish-publish_date-date", false)
             ->Limit(Configuration::Get('feedItemLimit'));
         
         if(isset($category['id']))
-            $query->AndWhere()->Match("content-category-dropdown",$category['id'])
-                ->AndWhere()->Match("content-in_category_flag-checkbox", 1);
+            $query->AndWhere()->Match("meta-category-dropdown",$category['id'])
+                ->AndWhere()->Match("meta-in_category_flag-checkbox", 1);
         
         $list = $query->Execute();
         

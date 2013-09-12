@@ -63,20 +63,20 @@ INSERT INTO `categories` VALUES (1, 'Uncategorized', 'uncategorized', TRUE);
 DROP TABLE IF EXISTS content;
 -- ---- Create content table:
 -- IN CATEGORY FLAG affects visibility and URI behavior
--- Articles: If false, Article will not be listed in category view
+-- Articles: If false, Article will not be listed in category index
 -- Pages: If true, Page URI default will be without category
 CREATE TABLE `content` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
   `content-title-field` VARCHAR(100) NOT NULL,
   `content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
-  `content-static_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
-  `content-in_category_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
-  `content-default_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
-  `content-category-dropdown` INT NOT NULL DEFAULT 1,
-  `content-author-dropdown` INT NOT NULL DEFAULT 1,
-  `content-date-date` BIGINT(14) UNSIGNED UNIQUE NOT NULL,
   `content-body-textarea` LONGTEXT DEFAULT NULL,
   `content-tags-field` VARCHAR(255) DEFAULT NULL,
+  `meta-author-dropdown` INT NOT NULL DEFAULT 1,
+  `meta-category-dropdown` INT NOT NULL DEFAULT 1,
+  `meta-date-date` BIGINT(14) UNSIGNED UNIQUE NOT NULL,
+  `meta-static_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `meta-default_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
+  `meta-in_category_flag-checkbox` BOOL NOT NULL DEFAULT TRUE, -- is_indexed?
   `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
   `publish-publish_date-date` BIGINT UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,

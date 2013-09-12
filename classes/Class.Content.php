@@ -195,10 +195,10 @@ class Content
         $uri = Utils::GenerateUri();
         
         $database = Database::Connect();
-        //$result = $database->Retrieve('content', 'content-title_mung-field, content-category-dropdown, content-static_page_flag-checkbox, content-in_category_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
+        //$result = $database->Retrieve('content', 'content-title_mung-field, meta-category-dropdown, meta-static_page_flag-checkbox, meta-in_category_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
         $result = $database->Retrieve()
                 ->UsingTable("content")
-                ->Item('content-title_mung-field')->Item('content-category-dropdown')->Item('content-static_page_flag-checkbox')->Item('content-in_category_flag-checkbox')
+                ->Item('content-title_mung-field')->Item('meta-category-dropdown')->Item('meta-static_page_flag-checkbox')->Item('meta-in_category_flag-checkbox')
                 ->Match("publish-publish_flag-dropdown", 2)
                 ->AndWhere()->Match("id", self::$uri[1])
                 ->Execute();
@@ -206,13 +206,13 @@ class Content
         
         if (isset($content['content-title_mung-field']))
         {
-            $category = Content::GetCategoryByID($content['content-category-dropdown']);
+            $category = Content::GetCategoryByID($content['meta-category-dropdown']);
             $url = Utils::GenerateUri($category['title_mung-field'], 'articles', $content['content-title_mung-field']);
             
             //Check if content is a static page
-            if($content['content-static_page_flag-checkbox'] == true)
+            if($content['meta-static_page_flag-checkbox'] == true)
             {
-                if($content['content-in_category_flag-checkbox'] == true)
+                if($content['meta-in_category_flag-checkbox'] == true)
                      $url = Utils::GenerateUri($category['title_mung-field'], $content['content-title_mung-field']);
                 else
                      $url = Utils::GenerateUri($content['content-title_mung-field']);
@@ -321,16 +321,16 @@ ELSE
                 $l = Language::Create();
                 $database = Database::Connect();
                 $html = '<h1>'.$l->Phrase("tagSearch")."</h1>\n";
-                //$data = $database->Retrieve('content', 'id', "MATCH(content-title-field, content-body-textarea, content-tags-field) AGAINST('{$searchPhrase}' IN BOOLEAN MODE) AND content-static_page_flag-checkbox = false AND publish-publish_flag-dropdown = 2", $queryExtra);
+                //$data = $database->Retrieve('content', 'id', "MATCH(content-title-field, content-body-textarea, content-tags-field) AGAINST('{$searchPhrase}' IN BOOLEAN MODE) AND meta-static_page_flag-checkbox = false AND publish-publish_flag-dropdown = 2", $queryExtra);
                 $query = $database->Retrieve()
                 ->UsingTable("content")
                 ->Item("id")
                 ->FindIn(array("content-title-field", "content-body-textarea", "content-tags-field"), $searchPhrase)
-                ->AndWhere()->Match("content-static_page_flag-checkbox", 0)
+                ->AndWhere()->Match("meta-static_page_flag-checkbox", 0)
                 ->AndWhere()->Match("publish-publish_flag-dropdown", 2);
                 
                 if (self::$uri[2] == 'date')
-                    $query->OrderBy("content-date-date", false);
+                    $query->OrderBy("meta-date-date", false);
                 
                 if (is_numeric(self::$uri[$tagIndex]))
                     $query->Limit(Configuration::Get('listMaxNum'))
@@ -426,7 +426,7 @@ class Space
         $page = $data->Fetch();
         $this->id = $id;
         $this->title = $page['content-title-field'];
-        $this->date = Date::FromString($page['content-date-date']);
+        $this->date = Date::FromString($page['meta-date-date']);
         
         $this->tags = explode(',', $page['content-tags-field']);
         foreach ($this->tags as $key => $value)
@@ -434,7 +434,7 @@ class Space
             $this->tags[$key] = trim($value);
         }
 
-        $category = Content::GetCategoryById($page['content-category-dropdown']);
+        $category = Content::GetCategoryById($page['meta-category-dropdown']);
         $this->categoryMung = $category['title_mung-field']; 
 
         
@@ -479,7 +479,7 @@ class Page implements IContentObject
             
         $this->id = $page['id'];
         $this->title = $page['content-title-field'];
-        $this->date = Date::FromString($page['content-date-date']);
+        $this->date = Date::FromString($page['meta-date-date']);
         
         $this->tags = explode(',', $page['content-tags-field']);
         foreach ($this->tags as $key => $value)
@@ -489,7 +489,7 @@ class Page implements IContentObject
 
         $category = $database->Retrieve()
                 ->UsingTable("categories")
-                ->Match("id", $page['content-category-dropdown'])
+                ->Match("id", $page['meta-category-dropdown'])
                 ->Execute()->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
 
@@ -540,9 +540,9 @@ class Article extends Page
         $this->title = $article['content-title-field'];
         $this->titleMung = $article['content-title_mung-field'];
         $this->body = $article['content-body-textarea'];
-        $this->date = Date::FromString($article['content-date-date']);
-        $this->author = Content::GetAuthorById($article['content-author-dropdown']);
-        $this->category = Content::GetCategoryById($article['content-category-dropdown']); 
+        $this->date = Date::FromString($article['meta-date-date']);
+        $this->author = Content::GetAuthorById($article['meta-author-dropdown']);
+        $this->category = Content::GetCategoryById($article['meta-category-dropdown']); 
         
         
         $this->tags = explode(',', $article['content-tags-field']);
@@ -553,7 +553,7 @@ class Article extends Page
 
         $category = $database->Retrieve()
                 ->UsingTable("categories")
-                ->Match("id", $article['content-category-dropdown'])
+                ->Match("id", $article['meta-category-dropdown'])
                 ->Execute()->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
     }

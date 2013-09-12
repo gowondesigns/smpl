@@ -2,9 +2,10 @@
 /*------------------------------------------------------------------------------
   SMPL Version:   0.1.1
   Issue Date:     August 1, 2013
-  Copyright (c):  Gowon Patterson, Gowon Designs 2013
-  Licence:        SMPL is licensed under the Open Software License 3.0.
-                  http://www.opensource.org/licenses/osl-3.0.php
+  Copyright (c):  2013 Gowon Patterson, Gowon Designs
+  License:        This program is distributed under the terms of the
+                  GNU General Public License v3
+                  <http://www.gnu.org/licenses/gpl-3.0.html>
 ------------------------------------------------------------------------------*/
 define("DEBUG_MODE", true);
 define("DEBUG_STRICT", false);

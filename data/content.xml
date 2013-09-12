@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Example SMPL Content XML Serialized Data -->
+<content static="true" indexed="true">
+    <meta>
+        <author>User 1</author>
+        <category>Sample Category</category>
+        <date>YYYYMMDDHHmmSS</date>
+    </meta>
+    <title mung="sample-static-page">Sample Static Page</title>
+    <body>Serialized data -OR- Base64Encoded data?
+    </body>
+    <tagSet>
+        <tag>Sample</tag>
+        <tag>Page</tag>
+        <tag>Tags</tag>
+    </tagSet>
+    <publishDate status="published">YYYYMMDDHHmmSS</publishDate><!-- status=(notpublished|published|topublish) -->
+    <unpublishDate active="true">YYYYMMDDHHmmSS</unpublishDate>
+</content>

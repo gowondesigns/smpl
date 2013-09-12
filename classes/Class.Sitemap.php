@@ -31,7 +31,7 @@ class Sitemap
         
         $result = $database->Retrieve()
             ->UsingTable("content")
-            ->Match("content-static_page_flag-checkbox", 1)
+            ->Match("meta-static_page_flag-checkbox", 1)
             ->AndWhere()->Match("publish-publish_flag-dropdown", 2)
             ->Execute();
             
@@ -39,7 +39,7 @@ class Sitemap
         {
             $xml .= "\n\t<url>";
             $xml .= "\n\t\t<loc>".Utils::GenerateUri($pages['content-title_mung-field']).'</loc>';
-            $xml .= "\n\t\t<lastmod>".Date::FromString($pages['content-date-date'])->ToString("Y-m-d\x54H:i:s").Date::Offset().'</lastmod>';
+            $xml .= "\n\t\t<lastmod>".Date::FromString($pages['meta-date-date'])->ToString("Y-m-d\x54H:i:s").Date::Offset().'</lastmod>';
             $xml .= "\n\t</url>\n";
         }
         
