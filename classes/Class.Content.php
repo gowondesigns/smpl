@@ -195,10 +195,10 @@ class Content
         $uri = Utils::GenerateUri();
         
         $database = Database::Connect();
-        //$result = $database->Retrieve('content', 'content-title_mung-field, meta-category-dropdown, meta-static_page_flag-checkbox, meta-in_category_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
+        //$result = $database->Retrieve('content', 'content-title_mung-field, meta-category-dropdown, meta-static_page_flag-checkbox, meta-indexed_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
         $result = $database->Retrieve()
                 ->UsingTable("content")
-                ->Item('content-title_mung-field')->Item('meta-category-dropdown')->Item('meta-static_page_flag-checkbox')->Item('meta-in_category_flag-checkbox')
+                ->Item('content-title_mung-field')->Item('meta-category-dropdown')->Item('meta-static_page_flag-checkbox')->Item('meta-indexed_flag-checkbox')
                 ->Match("publish-publish_flag-dropdown", 2)
                 ->AndWhere()->Match("id", self::$uri[1])
                 ->Execute();
@@ -212,7 +212,7 @@ class Content
             //Check if content is a static page
             if($content['meta-static_page_flag-checkbox'] == true)
             {
-                if($content['meta-in_category_flag-checkbox'] == true)
+                if($content['meta-indexed_flag-checkbox'] == true)
                      $url = Utils::GenerateUri($category['title_mung-field'], $content['content-title_mung-field']);
                 else
                      $url = Utils::GenerateUri($content['content-title_mung-field']);

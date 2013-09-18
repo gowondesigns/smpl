@@ -57,7 +57,7 @@ class Feed
         
         if(isset($category['id']))
             $query->AndWhere()->Match("meta-category-dropdown",$category['id'])
-                ->AndWhere()->Match("meta-in_category_flag-checkbox", 1);
+                ->AndWhere()->Match("meta-indexed_flag-checkbox", 1);
         
         $list = $query->Execute();
         

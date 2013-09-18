@@ -157,10 +157,10 @@ class LanguageSet
             
             // Control Panel - Blocks
             "block" => "Block",
-            "content-space-dropdown" => "Space",
-            "content-priority-dropdown" => "Block Priority",
-            "content-redirect_flag-checkbox" => "Redirect to External File",                    
-            "content-redirect_location-field" => "External File Location (in /smpl-includes/)",    
+            "meta-space-dropdown" => "Space",
+            "meta-priority-dropdown" => "Block Priority",
+            "meta-redirect_flag-checkbox" => "Redirect to External File",                    
+            "meta-redirect_location-field" => "External File Location (in /smpl-includes/)",    
                
             // Control Panel - Info Pane
             "cms" => "Content Management System",

@@ -56,9 +56,6 @@ CREATE TABLE `categories` (
  	`publish_flag-checkbox` BOOL NOT NULL DEFAULT TRUE
 );
 
--- ---- Insert default category into Categories table:
-INSERT INTO `categories` VALUES (1, 'Uncategorized', 'uncategorized', TRUE);
-
 
 DROP TABLE IF EXISTS content;
 -- ---- Create content table:
@@ -76,7 +73,7 @@ CREATE TABLE `content` (
   `meta-date-date` BIGINT(14) UNSIGNED UNIQUE NOT NULL,
   `meta-static_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
   `meta-default_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
-  `meta-in_category_flag-checkbox` BOOL NOT NULL DEFAULT TRUE, -- is_indexed?
+  `meta-indexed_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
   `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
   `publish-publish_date-date` BIGINT UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
@@ -101,11 +98,11 @@ CREATE TABLE `blocks` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
  	`content-title-field` VARCHAR(100) NOT NULL,
  	`content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
-  `content-space-dropdown` INT NOT NULL DEFAULT 1,
-  `content-priority-dropdown` ENUM('LOW', 'MED', 'HIGH') NOT NULL DEFAULT 'LOW',
-  `content-redirect_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
-  `content-redirect_location-field` VARCHAR(255) DEFAULT NULL,    
   `content-body-textarea` LONGTEXT DEFAULT NULL,
+  `meta-space-dropdown` INT NOT NULL DEFAULT 1,
+  `meta-priority-dropdown` ENUM('LOW', 'MED', 'HIGH') NOT NULL DEFAULT 'LOW',
+  `meta-redirect_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
+  `meta-redirect_location-field` VARCHAR(255) DEFAULT NULL,
   `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
   `publish-publish_date-date` BIGINT(14) UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
