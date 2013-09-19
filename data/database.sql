@@ -1,10 +1,8 @@
-/*
-    Database fields should be in the following format:
+--    Database fields should be in the following format:
+--    id -OR-
+--    item_name-item_type -OR-
+--    item_group-item_name-item_type
 
-    id -OR-
-    item_name-item_type -OR-
-    item_group-item_name-item_type
-*/
 
 DROP TABLE IF EXISTS settings;
 -- ---- Create settings table:

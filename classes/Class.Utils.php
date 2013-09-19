@@ -50,7 +50,8 @@ class Utils
 
         // Truncate string to the defined length
         $mung = Utils::Truncate($mung, $length);
-        
+        // wipe out any trailing dashes caused by the truncate
+        $mung = preg_replace('/^-+|-+$/', '', $mung);        
         // Lower all cases
         $mung = strtolower($mung);
         return $mung;

@@ -1,6 +1,4 @@
-
-<!-- saved from url=(0072)https://raw.github.com/yihui/knitr/master/inst/examples/knitr-minimal.md -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css"></style></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;"># A Minimal Example for Markdown
+# A Minimal Example for Markdown
 
 This is a minimal example of using **knitr** to produce an _HTML_ page from _Markdown_.
 
@@ -78,4 +76,16 @@ knit("knitr-minimal.Rmd")
 ## Conclusion
 
 Markdown is super easy to write. Go to **knitr** [homepage](http://yihui.name/knitr) for details.
-</pre></body></html>
+
+Here's a regular code block:
+
+    <?php
+    
+    echo 'Hello World!'; 
+	
+	?>
+
+Here's one that holds a list:
+
+    - list item
+    - another list item

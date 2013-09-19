@@ -38,6 +38,7 @@ $html = '<!DOCTYPE html>
     </form>';
 
 $statusMessage = null;
+if (isset($_POST['create'])) $statusMessage = CreateDatabase();
 if (isset($_POST['fill'])) $statusMessage = GenerateNewData();
 if (isset($_POST['clear'])) $statusMessage = ClearAllData();
 
@@ -46,6 +47,17 @@ $html .= "<h2>$statusMessage</h2>
 </html>";
 
 echo $html;
+
+
+
+function CreateDatabase()
+{
+    $configurations = Configuration::Database();
+    $database = Database::Connect();
+    $file = file_get_contents('./data/database.sql', true);
+    $database->Custom($file)->Execute();
+    return "Database Created";    
+}
 
 function GenerateNewData()
 {
@@ -140,6 +152,36 @@ function GenerateNewData()
             ->Execute();   
     }
     
+        /* Markdown Article Example */
+    $article = '
+## Parsedown PHP
+
+Parsedown is a parser for Markdown. It parses Markdown text the way people do. First, it divides texts into blocks. Then it looks at how these blocks start and how they relate to each other. Finally, it looks for special characters to identify inline elements. As a result, Parsedown is (super) fast, consistent and clean.
+
+[Explorer (demo)](http://parsedown.org/explorer/)  
+[Tests](http://parsedown.org/tests/)
+
+### Installation
+
+Include `Parsedown.php` or install [the composer package](https://packagist.org/packages/erusev/parsedown).
+
+### Example
+
+```php
+$text = \'Hello **Parsedown**!\';
+
+$result = Parsedown::instance()->parse($text);
+
+echo $result; # prints: <p>Hello <strong>Parsedown</strong>!</p>
+```';
+
+        $errors[] = $database->Update()
+            ->UsingTable("content")
+            ->Item('meta-static_page_flag-checkbox')->SetValue(0)
+            ->Item('content-body-textarea')->SetValue(mysql_escape_string($article))
+            ->Item('content-title_mung-field')->SetValue("test,stuff,blah,foo")
+            ->Match("id", 3)
+            ->Execute();
     
     /* Generate Settings */
     $errors[] = $database->Create()->UsingTable("settings")

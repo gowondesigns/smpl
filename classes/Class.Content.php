@@ -62,8 +62,8 @@ class Content
                 '*' => array(
                     'Content::HtmlHeader'
                 ),
-                'articles' => 'Content::TagsKeywords',
-                'pages' => 'Content::TagsKeywords'
+                'articles' => 'Content::GenerateMetaKeywords',
+                'pages' => 'Content::GenerateMetaKeywords'
             ),
             'main' => array(
                 '*' => array(
@@ -411,6 +411,35 @@ ELSE
         // [MUSTCHANGE]
     }
     
+    public static function GenerateMetaKeywords()
+    {
+        $database = Database::Connect();
+        $uri = Content::Uri();
+        if($uri[1] == 'articles' && isset($uri[2]))        
+            $query = $database->Retrieve()
+                    ->UsingTable("content")
+                    ->Item("content-tags-field")
+                    ->Match("content-title_mung-field", $uri[2])
+                    ->Execute()->Fetch();
+        else
+            throw new StrictException();
+        
+        echo '<meta name="keywords" content="'.$query['content-tags-field'].'"/>';
+    }
+
+    public static function RenderArticle()
+    {
+        $database = Database::Connect();
+        $uri = Content::Uri();
+        if($uri[1] == 'articles' && isset($uri[2]))        
+            $query = $database->Retrieve()
+                    ->UsingTable("content")
+                    ->Item("content-tags-field")
+                    ->Match("content-title_mung-field", $uri[2])
+                    ->Execute()->Fetch();
+        
+        echo '<p>Foo.<p/>'.PHP_EOL;
+    }    
     
 }
 
