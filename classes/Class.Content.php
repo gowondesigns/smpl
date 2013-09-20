@@ -356,7 +356,7 @@ ELSE
     //            Content::HtmlHeader()
     public static function HtmlHeader()
     {
-        $html = '<title>'.Configuration::Get('title')."</title>\n";
+        $html = '<title>'.Configuration::Get('siteTitle')."</title>\n";
         $html .= '<meta content="text/html; charset=UTF-8" http-equiv="content-type">'."\n";
         $html .= '<meta name="robots" content="index,follow">'."\n";
         $html .= '<link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="'.Utils::GenerateUri('feed/').'">'."\n";
@@ -432,13 +432,14 @@ ELSE
         $database = Database::Connect();
         $uri = Content::Uri();
         if($uri[1] == 'articles' && isset($uri[2]))        
-            $query = $database->Retrieve()
+            $data = $database->Retrieve()
                     ->UsingTable("content")
-                    ->Item("content-tags-field")
                     ->Match("content-title_mung-field", $uri[2])
-                    ->Execute()->Fetch();
+                    ->Execute();
         
-        echo '<p>Foo.<p/>'.PHP_EOL;
+        $article = new Article($data);
+        
+        $article->Render();
     }    
     
 }
@@ -547,20 +548,20 @@ class Article extends Page
     protected $category;
     
     
-    public function __construct($data)
+    public function __construct($idOrData)
     {
         $database = Database::Connect(); 
         
-        if(is_numeric($data))
+        if(is_numeric($idOrData))
         { 
             $article = $database->Retrieve()
                 ->UsingTable("content")
-                ->Match("id", $data)
+                ->Match("id", $idOrData)
                 ->Execute()->Fetch();
         }
-        elseif($data instanceof IDatabaseResult)
+        elseif($idOrData instanceof IDatabaseResult)
         {
-            $article = $data->Fetch();
+            $article = $idOrData->Fetch();
         }
         else
             throw new ErrorException("Passed argument not numeric or of type IDatabaseResult");
@@ -596,10 +597,15 @@ class Article extends Page
 
     public function Render() 
     {
+        if(Configuration::Get('MarkdownActive'))
+            $body = Parsedown::instance()->parse($this->body);
+        else
+            $body = $this->body; 
+        
         $formatTags = array( 
             "[title]" => $this->title, 
             "[url]" => Utils::GenerateUri($this->categoryMung, 'articles', $this->titleMung), 
-            "[body]" => $this->body, 
+            "[body]" => $body, 
             "[category]" => $this->category, 
             "[category_url]" => Utils::GenerateUri('categories', $this->categoryMung), 
             "[author]" => $this->author, 

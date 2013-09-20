@@ -13,13 +13,14 @@ class Utils
     private static $permalinkBase = "23456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ";
           
     // Convert strings to SEO-friendly strings, with optional flags to remove integers
-    public static function Munge($string, $length = 30, $removeIntegers = false)
+    public static function Munge($string, $length = null, $removeIntegers = false)
     {
-        // Remove noise phrases: "the, and, a, an, or, my, our, us" etc.
-        
-        // Remove everything but standard ASCII characters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ1234567890"
+        if(null === $length)
+            $length = Configuration::Get('siteMungLength');
+        // Remove whitespace at the end of phrases
         $mung = trim($string);
         
+        // Remove everything but standard ASCII characters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ1234567890"
         // Convert accented and international characters  
         $table = array(
             'Š'=>'S', 'š'=>'s', 'Ð'=>'Dj', 'Ž'=>'Z', 'ž'=>'z', 'C'=>'C', 'c'=>'c', 'C'=>'C', 'c'=>'c',
@@ -31,9 +32,15 @@ class Utils
             'ô'=>'o', 'õ'=>'o', 'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'ý'=>'y', 'þ'=>'b',
             'ÿ'=>'y', 'R'=>'R', 'r'=>'r',
         );
-   
         $mung = strtr($mung, $table);
-        
+
+        // Lower all cases
+        $mung = strtolower($mung);
+
+        // Remove noise phrases: "the, and, a, an, or, my, our, us" etc.
+        $noise = array('a','an','and','my','or','our','the','us');
+        $mung = preg_replace('/\b('.implode('|', $noise).')\b/', '', $mung);
+                
         // Remove integers from mung string if flagged
         if ($removeIntegers)
         {
@@ -52,8 +59,7 @@ class Utils
         $mung = Utils::Truncate($mung, $length);
         // wipe out any trailing dashes caused by the truncate
         $mung = preg_replace('/^-+|-+$/', '', $mung);        
-        // Lower all cases
-        $mung = strtolower($mung);
+    
         return $mung;
     }
 

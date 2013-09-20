@@ -63,7 +63,7 @@ DROP TABLE IF EXISTS content;
 CREATE TABLE `content` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
   `content-title-field` VARCHAR(100) NOT NULL,
-  `content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
+  `content-title_mung-field` VARCHAR(50) UNIQUE NOT NULL,
   `content-body-textarea` LONGTEXT DEFAULT NULL,
   `content-tags-field` VARCHAR(255) DEFAULT NULL,
   `meta-author-dropdown` INT NOT NULL DEFAULT 1,

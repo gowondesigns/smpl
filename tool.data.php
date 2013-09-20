@@ -66,6 +66,68 @@ function GenerateNewData()
     $queries = array();
     $errors = array();
 
+
+    /* Generate Settings */
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('siteURL')
+        ->Item('title-label')->SetValue('Site URL')
+        ->Item('value-field')->SetValue('http://localhost/smpl/')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('siteTitle')
+        ->Item('title-label')->SetValue('Site Title')
+        ->Item('value-field')->SetValue('My SMPL Site')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('siteDescription')
+        ->Item('title-label')->SetValue('Site Description')
+        ->Item('value-field')->SetValue('My SMPL Site is a website that hosts pages and articles.')->Execute();
+
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('siteMungLength')
+        ->Item('title-label')->SetValue('SEO URL Max Length')
+        ->Item('value-field')->SetValue(50)->Execute();
+
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('MarkdownActive')
+        ->Item('title-label')->SetValue('Parse Articles for Markdown')
+        ->Item('value-field')->SetValue(true)->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('listMaxNum')
+        ->Item('title-label')->SetValue('Max # of items per page listed in categorical view')
+        ->Item('value-field')->SetValue(10)->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('feedDefaultType')
+        ->Item('title-label')->SetValue('Default feed format')
+        ->Item('value-field')->SetValue('Atom')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('feedItemLimit')
+        ->Item('title-label')->SetValue('Max # items in feed')
+        ->Item('value-field')->SetValue(5)->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('permalinkSalt')
+        ->Item('title-label')->SetValue('Salt integer for unique permalinks')
+        ->Item('value-field')->SetValue(rand(0,62))->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('languageDefault')
+        ->Item('title-label')->SetValue('Default language')
+        ->Item('value-field')->SetValue('en-US')->Execute();
+    
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('dateOffset')
+        ->Item('title-label')->SetValue('Date Timezone Offset')
+        ->Item('value-field')->SetValue(rand(-12,14))->Execute();
+
+    $errors[] = $database->Create()->UsingTable("settings")
+        ->Item('name-hidden')->SetValue('articleFormat')
+        ->Item('title-label')->SetValue('Article Format')
+        ->Item('value-field')->SetValue("<h1>[category]&nbsp;/&nbsp;[title]</h1>\n<p>[body]</p>")->Execute();
+
     
     /* Generate Users */
     for($i = 0; $i < 16; $i++)
@@ -179,60 +241,11 @@ echo $result; # prints: <p>Hello <strong>Parsedown</strong>!</p>
             ->UsingTable("content")
             ->Item('meta-static_page_flag-checkbox')->SetValue(0)
             ->Item('content-body-textarea')->SetValue(mysql_escape_string($article))
-            ->Item('content-title_mung-field')->SetValue("test,stuff,blah,foo")
+            ->Item('content-tags-field')->SetValue("test,stuff,blah,foo")
             ->Match("id", 3)
             ->Execute();
     
-    /* Generate Settings */
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('siteURL')
-        ->Item('title-label')->SetValue('Site URL')
-        ->Item('value-field')->SetValue('http://localhost/smpl/')->Execute();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('title')
-        ->Item('title-label')->SetValue('Site Title')
-        ->Item('value-field')->SetValue('My SMPL Site')->Execute();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('description')
-        ->Item('title-label')->SetValue('Site Description')
-        ->Item('value-field')->SetValue('My SMPL Site is a website that hosts pages and articles.')->Execute();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('listMaxNum')
-        ->Item('title-label')->SetValue('Max # of items per page listed in categorical view')
-        ->Item('value-field')->SetValue(10)->Execute();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('feedDefaultType')
-        ->Item('title-label')->SetValue('Default feed format')
-        ->Item('value-field')->SetValue('Atom')->Execute();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('feedItemLimit')
-        ->Item('title-label')->SetValue('Max # items in feed')
-        ->Item('value-field')->SetValue(5)->Execute();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('permalinkSalt')
-        ->Item('title-label')->SetValue('Salt integer for unique permalinks')
-        ->Item('value-field')->SetValue(rand(0,62))->Execute();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('languageDefault')
-        ->Item('title-label')->SetValue('Default language')
-        ->Item('value-field')->SetValue('en-US')->Execute();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('dateOffset')
-        ->Item('title-label')->SetValue('Date Timezone Offset')
-        ->Item('value-field')->SetValue(rand(-12,14))->Execute();
 
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('articleFormat')
-        ->Item('title-label')->SetValue('Article Format')
-        ->Item('value-field')->SetValue("<h1>[category]&nbsp;/&nbsp;[title]</h1>\n<p>[body]</p>")->Execute();
     
     /* Pass along any errors*/
     $msg = null;

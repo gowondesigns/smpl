@@ -104,8 +104,8 @@ abstract class aFeed
     
     protected function __construct()
     {
-        $this->title = Configuration::Get('title');
-        $this->feedDescription = Configuration::Get('description');
+        $this->title = Configuration::Get('siteTitle');
+        $this->feedDescription = Configuration::Get('siteDescription');
     }
 }
 
