@@ -98,7 +98,7 @@ CREATE TABLE `blocks` (
  	`content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
   `content-body-textarea` LONGTEXT DEFAULT NULL,
   `meta-space-dropdown` INT NOT NULL DEFAULT 1,
-  `meta-priority-dropdown` ENUM('LOW', 'MED', 'HIGH') NOT NULL DEFAULT 'LOW',
+  `meta-priority-dropdown` ENUM('HIGH', 'MED', 'LOW') NOT NULL DEFAULT 'LOW',
   `meta-redirect_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
   `meta-redirect_location-field` VARCHAR(255) DEFAULT NULL,
   `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',

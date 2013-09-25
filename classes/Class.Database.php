@@ -204,8 +204,18 @@ class MySqlDatabaseResult extends MySQLi_Result implements IDatabaseResult
 /*  Database Query Fluent Interface 
     Abstracts away the syntax in creating simple DB queries
 */
-interface ISqlQuery
-{
+interface IQuery
+{   
+    /* Constants used in queries */
+    const SORT_ASC = 'ASC';
+    const SORT_DESC = 'DESC';
+    const STATE_PUBLISHED = 'PUBLISHED';
+    const STATE_TOPUBLISH = 'TOPUBLISH';
+    const STATE_NOT_PUBLISHED = 'NOTPUBLISHED';
+    const PRIORITY_HIGH = 'HIGH';
+    const PRIORITY_MED = 'MED';
+    const PRIORITY_LOW = 'LOW';
+    
     public function Execute(IDatabase $database); // possible name, ToDatabase()?
     public function ToString();
     
@@ -235,12 +245,12 @@ interface ISqlQuery
     public function FindIn($items, $text);
     
     /* Query Optimization Methods */
-    public function orderBy($item, $ascending);
+    public function OrderBy($item, $direction);
     public function Limit($count);
     public function Offset($amount);
 }
 
-class MySqlDatabaseQuery implements ISqlQuery
+class MySqlDatabaseQuery implements IQuery
 {
     protected $database = null;
     protected $action = null;   // Query Action: Select, Create (Insert), Update, Delete
@@ -648,9 +658,11 @@ class MySqlDatabaseQuery implements ISqlQuery
     }
     
     /* Query Optimization Methods */
-    public function orderBy($item, $ascending = true)
+    public function OrderBy($item, $direction = null)
     {
-        $direction = ($ascending) ? 'ASC': 'DESC';
+        if (null === $databaseType)
+            $direction = self::SORT_ASC;
+
         $expanded = explode('.', $item);
         $item = implode('`.`', $expanded);
         $order = "`{$item}` ".$direction;

@@ -1,6 +1,6 @@
 <?php
 /*------------------------------------------------------------------------------
-  SMPL Version:   0.1.1
+  SMPL Version:   0.1.0
   Issue Date:     August 1, 2013
   Copyright (c):  2013 Gowon Patterson, Gowon Designs
   License:        This program is distributed under the terms of the
@@ -9,14 +9,14 @@
 ------------------------------------------------------------------------------*/
 define("DEBUG_MODE", true);
 define("DEBUG_STRICT", false);
-define("DEBUG_VERBOSE", false);
+define("DEBUG_VERBOSITY", false);
 define("DEBUG_LOGGING", false);
 
 
 error_reporting(-1);
 set_error_handler(array('Debug', 'ErrorHandler'));
 register_shutdown_function(array('Debug', 'EndOfExecution'));
-Debug::Set(DEBUG_MODE, DEBUG_STRICT, DEBUG_VERBOSE, DEBUG_LOGGING);
+Debug::Set(DEBUG_MODE, DEBUG_STRICT, DEBUG_VERBOSITY, DEBUG_LOGGING);
 
 IncludeFromFolder("classes/");
 

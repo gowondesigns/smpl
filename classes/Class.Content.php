@@ -159,12 +159,10 @@ class Content
             die;
         }
     }
-    
-    // May not be useful    
-    public static function Status()
+        
+    public static function Debug()
     {
-        print_r(self, true);
-        exit;        
+        return print_r(self, true);      
     }
     
     public static function GetCategoryById($id)
@@ -192,8 +190,6 @@ class Content
     public static function Permalink()
     {
         // Format: /permalink/<CONTENT_ID>/
-        $uri = Utils::GenerateUri();
-        
         $database = Database::Connect();
         //$result = $database->Retrieve('content', 'content-title_mung-field, meta-category-dropdown, meta-static_page_flag-checkbox, meta-indexed_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
         $result = $database->Retrieve()
@@ -448,39 +444,58 @@ class Space
 {
     private $blocks = array();
     
-    public function __construct($id)
+    public function __construct($titleMung)
     {
-        if($data->Count() < 1)
-            die();
-        
-        $page = $data->Fetch();
-        $this->id = $id;
-        $this->title = $page['content-title-field'];
-        $this->date = Date::FromString($page['meta-date-date']);
-        
-        $this->tags = explode(',', $page['content-tags-field']);
-        foreach ($this->tags as $key => $value)
+        $database = Database::Connect();      
+        $space = $database->Retrieve()
+            ->Item('id')
+            ->UsingTable("spaces")
+            ->Match("title_mung-field", $titleMung)
+            ->Execute()->Fetch();
+            
+        $blocks = $database->Retrieve()
+            ->Item('id')
+            ->UsingTable("blocks")
+            ->Match("meta-space-dropdown", $space['id'])
+            ->AndWhere()->Match('publish-publish_flag-dropdown', IQuery::STATE_PUBLISHED)
+            ->OrderBy('meta-priority-dropdown', IQuery::SORT_DESC)
+            ->OrderBy('item', IQuery::SORT_ASC)
+            ->Execute();
+            
+        while($block = $blocks=>Fetch())
         {
-            $this->tags[$key] = trim($value);
+            $this->blocks = new Block($block['id']);
         }
-
-        $category = Content::GetCategoryById($page['meta-category-dropdown']);
-        $this->categoryMung = $category['title_mung-field']; 
-
         
-        parent::__construct($page['content-title_mung-field'], $page['content-body-textarea']);
+        $this->Render();
+    }
+    
+    public function Render()
+    {
+        foreach($this->blocks as $block)
+            $block->Render();
+    }
+}
+
+final class MainSpace extends Space
+{
+    private $blocks = array();
+    
+    public function __construct($titleMung)
+    {
     }
 }
 
 
-interface IContentObject
+
+interface IContent
 {
     public function Get($item);
     public function Render();
 }
 
 
-class Page implements IContentObject
+class Page implements IContent
 {
     protected $id;
     protected $title;
@@ -619,7 +634,7 @@ class Article extends Page
 }
 
 
-class Block implements IContentObject
+class Block implements IContent
 {
     protected $titleMung;
     protected $body;
