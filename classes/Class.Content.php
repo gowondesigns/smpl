@@ -24,9 +24,40 @@ class Content
 
 
     //Do-nothing function
-    public static function Stub()
+    public static function ValidateUri()
     {
-        //echo "\n\nStub\n\n";
+        /*
+        TAGS Trigger:
+        /tags/<search-phrase>/
+        /tags/<search-phrase>/<index-number>/ (Seeking through results)
+        /tags/<search-phrase>/date/ (sort results by date, most recent first)
+        /tags/<search-phrase>/date/<index-number>/ (Seeking through results)
+        
+        CATEGORIES Trigger:
+        /categories/<category-title>/
+        /categories/<category-title>/<index-number>/
+        
+        ARTICLES Trigger:
+        /articles/ (all active articles)
+        /articles/<index-number>/
+        
+        Signature-Based Triggers:
+        3-parameters, 2nd param = 'articles'
+        /<category-title>/articles/<article-title>/ (Long-form URL, most helpful, default)
+        
+        2-parameters, 2nd param = 'articles'
+        /<category-title>/articles/ (redirect to /categories/<category-title>/)
+        
+        2-parameters
+        /<category-title>/<page-title>/ (Long-form URL)
+        
+        1-parameter
+        /<page-title>/ (Articles cannot be accessed this way, they must have the "Static Content" flag to be treated like a page)
+        
+        ELSE
+        
+        /404/ (If the correct URI does not fetch a result, system redirects to this. Content can be injected by creating "404" block)
+        //*/
         return;
     }
     
@@ -48,14 +79,14 @@ class Content
         self::$hooks = array(
             'pre' => array(
                 '*' => array(
-                    'Content::Stub'
+                    'Content::ValidateUri'
                 ),
-                'tags' => 'Content::UpdateTagsUri',
+                'tags' => 'Content::TagSearch',
                 'sitemap' => 'Sitemap::RenderXML',
                 'link' => 'Content::Permalink',
-                'lang' => 'Language::Hook',
                 'feed' => 'Feed::Generate',
                 'api' => 'Content::Stub',
+                'lang' => 'Language::Hook',
                 'admin' => 'Admin::Render'
             ),
             'head' => array(
@@ -90,7 +121,7 @@ class Content
         }
         
         // Is no POST signature is present, any existing validation data should be unset
-        $key = md5(Configuration::Get('siteURL'));
+        $key = Security::Key();
         if (!isset($_POST[$key]))
             unset($_SESSION[$key]['validate']);
         
@@ -101,7 +132,7 @@ class Content
             ->Item("publish-publish_flag-dropdown")->SetValue(1)
             ->Match("publish-publish_flag-dropdown", 2)
             ->AndWhere()->LessThanOrEq("publish-publish_date-date", Date::Now()->ToInt())
-            ->Execute();
+            ->Send();
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
@@ -109,7 +140,7 @@ class Content
             ->Item("publish-unpublish_flag-checkbox")->SetValue(0)
             ->Match("publish-unpublish_flag-checkbox", 1)
             ->AndWhere()->LessThanOrEq("publish-unpublish_date-date", Date::Now()->ToInt())
-            ->Execute();
+            ->Send();
     }
 
 
@@ -119,14 +150,14 @@ class Content
         foreach($hooks['*'] as $trigger)
         {
             $action = explode("::", $trigger);
-            $action[0]::$action[1](self::$uri);
+            $action[0]::$action[1]();
         } 
 
         // Run any hooks triggerd by the URI
         foreach (self::$uri as $key)
         {
-            //[MUSTCHANGE] Need to pass along the index where the hook appears in the URI
-            //$index = array_search('lang', Content::Uri());
+            //pass along the index where the hook appears in the URI
+            $index = array_search($key, self::$uri);
             if(array_key_exists($key, $hooks))
             {
                 if (is_array($hooks[$key]))
@@ -134,13 +165,13 @@ class Content
                     foreach($hooks[$key] as $trigger)
                     {
                         $action = explode("::", $trigger);
-                        $action[0]::$action[1](self::$uri);
+                        $action[0]::$action[1]($index);
                     }
                 }
                 else
                 {
                     $action = explode("::", $hooks[$key]);
-                    $action[0]::$action[1](self::$uri);
+                    $action[0]::$action[1]($index);
                 }
             } 
         }
@@ -171,7 +202,7 @@ class Content
         $result = $database->Retrieve()
             ->UsingTable("categories")
             ->Match("id", $id)
-            ->Execute()->Fetch();
+            ->Send()->Fetch();
             
         return $result['title-field'];
     }
@@ -182,7 +213,7 @@ class Content
         $result = $database->Retrieve()
             ->UsingTable("users")
             ->Match("id", $id)
-            ->Execute()->Fetch();
+            ->Send()->Fetch();
         
         return $result['account-name-field'];
     }
@@ -197,7 +228,7 @@ class Content
                 ->Item('content-title_mung-field')->Item('meta-category-dropdown')->Item('meta-static_page_flag-checkbox')->Item('meta-indexed_flag-checkbox')
                 ->Match("publish-publish_flag-dropdown", 2)
                 ->AndWhere()->Match("id", self::$uri[1])
-                ->Execute();
+                ->Send();
         $content = $result->Fetch();
         
         if (isset($content['content-title_mung-field']))
@@ -250,7 +281,7 @@ Otherwise, look for the space being called
                 ->UsingTable("spaces")
                 ->Item("id")
                 ->Match("title_mung-field", $spaceName)
-                ->Execute();
+                ->Send();
             
             $results = $data->Fetch();
             if(isset($results['id']))
@@ -268,38 +299,7 @@ Otherwise, look for the space being called
             self::ParseHook(self::$hooks['head']);
             return;
         }
-/*
-TAGS Trigger:
-/tags/<search-phrase>/
-/tags/<search-phrase>/<index-number>/ (Seeking through results)
-/tags/<search-phrase>/date/ (sort results by date, most recent first)
-/tags/<search-phrase>/date/<index-number>/ (Seeking through results)
 
-CATEGORIES Trigger:
-/categories/<category-title>/
-/categories/<category-title>/<index-number>/
-
-ARTICLES Trigger:
-/articles/ (all active articles)
-/articles/<index-number>/
-
-Signature-Based Triggers:
-3-parameters, 2nd param = 'articles'
-/<category-title>/articles/<article-title>/ (Long-form URL, most helpful, default)
-
-2-parameters, 2nd param = 'articles'
-/<category-title>/articles/ (redirect to /categories/<category-title>/)
-
-2-parameters
-/<category-title>/<page-title>/ (Long-form URL)
-
-1-parameter
-/<page-title>/ (Articles cannot be accessed this way, they must have the "Static Content" flag to be treated like a page)
-
-ELSE
-
-/404/ (If the correct URI does not fetch a result, system redirects to this. Content can be injected by creating "404" block)
-//*/
         //Default Main Space behavior
         if ($spaceName == 'main')
         {
@@ -317,7 +317,6 @@ ELSE
                 $l = Language::Create();
                 $database = Database::Connect();
                 $html = '<h1>'.$l->Phrase("tagSearch")."</h1>\n";
-                //$data = $database->Retrieve('content', 'id', "MATCH(content-title-field, content-body-textarea, content-tags-field) AGAINST('{$searchPhrase}' IN BOOLEAN MODE) AND meta-static_page_flag-checkbox = false AND publish-publish_flag-dropdown = 2", $queryExtra);
                 $query = $database->Retrieve()
                 ->UsingTable("content")
                 ->Item("id")
@@ -332,7 +331,7 @@ ELSE
                     $query->Limit(Configuration::Get('listMaxNum'))
                         ->Offset(( (self::$uri[$tagIndex] - 1) * intval(Configuration::Get('listMaxNum')) ));
 
-                $results = $query->Execute()->FetchAll();
+                $results = $query->Send()->FetchAll();
 
                 // Render results
                 foreach($results as $id)
@@ -416,7 +415,7 @@ ELSE
                     ->UsingTable("content")
                     ->Item("content-tags-field")
                     ->Match("content-title_mung-field", $uri[2])
-                    ->Execute()->Fetch();
+                    ->Send()->Fetch();
         else
             throw new StrictException();
         
@@ -431,7 +430,7 @@ ELSE
             $data = $database->Retrieve()
                     ->UsingTable("content")
                     ->Match("content-title_mung-field", $uri[2])
-                    ->Execute();
+                    ->Send();
         
         $article = new Article($data);
         
@@ -451,7 +450,7 @@ class Space
             ->Item('id')
             ->UsingTable("spaces")
             ->Match("title_mung-field", $titleMung)
-            ->Execute()->Fetch();
+            ->Send()->Fetch();
             
         $blocks = $database->Retrieve()
             ->Item('id')
@@ -460,9 +459,9 @@ class Space
             ->AndWhere()->Match('publish-publish_flag-dropdown', IQuery::STATE_PUBLISHED)
             ->OrderBy('meta-priority-dropdown', IQuery::SORT_DESC)
             ->OrderBy('item', IQuery::SORT_ASC)
-            ->Execute();
+            ->Send();
             
-        while($block = $blocks=>Fetch())
+        while($block = $blocks->Fetch())
         {
             $this->blocks = new Block($block['id']);
         }
@@ -476,16 +475,6 @@ class Space
             $block->Render();
     }
 }
-
-final class MainSpace extends Space
-{
-    private $blocks = array();
-    
-    public function __construct($titleMung)
-    {
-    }
-}
-
 
 
 interface IContent
@@ -513,7 +502,7 @@ class Page implements IContent
             $page = $database->Retrieve()
                 ->UsingTable("content")
                 ->Match("id", $data)
-                ->Execute()->Fetch();
+                ->Send()->Fetch();
         }
         elseif($data instanceof IDatabaseResult)
         {
@@ -535,7 +524,7 @@ class Page implements IContent
         $category = $database->Retrieve()
                 ->UsingTable("categories")
                 ->Match("id", $page['meta-category-dropdown'])
-                ->Execute()->Fetch();
+                ->Send()->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
 
         
@@ -572,7 +561,7 @@ class Article extends Page
             $article = $database->Retrieve()
                 ->UsingTable("content")
                 ->Match("id", $idOrData)
-                ->Execute()->Fetch();
+                ->Send()->Fetch();
         }
         elseif($idOrData instanceof IDatabaseResult)
         {
@@ -599,7 +588,7 @@ class Article extends Page
         $category = $database->Retrieve()
                 ->UsingTable("categories")
                 ->Match("id", $article['meta-category-dropdown'])
-                ->Execute()->Fetch();
+                ->Send()->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
     }
     
@@ -648,7 +637,7 @@ class Block implements IContent
             $data = $database->Retrieve()
                 ->UsingTable("blocks")
                 ->Match("id", $id)
-                ->Execute();
+                ->Send();
         }
         
         $block = $data->Fetch();

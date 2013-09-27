@@ -20,7 +20,7 @@ class Sitemap
             ->UsingTable("categories")
             ->Item("title_mung-field")
             ->Match("publish_flag-checkbox", 1)
-            ->Execute();
+            ->Send();
 
         while($category = $result->Fetch())
         {
@@ -33,7 +33,7 @@ class Sitemap
             ->UsingTable("content")
             ->Match("meta-static_page_flag-checkbox", 1)
             ->AndWhere()->Match("publish-publish_flag-dropdown", 2)
-            ->Execute();
+            ->Send();
             
         while($pages = $result->Fetch())
         {

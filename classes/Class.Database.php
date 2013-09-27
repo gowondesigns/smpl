@@ -216,7 +216,7 @@ interface IQuery
     const PRIORITY_MED = 'MED';
     const PRIORITY_LOW = 'LOW';
     
-    public function Execute(IDatabase $database); // possible name, ToDatabase()?
+    public function Send(IDatabase $database); // possible name, ToDatabase()?
     public function ToString();
     
     /* Action Methods */
@@ -275,7 +275,7 @@ class MySqlDatabaseQuery implements IQuery
         return $this->ToString();
     }
     
-    public function Execute(IDatabase $database = null)
+    public function Send(IDatabase $database = null)
     {
         if(isset($database) && $database instanceof MySqlDatabase)
             return $database->Query($this->ToString());

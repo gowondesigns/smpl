@@ -51,7 +51,7 @@ class Configuration
             ->UsingTable("settings")
             ->Item("value-field")
             ->Match("name-hidden", $settingName)
-            ->Execute();
+            ->Send();
         
         $value = $result->Fetch();
         if(is_null($value))

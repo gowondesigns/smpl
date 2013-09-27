@@ -36,7 +36,7 @@ class Feed
                 ->UsingTable("categories")
                 ->Item("id")
                 ->Match("title_mung-field", Content::Uri()[0])
-                ->Execute();
+                ->Send();
             $category = $result->Fetch();
         }
 
@@ -59,7 +59,7 @@ class Feed
             $query->AndWhere()->Match("meta-category-dropdown",$category['id'])
                 ->AndWhere()->Match("meta-indexed_flag-checkbox", 1);
         
-        $list = $query->Execute();
+        $list = $query->Send();
         
         while($item = $list->Fetch())
         {

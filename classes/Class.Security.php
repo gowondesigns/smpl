@@ -9,6 +9,11 @@ class Security
 {
     private static $currentSessionValid = null;
 
+    public static function Key()
+    {
+        return md5(Configuration::Get('siteURL'));
+    }
+
     public static function GeneratePassword($length = 13, $useDashes = false, $useLowercase = true, $useUppercase = true, $useDigits = true, $useSymbols = true)
     {
     // Generates a strong password of N length containing at least one lower case letter,

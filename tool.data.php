@@ -55,7 +55,7 @@ function CreateDatabase()
     $configurations = Configuration::Database();
     $database = Database::Connect();
     $file = file_get_contents('./data/database.sql', true);
-    $database->Custom($file)->Execute();
+    $database->Custom($file)->Send();
     return "Database Created";    
 }
 
@@ -71,62 +71,62 @@ function GenerateNewData()
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('siteURL')
         ->Item('title-label')->SetValue('Site URL')
-        ->Item('value-field')->SetValue('http://localhost/smpl/')->Execute();
+        ->Item('value-field')->SetValue('http://localhost/smpl/')->Send();
     
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('siteTitle')
         ->Item('title-label')->SetValue('Site Title')
-        ->Item('value-field')->SetValue('My SMPL Site')->Execute();
+        ->Item('value-field')->SetValue('My SMPL Site')->Send();
     
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('siteDescription')
         ->Item('title-label')->SetValue('Site Description')
-        ->Item('value-field')->SetValue('My SMPL Site is a website that hosts pages and articles.')->Execute();
+        ->Item('value-field')->SetValue('My SMPL Site is a website that hosts pages and articles.')->Send();
 
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('siteMungLength')
         ->Item('title-label')->SetValue('SEO URL Max Length')
-        ->Item('value-field')->SetValue(50)->Execute();
+        ->Item('value-field')->SetValue(50)->Send();
 
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('MarkdownActive')
         ->Item('title-label')->SetValue('Parse Articles for Markdown')
-        ->Item('value-field')->SetValue(true)->Execute();
+        ->Item('value-field')->SetValue(true)->Send();
     
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('listMaxNum')
         ->Item('title-label')->SetValue('Max # of items per page listed in categorical view')
-        ->Item('value-field')->SetValue(10)->Execute();
+        ->Item('value-field')->SetValue(10)->Send();
     
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('feedDefaultType')
         ->Item('title-label')->SetValue('Default feed format')
-        ->Item('value-field')->SetValue('Atom')->Execute();
+        ->Item('value-field')->SetValue('Atom')->Send();
     
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('feedItemLimit')
         ->Item('title-label')->SetValue('Max # items in feed')
-        ->Item('value-field')->SetValue(5)->Execute();
+        ->Item('value-field')->SetValue(5)->Send();
     
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('permalinkSalt')
         ->Item('title-label')->SetValue('Salt integer for unique permalinks')
-        ->Item('value-field')->SetValue(rand(0,62))->Execute();
+        ->Item('value-field')->SetValue(rand(0,62))->Send();
     
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('languageDefault')
         ->Item('title-label')->SetValue('Default language')
-        ->Item('value-field')->SetValue('en-US')->Execute();
+        ->Item('value-field')->SetValue('en-US')->Send();
     
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('dateOffset')
         ->Item('title-label')->SetValue('Date Timezone Offset')
-        ->Item('value-field')->SetValue(rand(-12,14))->Execute();
+        ->Item('value-field')->SetValue(rand(-12,14))->Send();
 
     $errors[] = $database->Create()->UsingTable("settings")
         ->Item('name-hidden')->SetValue('articleFormat')
         ->Item('title-label')->SetValue('Article Format')
-        ->Item('value-field')->SetValue("<h1>[category]&nbsp;/&nbsp;[title]</h1>\n<p>[body]</p>")->Execute();
+        ->Item('value-field')->SetValue("<h1>[category]&nbsp;/&nbsp;[title]</h1>\n<p>[body]</p>")->Send();
 
     
     /* Generate Users */
@@ -145,7 +145,7 @@ function GenerateNewData()
             ->Item('permissions-access_users-checkbox')->SetValue($permissions[1])
             ->Item('permissions-access_content-checkbox')->SetValue($permissions[2])
             ->Item('permissions-access_blocks-checkbox')->SetValue($permissions[3])
-            ->Execute();   
+            ->Send();   
     }
 
 
@@ -165,7 +165,7 @@ function GenerateNewData()
             ->Item('title-field')->SetValue($key)
             ->Item('title_mung-field')->SetValue(Utils::Munge($key))
             ->Item('publish_flag-checkbox')->SetValue($value)
-            ->Execute(); 
+            ->Send(); 
     }
     
     
@@ -184,7 +184,7 @@ function GenerateNewData()
             ->Item('title-field')->SetValue($key)
             ->Item('title_mung-field')->SetValue(Utils::Munge($key))
             ->Item('publish_flag-checkbox')->SetValue($value)
-            ->Execute(); 
+            ->Send(); 
     }
     
     /* Generate Content */    
@@ -211,7 +211,7 @@ function GenerateNewData()
             ->Item('publish-publish_date-date')->SetValue(Date::Now()->AddTime($i)->ToInt())
             ->Item('publish-unpublish_flag-checkbox')->SetValue(rand(0,1))
             ->Item('publish-unpublish_date-date')->SetValue(Date::Now()->AddTime(120 + $i)->ToInt())
-            ->Execute();   
+            ->Send();   
     }
     
         /* Markdown Article Example */
@@ -243,7 +243,7 @@ echo $result; # prints: <p>Hello <strong>Parsedown</strong>!</p>
             ->Item('content-body-textarea')->SetValue(mysql_escape_string($article))
             ->Item('content-tags-field')->SetValue("test,stuff,blah,foo")
             ->Match("id", 3)
-            ->Execute();
+            ->Send();
     
 
     
@@ -270,13 +270,13 @@ function ClearAllData()
     $configurations = Configuration::Database();
     $database = Database::Connect();
     
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}api")->Execute();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}blocks")->Execute();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}categories")->Execute();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}content")->Execute();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}settings")->Execute();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}spaces")->Execute();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}users")->Execute();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}api")->Send();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}blocks")->Send();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}categories")->Send();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}content")->Send();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}settings")->Send();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}spaces")->Send();
+    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}users")->Send();
     
     return "All Data Clear";
 }
