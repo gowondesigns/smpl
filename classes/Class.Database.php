@@ -28,7 +28,6 @@ class Database
         else // Otherwise assume a unique database instance
         {
             $databaseType .= 'Database';
-            $optionalAssets = array_slice(func_get_args(), 1);
             
             if($host)
                 $configurations['host'] = $host;
@@ -95,7 +94,6 @@ class MySqlDatabase extends MySQLi implements IDatabase
     public function CustomQuery($query)
     {
         Debug::Message("MySqlDatabase\Query: ".$query);
-        $this->queries[] = $query;
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
@@ -660,7 +658,7 @@ class MySqlDatabaseQuery implements IQuery
     /* Query Optimization Methods */
     public function OrderBy($item, $direction = null)
     {
-        if (null === $databaseType)
+        if (null === $direction)
             $direction = self::SORT_ASC;
 
         $expanded = explode('.', $item);
@@ -684,7 +682,5 @@ class MySqlDatabaseQuery implements IQuery
     }
 
 }
-
-
 
 ?>
