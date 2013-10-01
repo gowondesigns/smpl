@@ -100,7 +100,7 @@ class Security
     public static function FilterXss($data)
     {
         // * Handle arrays recursively 
-        if (is_array($data) OR is_object($data))
+        if (is_array($data) || is_object($data))
         {
             foreach ($data as $key => $value)
             {

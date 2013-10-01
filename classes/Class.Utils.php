@@ -15,8 +15,6 @@ class Utils
     // Convert strings to SEO-friendly strings, with optional flags to remove integers
     public static function Munge($string, $length = null, $removeIntegers = false)
     {
-        if(null === $length)
-            $length = Configuration::Get('siteMungLength');
         // Remove whitespace at the end of phrases
         $mung = trim($string);
         
@@ -56,7 +54,9 @@ class Utils
         $mung = preg_replace($replace, $with, $mung);
 
         // Truncate string to the defined length
-        $mung = Utils::Truncate($mung, $length);
+        if(null !== $length)
+            $mung = Utils::Truncate($mung, $length);
+        
         // wipe out any trailing dashes caused by the truncate
         $mung = preg_replace('/^-+|-+$/', '', $mung);        
     
@@ -106,12 +106,14 @@ class Utils
     }
     
     // System-generated URIs  
-    public static function GenerateUri($stub) // $stub isn't used, it's just here to force behavior that at least one argument passed 
+    public static function GenerateUri() // $stub isn't used, it's just here to force behavior that at least one argument passed 
     {
+        $parameterCount = func_num_args();
         $assets = func_get_args();
         $uri = Configuration::Site();
         $uri .= (Configuration::ModRewrite()) ? '': '?';
-        $uri .= implode('/', $assets).'/';
+        if ($parameterCount > 0)
+            $uri .= implode('/', $assets).'/';
         
         return $uri;
     }

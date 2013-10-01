@@ -26,12 +26,37 @@ class Content
     //Do-nothing function
     public static function ValidateUri()
     {
+        $l = Language::Create();
+        $index = array_search($l->Phrase('tags'), self::$uri);
+        $uri = implode('/', self::$uri);
+        // Check if 'tags' is triggered in the URI at the first location
+        // Go into Tag URI Validation
+        if($index === 0)
+        {
+            if(isset($_POST['tagSearch']))
+            {
+                $query = Utils::Munge($_POST['tagSearch']);
+                header('Location: '. Utils::GenerateUri('tags', $query));
+                exit;  
+            }
+            /*  TAGS Trigger:
+                /tags/<search-phrase>/
+                /tags/<search-phrase>/<index-number>/ (Seeking through results)
+                /tags/<search-phrase>/date/ (sort results by date, most recent first)
+                /tags/<search-phrase>/date/<index-number>/ (Seeking through results)
+            */        
+            elseif (preg_match('\/tags\/([A-Za-z0-9\-]+)((\/\d+||(date(\/\d+)*))(\/)*)*', $uri) === 1)
+                return; // URI validates, Tags Method will process output
+            else
+            {
+                header('Location: '. Utils::GenerateUri('404'));
+                exit;  
+            }
+        
+        }
         /*
-        TAGS Trigger:
-        /tags/<search-phrase>/
-        /tags/<search-phrase>/<index-number>/ (Seeking through results)
-        /tags/<search-phrase>/date/ (sort results by date, most recent first)
-        /tags/<search-phrase>/date/<index-number>/ (Seeking through results)
+
+
         
         CATEGORIES Trigger:
         /categories/<category-title>/
@@ -81,13 +106,13 @@ class Content
                 '*' => array(
                     'Content::ValidateUri'
                 ),
-                'tags' => 'Content::TagSearch',
-                'sitemap' => 'Sitemap::RenderXML',
-                'link' => 'Content::Permalink',
-                'feed' => 'Feed::Generate',
-                'api' => 'Content::Stub',
+//                'tags' => 'Content::TagSearch',
+//                'sitemap' => 'Sitemap::Hook',
+//                'link' => 'Content::Permalink',
+//                'feed' => 'Feed::Hook',
+//                'api' => 'Content::Stub',
                 'lang' => 'Language::Hook',
-                'admin' => 'Admin::Render'
+//                'admin' => 'Admin::Hook'
             ),
             'head' => array(
                 '*' => array(
@@ -158,7 +183,7 @@ class Content
         {
             //pass along the index where the hook appears in the URI
             $index = array_search($key, self::$uri);
-            if(array_key_exists($key, $hooks))
+            if($index !== false)
             {
                 if (is_array($hooks[$key]))
                 {                        
@@ -438,6 +463,7 @@ Otherwise, look for the space being called
     }    
     
 }
+
 
 class Space
 {

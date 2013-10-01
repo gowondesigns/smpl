@@ -195,11 +195,14 @@ class LanguageSet
     }
 
     // Get the information on the current language    
-    public function Info()
+    public function Name()
     {
-        return array(               
-            "language" => $this->language,
-            "code" => $this->languageCode);
+        return $this->language;
+    }
+
+    public function Code()
+    {
+        return $this->languageCode;
     }
 
     // Use language phrase    
@@ -208,7 +211,8 @@ class LanguageSet
         if (isset($this->languagePhrases[$key]))
             return $this->languagePhrases[$key];
         else
-            throw new UserErrorException("Phrase \"{$key}\" does not exist in {$this->language}-{$this->languageCode}"); 
+            return $key;
+            //throw new UserErrorException("Phrase \"{$key}\" does not exist in {$this->language}-{$this->languageCode}"); 
     }
     
     // Add/Update/Remove the content of a particular phrase, the changes are global    
