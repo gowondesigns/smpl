@@ -17,6 +17,9 @@ class Date
         
     private function __construct($smplDateString)
     {
+        if (preg_match('((?!0{4})\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])([0-1][0-9]|2[0-3])[0-5][0-9][0-5][0-9]', $uri) !== 1)
+            throw new StrictExceptions('Invalid Date');
+        
         $this->year = substr($smplDateString, 0, 4);
         $this->month = substr($smplDateString, 4, 2);
         $this->day = substr($smplDateString, 6, 2);
