@@ -19,7 +19,7 @@ class Content
     
     // [MUSTCHANGE]
     // Hooks define the behavior the CMS will take when a trigger is defined
-    // Custom hooks are inserted in smpl-includes/, filnames 'hook.<hook_name>.php'
+    // Custom hooks are inserted in smpl-includes/, filenames 'hook.<hook_name>.php'
     // 'StaticClassName::StaticMethodName'
 
 
@@ -141,7 +141,7 @@ class Content
         */
         foreach (glob("smpl-includes/class.*.php") as $filename)
         {
-            Debug::Message("Content\Including additional class found at: ".$filename);
+            Debug::Message("Content\\Including additional class found at: ".$filename);
             include_once($filename);
         }
         
@@ -218,7 +218,11 @@ class Content
         
     public static function Debug()
     {
-        return print_r(self, true);      
+        $data = array("hooks" => self::$hooks,
+            "spaces" => self::$spaces,
+            "suppressMainExec" => self::$suppressMainExec,
+            "uri" => self::$uri);
+        return print_r($data, true);
     }
     
     public static function GetCategoryById($id)
@@ -657,7 +661,7 @@ class Block implements IContent
     
     public function __construct($id, MySQLi_Result $data = null)
     {
-        if (null === $result)
+        if (null === $data)
         {
             $database = Database::Connect();
             $data = $database->Retrieve()
