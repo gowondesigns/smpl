@@ -6,6 +6,15 @@
 
 class Debug
 {
+    const DEBUG_ON = true;
+    const DEBUG_OFF = false;
+    const STRICT_ON = true;
+    const STRICT_OFF = false;
+    const VERBOSE_ON = true;
+    const VERBOSE_OFF = false;
+    const LOGGING_ON = true;
+    const LOGGING_OFF = false;
+    
     private static $debugMode = false;       // Debug messages are logged
     private static $isStrict = false;        // TRUE: All errors pass as exceptions | FALSE: Notices and Warnings passed as messages
     private static $isVerbose = false;       // Debug errors are printed to screeen (on false, debug errors are passed as HTML5 comments)
@@ -22,6 +31,10 @@ class Debug
         self::$isVerbose = $setVerbose;
         self::$isLogging = $setLogging;
         self::$logPath = $logPath;
+        
+        error_reporting(-1);
+        set_error_handler(array('Debug', 'ErrorHandler'));
+        register_shutdown_function(array('Debug', 'EndOfExecution'));
     }
     
     // Send a message to the debug log

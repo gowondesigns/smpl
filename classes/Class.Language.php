@@ -1,13 +1,17 @@
 <?php
-/* SMPL Language Classes
-// 
-// Example Use:
-// $l = Language::Create("en-US");
-// echo $l->Phrase("Author");
-//
-//*/
+/**
+ * Class.Language
+ *
+ * @package SMPL\Language
+ */
 
-
+/**
+ * Language Class
+ *
+ * Produces strict datetime objects that provide a fluent interface for
+ * converting into various types and formats  
+ * @package Language
+ */
 class Language
 {
     private static $langInstance = null;
@@ -45,7 +49,13 @@ class Language
     }
 }
 
-
+/**
+ * Language Set Class
+ *
+ * Produces strict datetime objects that provide a fluent interface for
+ * converting into various types and formats  
+ * @package Language\LanguageSet
+ */
 class LanguageSet
 {
     private $language = null;

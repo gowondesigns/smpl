@@ -7,6 +7,10 @@
 
 class Content
 {
+    const UNPUBLISHED = 0;
+    const PUBLISHED = 1;
+    const TO_PUBLISH = 2;    
+        
     private static $uri = null;
     private static $suppressMainExec = false;
     
@@ -61,23 +65,29 @@ class Content
         CATEGORIES Trigger:
         /categories/<category-title>/
         /categories/<category-title>/<index-number>/
+        \/categories\/([A-Za-z0-9\-]+)\/([0-9]*)\/?
         
         ARTICLES Trigger:
         /articles/ (all active articles)
         /articles/<index-number>/
+        \/articles\/([0-9]*)\/?
         
         Signature-Based Triggers:
         3-parameters, 2nd param = 'articles'
         /<category-title>/articles/<article-title>/ (Long-form URL, most helpful, default)
+        \/([A-Za-z0-9\-]+)\/articles\/([A-Za-z0-9\-]+)\/*
         
         2-parameters, 2nd param = 'articles'
         /<category-title>/articles/ (redirect to /categories/<category-title>/)
+        ([A-Za-z0-9\-]+)\/articles\/*
         
         2-parameters
         /<category-title>/<page-title>/ (Long-form URL)
+        \/([A-Za-z0-9\-]+)\/([A-Za-z0-9\-]+)\/*
         
         1-parameter
         /<page-title>/ (Articles cannot be accessed this way, they must have the "Static Content" flag to be treated like a page)
+        \/([A-Za-z0-9\-]+)\/* 
         
         ELSE
         
@@ -154,14 +164,14 @@ class Content
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
-            ->Item("publish-publish_flag-dropdown")->SetValue(1)
-            ->Match("publish-publish_flag-dropdown", 2)
+            ->Item("publish-publish_flag-dropdown")->SetValue(Content::PUBLISHED)
+            ->Match("publish-publish_flag-dropdown", Content::TO_PUBLISH)
             ->AndWhere()->LessThanOrEq("publish-publish_date-date", Date::Now()->ToInt())
             ->Send();
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
-            ->Item("publish-publish_flag-dropdown")->SetValue(0)
+            ->Item("publish-publish_flag-dropdown")->SetValue(Content::UNPUBLISHED)
             ->Item("publish-unpublish_flag-checkbox")->SetValue(0)
             ->Match("publish-unpublish_flag-checkbox", 1)
             ->AndWhere()->LessThanOrEq("publish-unpublish_date-date", Date::Now()->ToInt())

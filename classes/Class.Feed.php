@@ -134,7 +134,7 @@ final class AtomFeed extends aFeed implements IFeed
     public function Render()
     {
         $date = Date::Now();
-        $offset = Date::Offset();
+        $offset = Date::TimeZone();
         header("Content-Type: application/atom+xml charset=utf-8");
         header("Cache-Control:public");
         header("Expires: ".$date->AddTime(3600)->ToString('D, d M Y H:i:s \G\M\T')); 

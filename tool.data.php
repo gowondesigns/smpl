@@ -1,14 +1,8 @@
 <?php
-define("DEBUG_MODE", true);
-define("DEBUG_STRICT", false);
-define("DEBUG_VERBOSE", false);
-define("DEBUG_LOGGING", false);
-
-
 error_reporting(-1);
-set_error_handler(array('Debug', 'ErrorHandler'));
-register_shutdown_function(array('Debug', 'EndOfExecution'));
-Debug::Set(DEBUG_MODE, DEBUG_STRICT, DEBUG_VERBOSE, DEBUG_LOGGING);
+//set_error_handler(array('Debug', 'ErrorHandler'));
+//register_shutdown_function(array('Debug', 'EndOfExecution'));
+Debug::Set(Debug::DEBUG_ON, Debug::STRICT_OFF, Debug::VERBOSE_OFF, Debug::LOGGING_OFF);
 
 function __autoload($class_name)
 {

@@ -1,10 +1,17 @@
 <?php
-/* SMPL Date Class
-// 
-//
-//*/
+/**
+ * Class.Date
+ *
+ * @package SMPL\Date
+ */
 
-
+/**
+ * Date Class
+ *
+ * Produces strict datetime objects that provide a fluent interface for
+ * converting into various types and formats  
+ * @package Date
+ */
 class Date
 {
     private $year;
@@ -14,112 +21,168 @@ class Date
     private $minutes;
     private $seconds;
     
-        
-    private function __construct($smplDateString)
+    /**
+     * Date constructor
+     *
+     * Private Date constructor so that Date objects can only be created
+     * via public methods. Formed from a datetime string in the
+     * format: YYYYMMDDHHmmSS. The datetime is always interpreted as UTC.
+     *                
+     * @return void
+     */        
+    private function __construct($datetime)
     {
-        if (preg_match('((?!0{4})\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])([0-1][0-9]|2[0-3])[0-5][0-9][0-5][0-9]', $uri) !== 1)
-            throw new StrictExceptions('Invalid Date');
+        if (preg_match('((?!0{4})\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])([0-1][0-9]|2[0-3])[0-5][0-9][0-5][0-9]', $datetime) !== 1)
+            throw new StrictException('Invalid Date String: '. $datetime);
         
-        $this->year = substr($smplDateString, 0, 4);
-        $this->month = substr($smplDateString, 4, 2);
-        $this->day = substr($smplDateString, 6, 2);
-        $this->hours = substr($smplDateString, 8, 2);
-        $this->minutes = substr($smplDateString, 10, 2);
-        $this->seconds = substr($smplDateString, 12, 2);
+        $this->year = substr($datetime, 0, 4);
+        $this->month = substr($datetime, 4, 2);
+        $this->day = substr($datetime, 6, 2);
+        $this->hours = substr($datetime, 8, 2);
+        $this->minutes = substr($datetime, 10, 2);
+        $this->seconds = substr($datetime, 12, 2);
     }
 
-    // Returns current date
+    /**
+     * Generates Date object with current datetime
+     *
+     * @return Date
+     */  
     public static function Now()
     {
         return new self(date("YmdHis"));
     }
 
-    // Create new Date or generate Date from SMPL Date Strings
-    // SmplDateTime Strings are always stored in the following format: YYYYMMDDHHMMSS
-    // Always interpreted as UTC
-    // other possible names? FromFlat, FromFlatDate
-    public static function FromString($string)
+    /**
+     * Generates Date object from given string
+     *
+     * @param string $datetime Datetime string in YYYYMMDDHHmmSS format
+     *     
+     * @return Date
+     */ 
+    public static function FromString($datetime)
     {
-        // Maybe validate string and throw error on fail
-        return new self($string);
+        return new self($datetime);
     }
     
-    // Create new Date from Unix timestamp
+    /**
+     * Generates Date object from given Unix timestamp
+     *
+     * @param int $timestamp
+     *     
+     * @return Date
+     */ 
     public static function FromTime($timestamp)
     {
         $string = date("YmdHis", $timestamp);
         return new self($string);
     }
 
-    // Pass timezone offset in HHMM or HH:MM format
-    public static function Offset($useSemiColon = true)
+    /**
+     * Generates timezone offset
+     *
+     * @param bool $useSemiColon Set whether or not to include semicolor in timezone string
+     *     
+     * @return string Returns timezone offset in HHMM or HH:MM format
+     */
+    public static function TimeZone($useSemiColon = true)
     {
         $value = intval(Configuration::Get('dateOffset'));
-        if ($value > 14 || $value < -12)
-            throw new StrictException("Date offset of ".$value." is invalid.");
+        if ($value > 14 || $value < -12) {
+            throw new StrictException("System Timezone offset of ".$value." is invalid.");
+        }
         
-        if ($value < 0)
-            $offset = "-".str_pad(abs($value), 2, "0", STR_PAD_LEFT);
-        else
-            $offset = "+".str_pad(abs($value), 2, "0", STR_PAD_LEFT);
+        if ($value < 0) {
+            $timeZone = "-".str_pad(abs($value), 2, "0", STR_PAD_LEFT);
+        }
+        else {
+            $timeZone = "+".str_pad(abs($value), 2, "0", STR_PAD_LEFT);
+        }
         
-        if ($useSemiColon)
-            $offset .= ":00";
-        else
-            $offset .= "00";        
+        if ($useSemiColon) {
+            $timeZone .= ":00";
+        }
+        else {
+            $timeZone .= "00";
+        }        
 
-        return $offset;
+        return $timeZone;
     }
     
-    // Shift date in seconds
+    /**
+     * Shift the stored date in seconds
+     *
+     * @param int $timeshift Amount in seconds to shift the stored time. Negative value will subtract time
+     *     
+     * @return Date Returns self for fluent interface
+     */
     public function AddTime($timeshift)
     {
         $time = mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year);
-        $time += $timeshift; // Add time shift (subtract by using a negative amount)
-        
+        $time += $timeshift;
         $date = date("YmdHis", $time);
         $this->year = substr($date, 0, 4);
         $this->month = substr($date, 4, 2);
         $this->day = substr($date, 6, 2);
         $this->hours = substr($date, 8, 2);
         $this->minutes = substr($date, 10, 2);
-        $this->seconds = substr($date, 12, 2);
-        
+        $this->seconds = substr($date, 12, 2);        
         return $this;
     }
         
-    // Return date string in specified format. If null, default to SMPL Date Format
-    public function ToString($stringFormat = null, $offset = false)
+    /**
+     * Returns date in string format
+     *
+     * @param string $format Set format for datetime string
+     * @param bool $useLocalOffset Set whether or not to offest time by system timezone     
+     *     
+     * @return string Returns datetime
+     */
+    public function ToString($format = null, $useLocalOffset = false)
     {
-        if (null === $stringFormat)
-            $stringFormat = "YmdHis";
-            
         $time = mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year);
         
-        if ($offset)
-            $time += (intval(Configuration::Get('dateOffset')) * 3600); // Add offset
+        if (null === $format) {
+            $format = "YmdHis";
+        }
         
-        return date($stringFormat, $time);
+        if ($useLocalOffset) {
+            $time += (intval(Configuration::Get('dateOffset')) * 3600);
+        }
+        
+        return date($format, $time);
     }
     
-    // Return date as integer in SMPL Date Format
-    public function ToInt($offset = false)
+    /**
+     * Returns date in int format
+     *
+     * @param bool $useLocalOffset Set whether or not to offest time by system timezone
+     *     
+     * @return int Returns datetime
+     */
+    public function ToInt($useLocalOffset = false)
     {
         $time = mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year);
         
-        if ($offset)
-            $time += (intval(Configuration::Get('dateOffset')) * 3600); // Add offset
+        if ($useLocalOffset)
+            $time += (intval(Configuration::Get('dateOffset')) * 3600);
         
         return floatval(date("YmdHis", $time));
     }
     
-    // Return date in Unix timestamp format
-    public function ToTime($offset = false)
+    /**
+     * Returns date in Unix timestamp format
+     *
+     * @param bool $useLocalOffset Set whether or not to offest time by system timezone
+     *     
+     * @return int Returns Unix timestamp
+     */
+    public function ToTime($useLocalOffset = false)
     {
         $time = mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year);
         
-        if ($offset)
-            $time += (intval(Configuration::Get('dateOffset')) * 3600); // Add offset
+        if ($useLocalOffset)
+            $time += (intval(Configuration::Get('dateOffset')) * 3600);
         
         return $time;
     }

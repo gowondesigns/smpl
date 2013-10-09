@@ -7,16 +7,10 @@
                   GNU General Public License v3
                   <http://www.gnu.org/licenses/gpl-3.0.html>
 ------------------------------------------------------------------------------*/
-define("DEBUG_MODE", true);
-define("DEBUG_STRICT", false);
-define("DEBUG_VERBOSITY", false);
-define("DEBUG_LOGGING", false);
-
-
 error_reporting(-1);
-set_error_handler(array('Debug', 'ErrorHandler'));
-register_shutdown_function(array('Debug', 'EndOfExecution'));
-Debug::Set(DEBUG_MODE, DEBUG_STRICT, DEBUG_VERBOSITY, DEBUG_LOGGING);
+//set_error_handler(array('Debug', 'ErrorHandler'));
+//register_shutdown_function(array('Debug', 'EndOfExecution'));
+Debug::Set(Debug::DEBUG_ON, Debug::STRICT_ON, Debug::VERBOSE_ON, Debug::LOGGING_OFF);
 
 IncludeFromFolder("classes/");
 
