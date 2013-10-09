@@ -7,10 +7,6 @@
 
 class Content
 {
-    const UNPUBLISHED = 0;
-    const PUBLISHED = 1;
-    const TO_PUBLISH = 2;    
-        
     private static $uri = null;
     private static $suppressMainExec = false;
     
@@ -164,14 +160,14 @@ class Content
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
-            ->Item("publish-publish_flag-dropdown")->SetValue(Content::PUBLISHED)
-            ->Match("publish-publish_flag-dropdown", Content::TO_PUBLISH)
+            ->Item("publish-publish_flag-dropdown")->SetValue(IQuery::PUBLISHED)
+            ->Match("publish-publish_flag-dropdown", IQuery::TO_PUBLISH)
             ->AndWhere()->LessThanOrEq("publish-publish_date-date", Date::Now()->ToInt())
             ->Send();
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
-            ->Item("publish-publish_flag-dropdown")->SetValue(Content::UNPUBLISHED)
+            ->Item("publish-publish_flag-dropdown")->SetValue(IQuery::UNPUBLISHED)
             ->Item("publish-unpublish_flag-checkbox")->SetValue(0)
             ->Match("publish-unpublish_flag-checkbox", 1)
             ->AndWhere()->LessThanOrEq("publish-unpublish_date-date", Date::Now()->ToInt())

@@ -7,6 +7,13 @@
 
 class Configuration
 {
+    const DB_TYPE = 'MySql';
+    const DB_HOST = 'localhost';
+    const DB_NAME = 'smpl';
+    const DB_USER = 'root';
+    const DB_PASS = 'root';
+    const DB_PREFIX = '';
+
     private static $database = array(
         'type' => 'MySql',
         'host' => 'localhost',

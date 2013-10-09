@@ -72,7 +72,7 @@ CREATE TABLE `content` (
   `meta-static_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
   `meta-default_page_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
   `meta-indexed_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
-  `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
+  `publish-publish_flag-dropdown` INT NOT NULL DEFAULT 1,
   `publish-publish_date-date` BIGINT UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
   `publish-unpublish_date-date` BIGINT UNSIGNED NOT NULL
@@ -98,10 +98,10 @@ CREATE TABLE `blocks` (
  	`content-title_mung-field` VARCHAR(25) UNIQUE NOT NULL,
   `content-body-textarea` LONGTEXT DEFAULT NULL,
   `meta-space-dropdown` INT NOT NULL DEFAULT 1,
-  `meta-priority-dropdown` ENUM('HIGH', 'MED', 'LOW') NOT NULL DEFAULT 'LOW',
+  `meta-priority-dropdown` INT NOT NULL DEFAULT 3,
   `meta-redirect_flag-checkbox` BOOL NOT NULL DEFAULT TRUE,
   `meta-redirect_location-field` VARCHAR(255) DEFAULT NULL,
-  `publish-publish_flag-dropdown` ENUM('NOTPUBLISHED', 'PUBLISHED', 'TOPUBLISH') NOT NULL DEFAULT 'PUBLISHED',
+  `publish-publish_flag-dropdown` INT NOT NULL DEFAULT 1,
   `publish-publish_date-date` BIGINT(14) UNSIGNED NOT NULL,
   `publish-unpublish_flag-checkbox` BOOL NOT NULL DEFAULT FALSE,
   `publish-unpublish_date-date` BIGINT(14) UNSIGNED NOT NULL

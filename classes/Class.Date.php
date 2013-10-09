@@ -9,7 +9,8 @@
  * Date Class
  *
  * Produces strict datetime objects that provide a fluent interface for
- * converting into various types and formats  
+ * converting into various types and formats
+ * 
  * @package Date
  */
 class Date
@@ -20,16 +21,18 @@ class Date
     private $hours;
     private $minutes;
     private $seconds;
-    
+
     /**
      * Date constructor
      *
      * Private Date constructor so that Date objects can only be created
      * via public methods. Formed from a datetime string in the
      * format: YYYYMMDDHHmmSS. The datetime is always interpreted as UTC.
-     *                
-     * @return void
-     */        
+     *
+     * @param $datetime
+     * @throws StrictException
+     * @return \Date
+     */
     private function __construct($datetime)
     {
         if (preg_match('((?!0{4})\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])([0-1][0-9]|2[0-3])[0-5][0-9][0-5][0-9]', $datetime) !== 1)
@@ -57,7 +60,6 @@ class Date
      * Generates Date object from given string
      *
      * @param string $datetime Datetime string in YYYYMMDDHHmmSS format
-     *     
      * @return Date
      */ 
     public static function FromString($datetime)
@@ -81,8 +83,8 @@ class Date
     /**
      * Generates timezone offset
      *
-     * @param bool $useSemiColon Set whether or not to include semicolor in timezone string
-     *     
+     * @param bool $useSemiColon Set whether or not to include semicolon in timezone string
+     * @throws StrictException
      * @return string Returns timezone offset in HHMM or HH:MM format
      */
     public static function TimeZone($useSemiColon = true)
@@ -134,7 +136,7 @@ class Date
      * Returns date in string format
      *
      * @param string $format Set format for datetime string
-     * @param bool $useLocalOffset Set whether or not to offest time by system timezone     
+     * @param bool $useLocalOffset Set whether or not to offset time by system timezone
      *     
      * @return string Returns datetime
      */
@@ -173,7 +175,7 @@ class Date
     /**
      * Returns date in Unix timestamp format
      *
-     * @param bool $useLocalOffset Set whether or not to offest time by system timezone
+     * @param bool $useLocalOffset Set whether or not to offset time by system timezone
      *     
      * @return int Returns Unix timestamp
      */

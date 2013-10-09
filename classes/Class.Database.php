@@ -1,10 +1,15 @@
 <?php
-/* SMPL Database Classes
-// 
-//
-//*/
+/**
+ * Class.Database
+ *
+ * @package SMPL\Database
+ */
 
-    
+/**
+ * Database Class
+ *
+ * @package Database
+ */
 class Database
 {
     private static $mainDatabaseInstance = null;
@@ -12,15 +17,11 @@ class Database
     // Database factory method, establish database connection and then pass it
     public static function Connect($databaseType = null, $host = null, $name = null, $username = null, $password = null, $prefix = null)
     {
-        $configurations = Configuration::Database();
-        
         // If no database type is specified, assume that the main database object is being used
-        if (null === $databaseType)
-        {
-            $databaseType = $configurations['type'].'Database';
-            if (null === self::$mainDatabaseInstance)
-            {
-                self::$mainDatabaseInstance = new $databaseType($configurations['host'], $configurations['name'], $configurations['username'], $configurations['password'], $configurations['prefix']);
+        if (null === $databaseType) {
+            $databaseType = Configuration::DB_TYPE.'Database';
+            if (null === self::$mainDatabaseInstance) {
+                self::$mainDatabaseInstance = new $databaseType(Configuration::DB_HOST, Configuration::DB_NAME, Configuration::DB_USER, Configuration::DB_PASS, Configuration::DB_PREFIX);
             }
             
             return self::$mainDatabaseInstance;
@@ -29,19 +30,19 @@ class Database
         {
             $databaseType .= 'Database';
             
-            if($host)
-                $configurations['host'] = $host;
-            if($name)
-                $configurations['name'] = $name;
-            if($username)
-                $configurations['username'] = $username;
-            if($password)
-                $configurations['password'] = $password;
-            if($prefix)
-                $configurations['prefix'] = $prefix;
+            if(!isset($host))
+                $host = Configuration::DB_HOST;
+            if(!isset($name))
+                $name = Configuration::DB_NAME;
+            if(!isset($username))
+                $username = Configuration::DB_USER;
+            if(!isset($password))
+                $password = Configuration::DB_PASS;
+            if(!isset($prefix))
+                $prefix = Configuration::DB_PREFIX;
             
             
-            return new $databaseType($configurations['host'], $configurations['name'], $configurations['username'], $configurations['password'], $configurations['prefix']);
+            return new $databaseType($host, $name, $username, $password, $prefix);
         }
     }
 }
@@ -86,14 +87,14 @@ class MySqlDatabase extends MySQLi implements IDatabase
 
     public function Query($query)
     {
-        Debug::Message("MySqlDatabase\Query: ".$query);
+        Debug::Message('MySqlDatabase\Query: '.$query);
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
         
     public function CustomQuery($query)
     {
-        Debug::Message("MySqlDatabase\Query: ".$query);
+        Debug::Message('MySqlDatabase\Query: '.$query);
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
@@ -207,12 +208,12 @@ interface IQuery
     /* Constants used in queries */
     const SORT_ASC = 'ASC';
     const SORT_DESC = 'DESC';
-    const STATE_PUBLISHED = 'PUBLISHED';
-    const STATE_TOPUBLISH = 'TOPUBLISH';
-    const STATE_NOT_PUBLISHED = 'NOTPUBLISHED';
-    const PRIORITY_HIGH = 'HIGH';
-    const PRIORITY_MED = 'MED';
-    const PRIORITY_LOW = 'LOW';
+    const PUBLISHED = 1;
+    const TO_PUBLISH = 2;
+    const UNPUBLISHED = 0;
+    const PRIORITY_HIGH = 1;
+    const PRIORITY_MED = 2;
+    const PRIORITY_LOW = 3;
     
     public function Send(IDatabase $database); // possible name, ToDatabase()?
     public function ToString();
