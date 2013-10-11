@@ -35,15 +35,16 @@ class Date
      */
     private function __construct($datetime)
     {
-        if (preg_match('((?!0{4})\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])([0-1][0-9]|2[0-3])[0-5][0-9][0-5][0-9]', $datetime) !== 1)
+        $valid = Pattern::Validate(Pattern::SIGNATURE_DATETIME, $datetime);
+        if ($valid === false)
             throw new StrictException('Invalid Date String: '. $datetime);
         
-        $this->year = substr($datetime, 0, 4);
-        $this->month = substr($datetime, 4, 2);
-        $this->day = substr($datetime, 6, 2);
-        $this->hours = substr($datetime, 8, 2);
-        $this->minutes = substr($datetime, 10, 2);
-        $this->seconds = substr($datetime, 12, 2);
+        $this->year = $valid[1];
+        $this->month = $valid[2];
+        $this->day = $valid[3];
+        $this->hours = $valid[4];
+        $this->minutes = $valid[5];
+        $this->seconds = $valid[6];
     }
 
     /**
@@ -71,7 +72,6 @@ class Date
      * Generates Date object from given Unix timestamp
      *
      * @param int $timestamp
-     *     
      * @return Date
      */ 
     public static function FromTime($timestamp)

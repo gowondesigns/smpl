@@ -6,7 +6,7 @@ These guidelines try to cover both, the technical standards as well as giving in
 
 __Note: These guidelines have been adapted from those utilized by the TYPO3 Association documentation. Their PHP Coding and Style guide can be found [here][1].__
 
-## Code Formatting and Layout aka "Beautiful Code"
+## Code Formatting and Layout, *Beautiful Code*
 
 The visual style of programming code is very important. In the SMPL project we want many programmers to contribute, but in the same style. This will help us to:
 
@@ -17,7 +17,7 @@ Some people may object to the visual guidelines since everyone has their own hab
 
 ### General Considerations
 
-*   Almost every PHP file in SMPL contains exactly one class and does not output anything if it is called directly. Therefore you start your file with a <?php tag and end it with the closing ?>.
+*   Almost every PHP file in SMPL contains exactly one class and does not output anything if it is called directly. Therefore you start your file with a `<?php` tag and end it with the closing `?>`.
 *   Every file must contain a [PHPDoc][2] header stating package and licensing information
 
 *The SMPL standard file header*:
@@ -78,7 +78,7 @@ The full package key is then built by combining the vendor namespace and the pac
 
 Only the characters a-z, A-Z and 0-9 are allowed for interface names – don't use special characters. Use adjectives whenever possible for Interface names, otherwise do not use any additional modifications. Always avoid naming tautologies like *IClass*, or *ClassInterface*. All interface names are written in UpperCamelCase.
 
-*A few examples follow:*
+*A few examples:*
 
 *   \SMPL\Core\Object\Truck
 *   \SMPL\Core\Object\Queryable
@@ -100,11 +100,11 @@ All method names are written in lowerCamelCase. In order to avoid problems with 
 
 Make method names descriptive, but keep them concise at the same time. Constructors must always be called __construct(), never use the class name as a method name.
 
-*   myMethod()
-*   someNiceMethodName()
-*   betterWriteLongMethodNamesThanNamesNobodyUnderstands()
-*   singYmcaLoudly()
-*   __construct()
+*   `myMethod()`
+*   `someNiceMethodName()`
+*   `betterWriteLongMethodNamesThanNamesNobodyUnderstands()`
+*   `singYmcaLoudly()`
+*   `__construct()`
 
 ### Variable Names
 
@@ -115,15 +115,15 @@ Variable names are written in lowerCamelCase and should be:
 
 *Correct naming of variables:*
 
-*   $singletonObjectsRegistry
-*   $argumentsArray
-*   $aLotOfHTMLCode
+*   `$singletonObjectsRegistry`
+*   `$argumentsArray`
+*   `$aLotOfHTMLCode`
 
 *Incorrect naming of variables*
 
-*   $sObjRgstry
-*   $argArr
-*   $cx
+*   `$sObjRgstry`
+*   `$argArr`
+*   `$cx`
 
 As a special exception you may use variable names like $i, $j and $k for numeric indexes in for loops if it's clear what they mean on the first sight. But even then you should want to avoid them.
 
@@ -249,12 +249,6 @@ You may break a string into multiple lines if you use the dot operator. You'll h
 
 ## Development Process
 
-### Test-Driven Development
-
-In a nutshell: before coding a feature or fixing a bug, write an unit test.
-
-Whatever you do: before committing changes to the repository, run all unit tests to make sure nothing is broken!
-
 ### Commit Messages
 
 To have a clear and focused history of code changes is greatly helped by using a consistent way of writing commit messages. Because of this and to help with (partly) automated generation of change logs for each release we have defined a fixed syntax for commit messages that is to be used.
@@ -337,7 +331,7 @@ The syntax is as follows:
 
 ### Source Code Documentation
 
-All code must be documented with inline comments. The syntax is similar to that known from the Java programming language (JavaDoc). This way code documentation can automatically be generated using [PHP_UML][4].
+All code must be documented using PHPDoc. The syntax is similar to that known from the Java programming language (JavaDoc). This way code documentation can automatically be generated using [PHP_UML][4].
 
 ### Documentation Blocks
 
@@ -373,7 +367,7 @@ Properties of a class should be documented as well. We use the short version for
      * A short description, very much recommended
      * @var string
      */
-    protected $title = &#39;Untitled&#39;;
+    protected $title = 'Untitled';
     
 
 ### Method Documentation
@@ -427,13 +421,13 @@ There are not only documentation annotations that can be used. In SMPL annotatio
 
 Here is a list of annotations used within the project. They are grouped by use case and the order given here should be kept for the sake of consistency.
 
-*Interface Documentation*
+__Interface Documentation__
 
 *   @api
 *   @since
 *   @deprecated
 
-*Class Documentation*
+__Class Documentation__
 
 *   @api
 *   @since
@@ -443,7 +437,7 @@ Here is a list of annotations used within the project. They are grouped by use c
 *   @CoreScope
 *   @CoreAspect
 
-*Property Documentation*
+__Property Documentation__
 
 *   @var
 *   @CoreIntroduce
@@ -454,7 +448,7 @@ Here is a list of annotations used within the project. They are grouped by use c
 *   @since
 *   @deprecated
 
-*Constructor Documentation*
+__Constructor Documentation__
 
 *   @param
 *   @throws
@@ -462,7 +456,7 @@ Here is a list of annotations used within the project. They are grouped by use c
 *   @since
 *   @deprecated
 
-*Method Documentation*
+__Method Documentation__
 
 *   @param
 *   @return
@@ -479,15 +473,9 @@ Here is a list of annotations used within the project. They are grouped by use c
 *   @CoreAround
 *   @CoreBefore
 
-*Testcase Documentation*
 
-*   @test
-*   @dataProvider
-*   @expectedException
-
-Tip
-
-Additional annotations (more or less only the @todo and @see come to mind here), should be placed after all other annotations.
+__*Tip*__
+> Additional annotations (more or less only the @todo and @see come to mind here), should be placed after all other annotations.
 
 ## Best Practices
 
@@ -512,42 +500,29 @@ When throwing an exception, make sure to provide a clear error message and an *e
 
 For every exception there should be a page on the SMPL wiki, as exception messages link to that page, identified by the error code (unix timestamp).
 
-### Unit Testing
-
-Some notes for a start:
-
-*   Never use the object manager or factory in unit tests! If they are needed, mock them.
-*   Avoid tests for the scope of an object. Those tests test the object factory, rather then the test target. Such a test should be done by checking for the presence of an expected @scope annotation – eventually we will find an elegant way for this.
-
-### Cross Platform Coding
-
-*   When concatenating paths, always use \SMPL\Core\Utility\Files::concatenatePaths() to avoid trouble.
-
 ### PHP in General
 
 *   All code should be object oriented. This means there should be no functions outside classes if not absolutely necessary. If you need a "container" for some helper methods, consider creating a static class.
 
 *   All code must make use of PHP5 advanced features for object oriented programming.
     
-    *   Use [PHP namespaces][48]
+    *   Use [PHP namespaces][5]
     *   Always declare the scope (public, protected, private) of methods and member variables
-    *   Make use of iterators and exceptions, have a look at the [SPL][49]
-*   Make use of [type-hinting][50] wherever possible
+    *   Make use of iterators and exceptions, have a look at the [SPL][6]
+*   Make use of [type-hinting][7] wherever possible
 
 *   Always use <?php as opening tags (never only <?)
 
 *   Always use the closing tag ?> at the end of a file, don't leave it out (this ain't no Zend Framework, dude)
 
-*   Never use the shut-up operator @ to suppress error messages. It makes debugging harder, is dirty style and slow as hell
+*   Never use the shut-up operator @ to suppress error messages. It makes debugging harder, very slow, and is generally bad practice.
 
 *   Prefer strict comparisons whenever possible, to avoid problems with truthy and falsy values that might behave different than what you expect. Here are some examples:
-    
-    Examples of good and bad comparisons:
-    
+
         if ($template)             // BAD
         if (isset($template))      // GOOD
         if ($template !== NULL))   // GOOD
-        if ($template !== &#39;&#39;))     // GOOD
+        if ($template !== ''))     // GOOD
         
         if (strlen($template) > ) // BAD! strlen("-1") is greater than 0
         if (is_string($template) && strlen($template) > ) // BETTER
@@ -557,8 +532,6 @@ Some notes for a start:
         if ($foo === $bar))        // GOOD
         if ($foo !== $bar))        // GOOD
         
-    
-    Truthy and falsy are fuzzy...
 
 *   Order of methods in classes. To gain a better overview, it helps if methods in classes are always ordered in a certain way. We prefer the following:
     
@@ -570,7 +543,8 @@ Some notes for a start:
     *   private methods
     *   shutdown methods
     *   destructor
-*   Avoid double-negation. Instead of exportSystemView(..., $noRecurse) use exportSystemView(..., $recurse). It is more logical to pass TRUE if you want recursion instead of having to pass FALSE. In general, parameters negating things are a bad idea.
+
+*   Avoid double-negation in method parameters. Instead of exportSystemView(..., $noRecurse) use exportSystemView(..., $recurse). It is more logical to pass TRUE if you want recursion instead of having to pass FALSE. In general, parameters negating things are a bad idea.
 
 ### Comments
 
@@ -592,12 +566,10 @@ This is a perfect case for the refactoring technique "extract method": In order 
 
 Bottom line is: You may (and are encouraged to) use inline comments if they support the readability of your code. But always be aware of possible design flaws you probably try to hide with them.
 
-* * *
-
  [1]: http://docs.typo3.org/flow/TYPO3FlowDocumentation/stable/TheDefinitiveGuide/PartV/CodingGuideLines/PHP.html
  [2]: http://www.phpdoc.org/docs/latest/for-users/phpdoc-reference.html
  [3]: http://discuss.fogcreek.com/joelonsoftware/default.asp?cmd=show&ixPost=3978
  [4]: http://pear.php.net/package/PHP_UML
- [48]: http://www.php.net/manual/language.namespaces.php
- [49]: http://www.php.net/manual/ref.spl.php
- [50]: http://www.php.net/manual/language.oop5.typehinting.php
+ [5]: http://www.php.net/manual/language.namespaces.php
+ [6]: http://www.php.net/manual/ref.spl.php
+ [7]: http://www.php.net/manual/language.oop5.typehinting.php

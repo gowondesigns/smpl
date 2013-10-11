@@ -4,7 +4,8 @@
 //
 //*/
 
-
+// Must refactor, Utility Class is an Anti-pattern
+// Most of these could be moved to the Content class
 class Utils
 {
     // const $codeset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
