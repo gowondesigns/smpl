@@ -11,7 +11,7 @@ function __autoload($class_name)
 
 IncludeFromFolder("classes/");
 
-$database = Database::Connect();
+$database = Config::Database();
 $html = '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,8 +46,7 @@ echo $html;
 
 function CreateDatabase()
 {
-    $configurations = Configuration::Database();
-    $database = Database::Connect();
+    $database = Config::Database();
     $file = file_get_contents('./data/database.sql', true);
     $database->Custom($file)->Send();
     return "Database Created";    
@@ -56,7 +55,7 @@ function CreateDatabase()
 function GenerateNewData()
 {
     ClearAllData();
-    $database = Database::Connect();
+    $database = Config::Database();
     $queries = array();
     $errors = array();
 
@@ -157,7 +156,7 @@ function GenerateNewData()
         $errors[] = $database->Create()
             ->UsingTable("categories")
             ->Item('title-field')->SetValue($key)
-            ->Item('title_mung-field')->SetValue(Utils::Munge($key, Configuration::Get('siteMungLength')))
+            ->Item('title_mung-field')->SetValue(Utils::Munge($key, Config::Get('siteMungLength')))
             ->Item('publish_flag-checkbox')->SetValue($value)
             ->Send(); 
     }
@@ -176,7 +175,7 @@ function GenerateNewData()
         $errors[] = $database->Create()
             ->UsingTable("spaces")
             ->Item('title-field')->SetValue($key)
-            ->Item('title_mung-field')->SetValue(Utils::Munge($key, Configuration::Get('siteMungLength')))
+            ->Item('title_mung-field')->SetValue(Utils::Munge($key, Config::Get('siteMungLength')))
             ->Item('publish_flag-checkbox')->SetValue($value)
             ->Send(); 
     }
@@ -193,7 +192,7 @@ function GenerateNewData()
         $errors[] = $database->Create()
             ->UsingTable("content")
             ->Item('content-title-field')->SetValue($title)
-            ->Item('content-title_mung-field')->SetValue(Utils::Munge($title, Configuration::Get('siteMungLength')))
+            ->Item('content-title_mung-field')->SetValue(Utils::Munge($title, Config::Get('siteMungLength')))
             ->Item('meta-static_page_flag-checkbox')->SetValue(rand(0,1))
             ->Item('meta-indexed_flag-checkbox')->SetValue(rand(0,1))
             ->Item('meta-default_page_flag-checkbox')->SetValue($default)
@@ -201,7 +200,7 @@ function GenerateNewData()
             ->Item('meta-author-dropdown')->SetValue(rand(1,16))
             ->Item('meta-date-date')->SetValue(Date::Now()->AddTime($i)->ToInt())
             ->Item('content-body-textarea')->SetValue($database->real_escape_string(gibberish(4,20)))
-            ->Item('publish-publish_flag-dropdown')->SetValue(IQuery::PUBLISHED)
+            ->Item('publish-publish_flag-dropdown')->SetValue(Query::PUBLISHED)
             ->Item('publish-publish_date-date')->SetValue(Date::Now()->AddTime($i)->ToInt())
             ->Item('publish-unpublish_flag-checkbox')->SetValue(rand(0,1))
             ->Item('publish-unpublish_date-date')->SetValue(Date::Now()->AddTime(120 + $i)->ToInt())
@@ -261,16 +260,15 @@ echo $result; # prints: <p>Hello <strong>Parsedown</strong>!</p>
 
 function ClearAllData()
 {
-    $configurations = Configuration::Database();
-    $database = Database::Connect();
+    $database = Config::Database();
     
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}api")->Send();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}blocks")->Send();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}categories")->Send();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}content")->Send();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}settings")->Send();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}spaces")->Send();
-    $database->Custom("TRUNCATE TABLE {$configurations['prefix']}users")->Send();
+    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'api')->Send();
+    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'blocks')->Send();
+    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'categories')->Send();
+    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'content')->Send();
+    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'settings')->Send();
+    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'spaces')->Send();
+    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'users')->Send();
     
     return "All Data Clear";
 }

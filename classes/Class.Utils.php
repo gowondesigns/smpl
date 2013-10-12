@@ -111,8 +111,8 @@ class Utils
     {
         $parameterCount = func_num_args();
         $assets = func_get_args();
-        $uri = Configuration::Site();
-        $uri .= (Configuration::ModRewrite()) ? '': '?';
+        $uri = Config::Site();
+        $uri .= (Config::USE_MODREWRITE) ? '': '?';
         if ($parameterCount > 0)
             $uri .= implode('/', $assets).'/';
         
@@ -123,9 +123,9 @@ class Utils
     public static function AppendUri($asset)
     {
         $optionalAssets = array_slice(func_get_args(), 1);
-        $uri = Configuration::Site();
+        $uri = Config::Site();
         
-        if (Configuration::ModRewrite())
+        if (Config::USE_MODREWRITE)
         {
             $uri .= $asset.'/';
         }
@@ -170,7 +170,7 @@ class Utils
     {
         $base = str_split(self::$permalinkBase);
         $baseNum = count($base);
-        $salt = intval( Configuration::Get('permalinkSalt'));
+        $salt = intval( Config::Get('permalinkSalt'));
 
         // Shift the order of base by the salt amount. + = Shift Left, - = Shift Right
         $baseOffset = $salt % $baseNum;
@@ -217,7 +217,7 @@ class Utils
     {
         $base = str_split(self::$permalinkBase);
         $baseNum = count($base);
-        $salt = intval( Configuration::Get('permalinkSalt'));
+        $salt = intval( Config::Get('permalinkSalt'));
 
         // Shift the order of base by the salt amount. + = Shift Left, - = Shift Right
         $baseOffset = $salt % $baseNum;

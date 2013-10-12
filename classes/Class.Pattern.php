@@ -83,10 +83,10 @@ class Pattern
     const SIGNATURE_URI_PAGE_1PARAM = '/\/([A-Za-z0-9\-]+)\//';
 
     /**
-     * This class should not be instantiated
+     * Empty private constructor to enforce "static-ness"
      *
      * @return void
-     */ 
+     */
     private function __construct() {}
     
     /**

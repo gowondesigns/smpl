@@ -22,7 +22,7 @@ class Sitemap
     public static function RenderXML()
     {
         header("Content-Type: application/xml charset=utf-8");
-        $database = Database::Connect();
+        $database = Config::Database();
         
         $xml = "<\x3Fxml version=\"1.0\" encoding=\"utf-8\"\x3F>\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';

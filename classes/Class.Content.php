@@ -156,18 +156,18 @@ class Content
         if (!isset($_POST[$key]))
             unset($_SESSION[$key]['validate']);
         
-        $database = Database::Connect();
+        $database = Config::Database();
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
-            ->Item("publish-publish_flag-dropdown")->SetValue(IQuery::PUBLISHED)
-            ->Match("publish-publish_flag-dropdown", IQuery::TO_PUBLISH)
+            ->Item("publish-publish_flag-dropdown")->SetValue(Query::PUBLISHED)
+            ->Match("publish-publish_flag-dropdown", Query::TO_PUBLISH)
             ->AndWhere()->LessThanOrEq("publish-publish_date-date", Date::Now()->ToInt())
             ->Send();
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
-            ->Item("publish-publish_flag-dropdown")->SetValue(IQuery::UNPUBLISHED)
+            ->Item("publish-publish_flag-dropdown")->SetValue(Query::UNPUBLISHED)
             ->Item("publish-unpublish_flag-checkbox")->SetValue(0)
             ->Match("publish-unpublish_flag-checkbox", 1)
             ->AndWhere()->LessThanOrEq("publish-unpublish_date-date", Date::Now()->ToInt())
@@ -233,7 +233,7 @@ class Content
     
     public static function GetCategoryById($id)
     {
-        $database = Database::Connect();
+        $database = Config::Database();
         $result = $database->Retrieve()
             ->UsingTable("categories")
             ->Match("id", $id)
@@ -244,7 +244,7 @@ class Content
 
     public static function GetAuthorById($id)
     {
-        $database = Database::Connect();
+        $database = Config::Database();
         $result = $database->Retrieve()
             ->UsingTable("users")
             ->Match("id", $id)
@@ -256,7 +256,7 @@ class Content
     public static function Permalink()
     {
         // Format: /permalink/<CONTENT_ID>/
-        $database = Database::Connect();
+        $database = Config::Database();
         //$result = $database->Retrieve('content', 'content-title_mung-field, meta-category-dropdown, meta-static_page_flag-checkbox, meta-indexed_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
         $result = $database->Retrieve()
                 ->UsingTable("content")
@@ -311,7 +311,7 @@ Otherwise, look for the space being called
         }
         else
         {
-            $database = Database::Connect();
+            $database = Config::Database();
             $data = $database->Retrieve()
                 ->UsingTable("spaces")
                 ->Item("id")
@@ -350,7 +350,7 @@ Otherwise, look for the space being called
                 $searchPhrase = preg_replace('-', ' ', self::$uri[1]);
                 
                 $l = Language::Create();
-                $database = Database::Connect();
+                $database = Config::Database();
                 $html = '<h1>'.$l->Phrase("tagSearch")."</h1>\n";
                 $query = $database->Retrieve()
                 ->UsingTable("content")
@@ -363,8 +363,8 @@ Otherwise, look for the space being called
                     $query->OrderBy("meta-date-date", false);
                 
                 if (is_numeric(self::$uri[$tagIndex]))
-                    $query->Limit(Configuration::Get('listMaxNum'))
-                        ->Offset(( (self::$uri[$tagIndex] - 1) * intval(Configuration::Get('listMaxNum')) ));
+                    $query->Limit(Config::Get('listMaxNum'))
+                        ->Offset(( (self::$uri[$tagIndex] - 1) * intval(Config::Get('listMaxNum')) ));
 
                 $results = $query->Send()->FetchAll();
 
@@ -386,7 +386,7 @@ Otherwise, look for the space being called
     //            Content::HtmlHeader()
     public static function HtmlHeader()
     {
-        $html = '<title>'.Configuration::Get('siteTitle')."</title>\n";
+        $html = '<title>'.Config::Get('siteTitle')."</title>\n";
         $html .= '<meta content="text/html; charset=UTF-8" http-equiv="content-type">'."\n";
         $html .= '<meta name="robots" content="index,follow">'."\n";
         $html .= '<link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="'.Utils::GenerateUri('feed/').'">'."\n";
@@ -400,7 +400,7 @@ Otherwise, look for the space being called
     {
         if (Security::Authenticate()) // If the user is logged in
         {
-            $site = Configuration::Site();
+            $site = Config::Site();
             $html = null;
             $l = Language::Create(); // Grab language data
 
@@ -420,7 +420,7 @@ Otherwise, look for the space being called
     public static function Breadcrumbs($seperator = "&bull;")
     {
         $l = Language::Create(); // Grab language data
-        $database = Database::Connect();
+        $database = Config::Database();
         
         $crumbs = array();
         $crumbs[] = '<li><a href="'.Utils::GenerateUri().'" title="'.$l->Phrase('Home').'">'.$l->Phrase('Home')."</a></li>\n";
@@ -443,7 +443,7 @@ Otherwise, look for the space being called
     
     public static function GenerateMetaKeywords()
     {
-        $database = Database::Connect();
+        $database = Config::Database();
         $uri = Content::Uri();
         if($uri[1] == 'articles' && isset($uri[2]))        
             $query = $database->Retrieve()
@@ -459,7 +459,7 @@ Otherwise, look for the space being called
 
     public static function RenderArticle()
     {
-        $database = Database::Connect();
+        $database = Config::Database();
         $uri = Content::Uri();
         if($uri[1] == 'articles' && isset($uri[2]))        
             $data = $database->Retrieve()
@@ -481,7 +481,7 @@ class Space
     
     public function __construct($titleMung)
     {
-        $database = Database::Connect();      
+        $database = Config::Database();      
         $space = $database->Retrieve()
             ->Item('id')
             ->UsingTable("spaces")
@@ -492,9 +492,9 @@ class Space
             ->Item('id')
             ->UsingTable("blocks")
             ->Match("meta-space-dropdown", $space['id'])
-            ->AndWhere()->Match('publish-publish_flag-dropdown', IQuery::STATE_PUBLISHED)
-            ->OrderBy('meta-priority-dropdown', IQuery::SORT_DESC)
-            ->OrderBy('item', IQuery::SORT_ASC)
+            ->AndWhere()->Match('publish-publish_flag-dropdown', Query::STATE_PUBLISHED)
+            ->OrderBy('meta-priority-dropdown', Query::SORT_DESC)
+            ->OrderBy('item', Query::SORT_ASC)
             ->Send();
             
         while($block = $blocks->Fetch())
@@ -532,7 +532,7 @@ class Page implements IContent
     
     public function __construct($data)
     {
-        $database = Database::Connect();
+        $database = Config::Database();
         if(is_numeric($data))
         {
             $page = $database->Retrieve()
@@ -540,12 +540,12 @@ class Page implements IContent
                 ->Match("id", $data)
                 ->Send()->Fetch();
         }
-        elseif($data instanceof IDatabaseResult)
+        elseif($data instanceof DatabaseResult)
         {
             $page = $data->Fetch();
         }
         else
-            throw new ErrorException("Passed argument not numeric or of type IDatabaseResult");
+            throw new ErrorException("Passed argument not numeric or of type DatabaseResult");
             
         $this->id = $page['id'];
         $this->title = $page['content-title-field'];
@@ -590,7 +590,7 @@ class Article extends Page
     
     public function __construct($idOrData)
     {
-        $database = Database::Connect(); 
+        $database = Config::Database(); 
         
         if(is_numeric($idOrData))
         { 
@@ -599,12 +599,12 @@ class Article extends Page
                 ->Match("id", $idOrData)
                 ->Send()->Fetch();
         }
-        elseif($idOrData instanceof IDatabaseResult)
+        elseif($idOrData instanceof DatabaseResult)
         {
             $article = $idOrData->Fetch();
         }
         else
-            throw new ErrorException("Passed argument not numeric or of type IDatabaseResult");
+            throw new ErrorException("Passed argument not numeric or of type DatabaseResult");
 
         $this->id = $article['id'];
         $this->title = $article['content-title-field'];
@@ -637,7 +637,7 @@ class Article extends Page
 
     public function Render() 
     {
-        if(Configuration::Get('MarkdownActive'))
+        if(Config::Get('MarkdownActive'))
             $body = Parsedown::instance()->parse($this->body);
         else
             $body = $this->body; 
@@ -653,7 +653,7 @@ class Article extends Page
             "[tags]" => "TAGSLIST" 
         );
          
-        $formattedString = str_replace(array_keys($formatTags), array_values($formatTags), Configuration::Get('articleFormat')); 
+        $formattedString = str_replace(array_keys($formatTags), array_values($formatTags), Config::Get('articleFormat')); 
         echo $formattedString; 
     }
 }
@@ -669,7 +669,7 @@ class Block implements IContent
     {
         if (null === $data)
         {
-            $database = Database::Connect();
+            $database = Config::Database();
             $data = $database->Retrieve()
                 ->UsingTable("blocks")
                 ->Match("id", $id)

@@ -5,50 +5,8 @@
  * @package SMPL\Database
  */
 
-/**
- * Database Class
- *
- * @package Database
- */
-class Database
-{
-    private static $mainDatabaseInstance = null;
-    
-    // Database factory method, establish database connection and then pass it
-    public static function Connect($databaseType = null, $host = null, $name = null, $username = null, $password = null, $prefix = null)
-    {
-        // If no database type is specified, assume that the main database object is being used
-        if (null === $databaseType) {
-            $databaseType = Configuration::DB_TYPE.'Database';
-            if (null === self::$mainDatabaseInstance) {
-                self::$mainDatabaseInstance = new $databaseType(Configuration::DB_HOST, Configuration::DB_NAME, Configuration::DB_USER, Configuration::DB_PASS, Configuration::DB_PREFIX);
-            }
-            
-            return self::$mainDatabaseInstance;
-        }
-        else // Otherwise assume a unique database instance
-        {
-            $databaseType .= 'Database';
-            
-            if(!isset($host))
-                $host = Configuration::DB_HOST;
-            if(!isset($name))
-                $name = Configuration::DB_NAME;
-            if(!isset($username))
-                $username = Configuration::DB_USER;
-            if(!isset($password))
-                $password = Configuration::DB_PASS;
-            if(!isset($prefix))
-                $prefix = Configuration::DB_PREFIX;
-            
-            
-            return new $databaseType($host, $name, $username, $password, $prefix);
-        }
-    }
-}
 
-
-interface IDatabase
+interface Database
 {
     //[MUSTCHANGE] MUST CREATE A CONNECT METHOD
     public static function NewQuery($database = null);    // Instatiate new query object
@@ -60,8 +18,8 @@ interface IDatabase
     public function Delete();   // Delete Query
     public function Custom($queryString);
 }
-
-class MySqlDatabase extends MySQLi implements IDatabase
+// [MUSTCHANGE]
+class MySqlDatabase extends MySQLi implements Database
 {
     protected $host;
     protected $name;
@@ -131,7 +89,7 @@ class MySqlDatabase extends MySQLi implements IDatabase
 }
 
 // Other database objects should also implement SeekableIterator for use in loop operators
-interface IDatabaseResult
+interface DatabaseResult
 {
     public function Fetch();
     public function FetchAll();
@@ -149,7 +107,7 @@ interface IDatabaseResult
 }
 
 // MySQLi_Result implements Traversible, does it need to implement Iterator?
-class MySqlDatabaseResult extends MySQLi_Result implements IDatabaseResult
+class MySqlDatabaseResult extends MySQLi_Result implements DatabaseResult
 {
     /* Inhereted Properties
     int $current_field ;
@@ -203,7 +161,7 @@ class MySqlDatabaseResult extends MySQLi_Result implements IDatabaseResult
 /*  Database Query Fluent Interface 
     Abstracts away the syntax in creating simple DB queries
 */
-interface IQuery
+interface Query
 {   
     /* Constants used in queries */
     const SORT_ASC = 'ASC';
@@ -215,7 +173,7 @@ interface IQuery
     const PRIORITY_MED = 2;
     const PRIORITY_LOW = 3;
     
-    public function Send(IDatabase $database); // possible name, ToDatabase()?
+    public function Send(Database $database);
     public function ToString();
     
     /* Action Methods */
@@ -249,7 +207,7 @@ interface IQuery
     public function Offset($amount);
 }
 
-class MySqlDatabaseQuery implements IQuery
+class MySqlDatabaseQuery implements Query
 {
     protected $database = null;
     protected $action = null;   // Query Action: Select, Create (Insert), Update, Delete
@@ -274,7 +232,7 @@ class MySqlDatabaseQuery implements IQuery
         return $this->ToString();
     }
     
-    public function Send(IDatabase $database = null)
+    public function Send(Database $database = null)
     {
         if(isset($database) && $database instanceof MySqlDatabase)
             return $database->Query($this->ToString());

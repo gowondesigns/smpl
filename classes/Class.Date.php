@@ -23,8 +23,6 @@ class Date
     private $seconds;
 
     /**
-     * Date constructor
-     *
      * Private Date constructor so that Date objects can only be created
      * via public methods. Formed from a datetime string in the
      * format: YYYYMMDDHHmmSS. The datetime is always interpreted as UTC.
@@ -89,7 +87,7 @@ class Date
      */
     public static function TimeZone($useSemiColon = true)
     {
-        $value = intval(Configuration::Get('dateOffset'));
+        $value = intval(Config::Get('dateOffset'));
         if ($value > 14 || $value < -12) {
             throw new StrictException("System Timezone offset of ".$value." is invalid.");
         }
@@ -149,7 +147,7 @@ class Date
         }
         
         if ($useLocalOffset) {
-            $time += (intval(Configuration::Get('dateOffset')) * 3600);
+            $time += (intval(Config::Get('dateOffset')) * 3600);
         }
         
         return date($format, $time);
@@ -167,7 +165,7 @@ class Date
         $time = mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year);
         
         if ($useLocalOffset)
-            $time += (intval(Configuration::Get('dateOffset')) * 3600);
+            $time += (intval(Config::Get('dateOffset')) * 3600);
         
         return floatval(date("YmdHis", $time));
     }
@@ -184,7 +182,7 @@ class Date
         $time = mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year);
         
         if ($useLocalOffset)
-            $time += (intval(Configuration::Get('dateOffset')) * 3600);
+            $time += (intval(Config::Get('dateOffset')) * 3600);
         
         return $time;
     }

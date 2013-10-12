@@ -24,7 +24,7 @@ class Language
         
         if (null === self::$langInstance)
         {
-            $languageCode = Configuration::Get("languageDefault");
+            $languageCode = Config::Get("languageDefault");
             Debug::Message("Language\Initializing system language to: ".$languageCode);
             self::$langInstance = new LanguageSet($languageCode);
         }
@@ -41,7 +41,7 @@ class Language
     public static function Reset($languageCode = null)
     {
         if (null === $languageCode)
-            $languageCode = Configuration::Get("languageDefault");
+            $languageCode = Config::Get("languageDefault");
         
         Debug::Message("Language\Resetting system language to: ".$languageCode);
         self::$langInstance = new LanguageSet($languageCode);

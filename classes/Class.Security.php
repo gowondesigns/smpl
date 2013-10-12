@@ -11,7 +11,7 @@ class Security
 
     public static function Key()
     {
-        return md5(Configuration::Get('siteURL'));
+        return md5(Config::Get('siteURL'));
     }
 
     public static function GeneratePassword($length = 13, $useDashes = false, $useLowercase = true, $useUppercase = true, $useDigits = true, $useSymbols = true)
@@ -88,7 +88,7 @@ class Security
         //
         if (empty($_SERVER['HTTPS']) || $_SERVER['SERVER_PORT'] !== 443)
         {
-            if (Configuration::SslCertificate())
+            if (Config::USE_SSL)
             {
                 header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
                 exit;            
@@ -154,7 +154,7 @@ class Security
                 if (session_status() !== PHP_SESSION_ACTIVE)
                     session_start();
                 
-                $key = md5(Configuration::Get('siteURL'));
+                $key = md5(Config::Get('siteURL'));
                 // User authentication period is still active, then update 
                 if (isset($_SESSION[$key]['auth']['period']) && $_SESSION[$key]['auth']['period'] > Date::Now()->ToInt())
                 {
@@ -191,7 +191,7 @@ class Security
         $username = md5(Security::FilterXSS($username) );
         $password = md5(Security::FilterXSS($password) );
 
-        $database = Database::Connect();
+        $database = Config::Database();
         $result = $database->Retrieve()
             ->UsingTable("users")
             ->Match("account-user_name-hash", $username)
@@ -218,7 +218,7 @@ class Security
         if (session_status() !== PHP_SESSION_ACTIVE)
             session_start();
         
-        $key = md5(Configuration::Get('siteURL'));
+        $key = md5(Config::Get('siteURL'));
         $_SESSION[$key]['auth']['id'] = $sessionData['id'];
         $_SESSION[$key]['auth']['username'] = $sessionData['account-user_name-hash'];
         $_SESSION[$key]['auth']['period'] = Date::Now()->ToInt() + 10000;
@@ -230,8 +230,8 @@ class Security
         // Possibly use Cookies instead of Sessions (less server overhead, more security concerns)
         /*        
         $expire = time() + 3600;
-        setcookie(Configuration::Site().'_AUTH_ID', $id, $expire);
-        setcookie(Configuration::Site().'_AUTH_USERNAME', $username, $expire);
+        setcookie(Config::Site().'_AUTH_ID', $id, $expire);
+        setcookie(Config::Site().'_AUTH_USERNAME', $username, $expire);
         //*/
     }
     
@@ -240,14 +240,14 @@ class Security
         if (session_status() !== PHP_SESSION_ACTIVE)
             session_start();
         
-        $key = md5(Configuration::Get('siteURL'));
+        $key = md5(Config::Get('siteURL'));
         unset($_SESSION[$key]);
         //session_destroy();
         
         // Possibly use Cookies instead of Sessions (less server overhead, more security concerns)
         /*
-        setcookie(Configuration::Site().'_AUTH_ID', '', time() - 3600);
-        setcookie(Configuration::Site().'_AUTH_USERNAME', '', time() - 3600);
+        setcookie(Config::Site().'_AUTH_ID', '', time() - 3600);
+        setcookie(Config::Site().'_AUTH_USERNAME', '', time() - 3600);
         //*/
     } 
 

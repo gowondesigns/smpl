@@ -10,9 +10,9 @@ class Feed
     public static function Generate()
     {
         $feed = null;
-        $type = Configuration::Get('feedDefaultType').'Feed';
+        $type = Config::Get('feedDefaultType').'Feed';
         $category = null;                                                                                       
-        $database = Database::Connect();
+        $database = Config::Database();
  
         if(count(Content::Uri()) > 3)
             throw new ErrorException("URI Error.");
@@ -53,7 +53,7 @@ class Feed
             ->Match("publish-publish_flag-dropdown", 2)
             ->AndWhere()->Match("meta-static_page_flag-checkbox", 0)
             ->OrderBy("publish-publish_date-date", false)
-            ->Limit(Configuration::Get('feedItemLimit'));
+            ->Limit(Config::Get('feedItemLimit'));
         
         if(isset($category['id']))
             $query->AndWhere()->Match("meta-category-dropdown",$category['id'])
@@ -104,8 +104,8 @@ abstract class aFeed
     
     protected function __construct()
     {
-        $this->title = Configuration::Get('siteTitle');
-        $this->feedDescription = Configuration::Get('siteDescription');
+        $this->title = Config::Get('siteTitle');
+        $this->feedDescription = Config::Get('siteDescription');
     }
 }
 

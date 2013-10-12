@@ -4,7 +4,7 @@ Coding Standards are an important factor for achieving a high code quality. A co
 
 These guidelines try to cover both, the technical standards as well as giving incentives for a common development style. These guidelines must be followed by everyone who creates code for the SMPL Content Management System. We hope that you feel encouraged to follow these guidelines as well when creating your own packages and SMPL-based applications.
 
-__Note: These guidelines have been adapted from those utilized by the TYPO3 Association documentation. Their PHP Coding and Style guide can be found [here][1].__
+__Note: These guidelines have been adapted from those utilized by the TYPO3 Association. Their PHP Coding and Style guide can be found [here][1].__
 
 ## Code Formatting and Layout, *Beautiful Code*
 
@@ -46,7 +46,7 @@ Indentation is done with tabs - and not spaces! The beginning of a line is the o
      * @return string Name of the current context
      * @author Your Name <your@email.here>
      */
-    public function getContextName() {
+    public function GetContextName() {
         return $this->contextName;
     }
     
@@ -96,14 +96,14 @@ Exception naming basically follows the rules for naming classes. There are two p
 
 ### Method Names
 
-All method names are written in lowerCamelCase. In order to avoid problems with different filesystems, only the characters a-z, A-Z and 0-9 are allowed for method names – don't use special characters.
+All method names are written in UpperCamelCase. In order to avoid problems with different filesystems, only the characters a-z, A-Z and 0-9 are allowed for method names – don't use special characters.
 
 Make method names descriptive, but keep them concise at the same time. Constructors must always be called __construct(), never use the class name as a method name.
 
-*   `myMethod()`
-*   `someNiceMethodName()`
-*   `betterWriteLongMethodNamesThanNamesNobodyUnderstands()`
-*   `singYmcaLoudly()`
+*   `DoThisMethod()`
+*   `SomeNiceMethodName()`
+*   `BetterWriteLongMethodNamesThanNamesNobodyUnderstands()`
+*   `SingYmcaLoudly()`
 *   `__construct()`
 
 ### Variable Names
@@ -212,17 +212,19 @@ You may break a string into multiple lines if you use the dot operator. You'll h
 *if statements*:
 
     if ($something || $somethingElse) {
-      doThis();
-    } else {
-      doSomethingElse();
+      DoThis();
+    }
+    else {
+      DoSomethingElse();
     }
     
-    if (weHaveALotOfCriteria() === TRUE
-      && notEverythingFitsIntoOneLine() === TRUE
-      || youJustTendToLikeIt() === TRUE) {
-         doThis();
+    if (WeHaveALotOfCriteria() === TRUE
+      && NotEverythingFitsIntoOneLine() === TRUE
+      || YouJustTendToLikeIt() === TRUE) {
+         DoThis();
     
-    } else {
+    }
+    else {
       ...
     }
     
@@ -237,13 +239,13 @@ You may break a string into multiple lines if you use the dot operator. You'll h
 
     switch ($something) {
       case FOO:
-         $this->handleFoo();
+         $this->HandleFoo();
       break;
       case BAR:
-         $this->handleBar();
+         $this->HandleBar();
       break;
       default:
-         $this->handleDefault();
+         $this->HandleDefault();
     }
     
 
@@ -253,9 +255,7 @@ You may break a string into multiple lines if you use the dot operator. You'll h
 
 To have a clear and focused history of code changes is greatly helped by using a consistent way of writing commit messages. Because of this and to help with (partly) automated generation of change logs for each release we have defined a fixed syntax for commit messages that is to be used.
 
-Tip
-
-Never commit without a commit message explaining the commit!
+> __NOTE:__ Never commit without a commit message explaining the commit.
 
 The syntax is as follows:
 
@@ -385,7 +385,7 @@ For a method, at least all parameters and the return value must be documented. T
      * @param string $someString This parameter should contain some string
      * @return void
      */
-    public function addStringToPost(\SMPL\Blog\Domain\Model\Post $post, $someString) {
+    public function AddStringToPost(\SMPL\Blog\Domain\Model\Post $post, $someString) {
      ...
     }
     
@@ -398,7 +398,7 @@ Not all methods with a public visibility are necessarily part of the intended pu
 
 To mark a method as part of the public API, include an @api annotation for it in the docblock.
 
-*Defining the public API*:
+*Defining the public API:*
 
     /**
      * This method is part of the public API.
@@ -406,14 +406,11 @@ To mark a method as part of the public API, include an @api annotation for it in
      * @return void
      * @api
      */
-    public function fooBar() {
+    public function FooBar() {
      ...
     }
-    
 
-__*Tip:*__
-
-> When something in a class or an interface is annotated with @api make sure to also annotate the class or interface itself! Otherwise it will be ignored completely when official API documentation is rendered!
+> __NOTE:__ When something in a class or an interface is annotated with @api make sure to also annotate the class or interface itself! Otherwise it will be ignored completely when official API documentation is rendered!
 
 ### Overview of Documentation Annotations
 
@@ -473,9 +470,7 @@ __Method Documentation__
 *   @CoreAround
 *   @CoreBefore
 
-
-__*Tip*__
-> Additional annotations (more or less only the @todo and @see come to mind here), should be placed after all other annotations.
+> __NOTE:__ Additional annotations (more or less only the @todo and @see come to mind here), should be placed after all other annotations.
 
 ## Best Practices
 
@@ -517,7 +512,9 @@ For every exception there should be a page on the SMPL wiki, as exception messag
 
 *   Never use the shut-up operator @ to suppress error messages. It makes debugging harder, very slow, and is generally bad practice.
 
-*   Prefer strict comparisons whenever possible, to avoid problems with truthy and falsy values that might behave different than what you expect. Here are some examples:
+*   Prefer strict comparisons whenever possible, to avoid problems with truthy and falsy values that might behave different than what you expect.
+
+    *Here are some examples of good and bad comparisons:*
 
         if ($template)             // BAD
         if (isset($template))      // GOOD
@@ -531,7 +528,6 @@ For every exception there should be a page on the SMPL wiki, as exception messag
         if ($foo != $bar)          // BAD, avoid falsy comparisons
         if ($foo === $bar))        // GOOD
         if ($foo !== $bar))        // GOOD
-        
 
 *   Order of methods in classes. To gain a better overview, it helps if methods in classes are always ordered in a certain way. We prefer the following:
     
@@ -544,7 +540,7 @@ For every exception there should be a page on the SMPL wiki, as exception messag
     *   shutdown methods
     *   destructor
 
-*   Avoid double-negation in method parameters. Instead of exportSystemView(..., $noRecurse) use exportSystemView(..., $recurse). It is more logical to pass TRUE if you want recursion instead of having to pass FALSE. In general, parameters negating things are a bad idea.
+*   Avoid double-negation in method parameters. Instead of `ExportSystemView(..., $noRecurse)` use `ExportSystemView(..., $recurse)`. It is more logical to pass TRUE if you want recursion instead of having to pass FALSE. In general, parameters negating things are a bad idea.
 
 ### Comments
 
@@ -559,7 +555,7 @@ In general, comments are a good thing and we strive for creating a well-document
 
 This is a perfect case for the refactoring technique "extract method": In order to avoid the comment, create a new method which is as explanatory as the comment:
 
-    if ($this->isValidPerson($person) {
+    if ($this->IsValidPerson($person) {
       $xmM = $thd;
     }
     

@@ -38,7 +38,7 @@ $html .= "<h2></h2>
 
 echo $html;
 /*
-$database = Database::Connect();
+$database = Config::Database();
 $database->Queries();
 var_dump(get_class_methods($database));
 */
