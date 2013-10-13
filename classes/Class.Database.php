@@ -5,20 +5,61 @@
  * @package SMPL\Database
  */
 
-
+/**
+ * Database interface
+ *
+ * @package Database\Interface
+ */
 interface Database
 {
     //[MUSTCHANGE] MUST CREATE A CONNECT METHOD
-    public static function NewQuery($database = null);    // Instatiate new query object
-    
-    //public function Query($query); // Process direct query
-    public function Create();   // Create (Insert) Query
-    public function Retrieve(); // Retrieve (Select) Query
-    public function Update();   // Update Queries
-    public function Delete();   // Delete Query
-    public function Custom($queryString);
+    public static function NewQuery($database = null);    // Instantiate new query object
+
+    /**
+     * Generate a Create (Insert) query
+     *
+     * @return Query
+     */
+    public function Create();
+
+
+    /**
+     * Generate a Retrieve (Select) query
+     *
+     * @return Query
+     */
+    public function Retrieve();
+
+    /**
+     * Generate a Update query
+     *
+     * @return Query
+     */
+    public function Update();
+
+
+    /**
+     * Generate a Delete query
+     *
+     * @return Query
+     */
+    public function Delete();
+
+
+    /**
+     * Generate a custom query
+     *
+     * @param $query
+     * @return Query
+     */
+    public function Custom($query);
 }
-// [MUSTCHANGE]
+
+/**
+ * MySQL Implementation of the Database interface
+ *
+ * @package Database\MySQL
+ */
 class MySqlDatabase extends MySQLi implements Database
 {
     protected $host;
@@ -49,13 +90,6 @@ class MySqlDatabase extends MySQLi implements Database
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
-        
-    public function CustomQuery($query)
-    {
-        Debug::Message('MySqlDatabase\Query: '.$query);
-        $this->real_query($query);
-        return new MySqlDatabaseResult($this);
-    }
 
     public function Create() 
     {
@@ -66,7 +100,7 @@ class MySqlDatabase extends MySQLi implements Database
     public function Retrieve()
     {
         $query = new MySqlDatabaseQuery($this);
-        return $query->Select();
+        return $query->Retrieve();
     }
     
     public function Update()
@@ -88,79 +122,11 @@ class MySqlDatabase extends MySQLi implements Database
     }
 }
 
-// Other database objects should also implement SeekableIterator for use in loop operators
-interface DatabaseResult
-{
-    public function Fetch();
-    public function FetchAll();
-    public function Count();
-    
-    /* Inhereted Methods (from SeekableIterator) //
-    abstract public void seek ( int $position )
-    abstract public mixed current ( void )
-    abstract public scalar key ( void )
-    abstract public void next ( void )
-    abstract public void rewind ( void )
-    abstract public boolean valid ( void )
-
-    //*/
-}
-
-// MySQLi_Result implements Traversible, does it need to implement Iterator?
-class MySqlDatabaseResult extends MySQLi_Result implements DatabaseResult
-{
-    /* Inhereted Properties
-    int $current_field ;
-    int $field_count;
-    array $lengths;
-    int $num_rows;
-    $type;
-
-    //*/
-    
-    public function Fetch()
-    {
-        return $this->fetch_assoc();
-    }
-
-    public function FetchAll()
-    {
-        $rows = array();
-        while($row = $this->Fetch())
-        {
-            $rows[] = $row;
-        }
-        return $rows;
-    }
-    
-    public function Count()
-    {
-        return $this->num_rows;
-    }
-
-    /* Inhereted Methods //    
-    __construct
-    close
-    free_result
-    
-    bool data_seek ( int $offset )
-    mixed fetch_all ([ int $resulttype = MYSQLI_NUM ] )
-    mixed fetch_array ([ int $resulttype = MYSQLI_BOTH ] )
-    array fetch_assoc ( void )
-    object fetch_field_direct ( int $fieldnr )
-    object fetch_field ( void )
-    array fetch_fields ( void )
-    object fetch_object ([ string $class_name [, array $params ]] )
-    mixed fetch_row ( void )
-    bool field_seek ( int $fieldnr )
-    void free ( void )
-
-    //*/
-}
-
-/*  Database Query Fluent Interface 
-    Abstracts away the syntax in creating simple DB queries
-*/
+/**
+ * Database Query object that implements a fluent interface, abstracts away the syntax in creating simple DB queries
+ *
+ * @package Database\DatabaseResult
+ */
 interface Query
 {   
     /* Constants used in queries */
@@ -172,38 +138,162 @@ interface Query
     const PRIORITY_HIGH = 1;
     const PRIORITY_MED = 2;
     const PRIORITY_LOW = 3;
-    
-    public function Send(Database $database);
+
+    /**
+     * Execute the query
+     * @param Database $database database that will be used to execute the query
+     * @return DatabaseResult The number of rows returned in the result
+     */
+    public function Send(Database $database = null);
+
+    /**
+     * Convert the query to a string
+     * @return string
+     */
     public function ToString();
-    
-    /* Action Methods */
-    public function Select();
+
+    /**
+     * Generate a select-type Query
+     * @return \Query
+     */
+    public function Retrieve();
+
+    /**
+     * Generate a create-type Query
+     * @return \Query
+     */
     public function Create();
+
+    /**
+     * Generate a update-type Query
+     * @return \Query
+     */
     public function Update();
+
+    /**
+     * Generate a delete-type Query
+     * @return \Query
+     */
     public function Delete();
+
+    /**
+     * Generate a custom Query
+     * @param string $query
+     * @return \Query
+     */
     public function Custom($query);
-    
-    /* Selection Methods*/
-    public function UsingTable($table, $tableAlias);
-    public function Item($item, $itemAlias);
-    
-    /* Create/Update Methods*/
+
+    /**
+     * Select SQL table to perform operation on
+     * @param string $table
+     * @param string $tableAlias
+     * @return \Query
+     */
+    public function UsingTable($table, $tableAlias = null);
+
+    /**
+     * Select a column from the SQL table
+     * @param string $item
+     * @param string $itemAlias
+     * @return \Query
+     */
+    public function Item($item, $itemAlias = null);
+
+    /**
+     * Assign a value to the preceding item
+     * @param string $value
+     * @return \Query
+     */
     public function SetValue($value);
 
-    /* Where Clause Methods*/
+    /**
+     * Modify match relationship of proceeding clause to OR
+     * @return \Query
+     */
     public function OrWhere();
-    public function AndWhere(); // Default behavior is to AND clauses, may not be necessary
+
+    /**
+     * Modify match relationship of proceeding clause to AND
+     * @return \Query
+     */
+    public function AndWhere();
+
+    /**
+     * Add an equal-to match parameter to a SQL query
+     * @param string $item
+     * @param string $condition
+     * @return \Query
+     */
     public function Match($item, $condition);
+
+    /**
+     * Add a not-equal-to match parameter to a SQL query
+     * @param string $item
+     * @param string $condition
+     * @return \Query
+     */
     public function NotMatch($item, $condition);
-    public function LessThan($item, $condition);   
+
+    /**
+     * Add a less-than match parameter to a SQL query
+     * @param string $item
+     * @param string $condition
+     * @return \Query
+     */
+    public function LessThan($item, $condition);
+
+    /**
+     * Add a greater-than match parameter to a SQL query
+     * @param string $item
+     * @param string $condition
+     * @return \Query
+     */
     public function GreaterThan($item, $condition);
+
+    /**
+     * Add a less-than-or-equal-to match parameter to a SQL query
+     * @param string $item
+     * @param string $condition
+     * @return \Query
+     */
     public function LessThanOrEq($item, $condition);
+
+    /**
+     * Add a greater-than-or-equal-to match parameter to a SQL query
+     * @param string $item
+     * @param string $condition
+     * @return \Query
+     */
     public function GreaterThanOrEq($item, $condition);
+
+    /**
+     * Add a matching parameter to find <text> in SQL table items
+     * @param string $items
+     * @param string $text
+     * @return \Query
+     */
     public function FindIn($items, $text);
-    
-    /* Query Optimization Methods */
+
+    /**
+     * Add a sorting parameter on a column in the SQL table
+     * @param string $item
+     * @param string $direction
+     * @return \Query
+     */
     public function OrderBy($item, $direction);
+
+    /**
+     * Limits the amount of rows returned in the result set
+     * @param int $count
+     * @return \Query
+     */
     public function Limit($count);
+
+    /**
+     * Set offset for the query result set
+     * @param int $amount
+     * @return \Query
+     */
     public function Offset($amount);
 }
 
@@ -223,25 +313,29 @@ class MySqlDatabaseQuery implements Query
 
     public function __construct(MySqlDatabase $database = null)
     {
-        if(isset($database))
+        if (isset($database)) {
             $this->database = $database;
+        }
     }
-    
+
+    public function Send(Database $database = null)
+    {
+        if ($database instanceof MySqlDatabase) {
+            return $database->Query($this->ToString());
+        }
+        elseif (isset($this->database)) {
+            return $this->database->Query($this->ToString());
+        }
+        else {
+            throw new ErrorException("No database was set up.");
+        }
+    }
+
     public function __toString()
     {
         return $this->ToString();
     }
-    
-    public function Send(Database $database = null)
-    {
-        if(isset($database) && $database instanceof MySqlDatabase)
-            return $database->Query($this->ToString());
-        elseif(isset($this->database))
-            return $this->database->Query($this->ToString());
-        else
-            throw new ErrorException("No database was set up.");
-    }
-    
+
     public function ToString()
     {
         if(isset($this->custom))
@@ -365,9 +459,9 @@ class MySqlDatabaseQuery implements Query
                     $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);                
                 
                 if(isset($this->resultLimit))
-                    $sql .= ' LIMIT '.$this->resultLimit;
+                    $sql .= ' LIMIT ' . $this->resultLimit;
                 
-                return $sql.PHP_EOL;
+                return $sql . PHP_EOL;
                 break;
             default:
                 return null;
@@ -375,7 +469,7 @@ class MySqlDatabaseQuery implements Query
     }
     
     /* Action Methods */
-    public function Select()
+    public function Retrieve()
     {
         $this->action = "SELECT";
         return $this;
@@ -617,14 +711,13 @@ class MySqlDatabaseQuery implements Query
     /* Query Optimization Methods */
     public function OrderBy($item, $direction = null)
     {
-        if (null === $direction)
+        if (null === $direction) {
             $direction = self::SORT_ASC;
+        }
 
-        $expanded = explode('.', $item);
-        $item = implode('`.`', $expanded);
-        $order = "`{$item}` ".$direction;
-        $this->orderByLogic[] = $order;
-        
+        $item = str_replace('.', '`.`', $item);
+        $this->orderByLogic[] = '`' . $item . '` ' . $direction;
+
         return $this;
     }
     
@@ -640,6 +733,104 @@ class MySqlDatabaseQuery implements Query
         return $this;
     }
 
+}
+
+/**
+ * Interface for the results that come from Query objects. May benefit from extending Seekable Iterator interface
+ *
+ * @package Database\DatabaseResult
+ */
+interface DatabaseResult
+{
+    /**
+     * Fetch result from Query
+     * @return array an associative array of strings representing the fetched row in the result
+     * set, where each key in the array represents the name of one of the result
+     * set's columns or null if there are no more rows in resultset.
+     */
+    public function Fetch();
+
+    /**
+     * Fetch complete result set from Query
+     * @return array an array of all associative arrays of strings representing the fetched row in the result
+     * set
+     */
+    public function FetchAll();
+
+    /**
+     * Count number of rows from Query
+     * @return int The number of rows returned in the result
+     */
+    public function Count();
+}
+
+/**
+ * MySQL implementation of Database Result interface, also extends the PDO MySQLi Result class,
+ * which implements the Traversable interface
+ * @package Database\MySQL\Result
+ */
+class MySqlDatabaseResult extends MySQLi_Result implements DatabaseResult
+{
+    /**
+     * Fetch results from MySQL Query
+     * @return array an associative array of strings representing the fetched row in the result
+     * set, where each key in the array represents the name of one of the result
+     * set's columns or null if there are no more rows in resultset.
+     */
+    public function Fetch()
+    {
+        return $this->fetch_assoc();
+    }
+
+    /**
+     * Fetch complete result set from MySQL Query
+     * @return array an array of all associative arrays of strings representing the fetched row in the result
+     * set
+     */
+    public function FetchAll()
+    {
+        $rows = array();
+        while($row = $this->Fetch())
+        {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    /**
+     * Count number of rows from MySQL Query
+     * @return int The number of rows returned in the result
+     */
+    public function Count()
+    {
+        return $this->num_rows;
+    }
+
+    /* Inhereted Properties:
+    int $current_field ;
+    int $field_count;
+    array $lengths;
+    int $num_rows;
+    $type;
+    */
+
+    /* Inhereted Methods:
+    __construct
+    close
+    free_result
+
+    bool data_seek ( int $offset )
+    mixed fetch_all ([ int $resulttype = MYSQLI_NUM ] )
+    mixed fetch_array ([ int $resulttype = MYSQLI_BOTH ] )
+    array fetch_assoc ( void )
+    object fetch_field_direct ( int $fieldnr )
+    object fetch_field ( void )
+    array fetch_fields ( void )
+    object fetch_object ([ string $class_name [, array $params ]] )
+    mixed fetch_row ( void )
+    bool field_seek ( int $fieldnr )
+    void free ( void )
+    */
 }
 
 ?>

@@ -259,11 +259,14 @@ class Content
         $database = Config::Database();
         //$result = $database->Retrieve('content', 'content-title_mung-field, meta-category-dropdown, meta-static_page_flag-checkbox, meta-indexed_flag-checkbox',  "publish-publish_flag-dropdown = 2 AND id = '".self::$uri[1]."'");
         $result = $database->Retrieve()
-                ->UsingTable("content")
-                ->Item('content-title_mung-field')->Item('meta-category-dropdown')->Item('meta-static_page_flag-checkbox')->Item('meta-indexed_flag-checkbox')
-                ->Match("publish-publish_flag-dropdown", 2)
-                ->AndWhere()->Match("id", self::$uri[1])
-                ->Send();
+            ->UsingTable("content")
+            ->Item('content-title_mung-field')
+            ->Item('meta-category-dropdown')
+            ->Item('meta-static_page_flag-checkbox')
+            ->Item('meta-indexed_flag-checkbox')
+            ->Match("publish-publish_flag-dropdown", 2)
+            ->AndWhere()->Match("id", self::$uri[1])
+            ->Send();
         $content = $result->Fetch();
         
         if (isset($content['content-title_mung-field']))

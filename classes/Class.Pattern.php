@@ -85,13 +85,12 @@ class Pattern
     /**
      * Empty private constructor to enforce "static-ness"
      *
-     * @return void
+     * @return \Pattern
      */
     private function __construct() {}
     
     /**
      * Validates REGEX patterns. Returns array of passing elements.
-     *
      * @param string $pattern
      * @param string $subject     
      * @return mixed

@@ -1,16 +1,13 @@
 <?php
 /**
  * Class.Date
- *
  * @package SMPL\Date
  */
 
 /**
  * Date Class
- *
  * Produces strict datetime objects that provide a fluent interface for
  * converting into various types and formats
- * 
  * @package Date
  */
 class Date
@@ -26,17 +23,16 @@ class Date
      * Private Date constructor so that Date objects can only be created
      * via public methods. Formed from a datetime string in the
      * format: YYYYMMDDHHmmSS. The datetime is always interpreted as UTC.
-     *
      * @param $datetime
      * @throws StrictException
-     * @return \Date
+     * @return Date
      */
     private function __construct($datetime)
     {
         $valid = Pattern::Validate(Pattern::SIGNATURE_DATETIME, $datetime);
-        if ($valid === false)
+        if ($valid === false) {
             throw new StrictException('Invalid Date String: '. $datetime);
-        
+        }
         $this->year = $valid[1];
         $this->month = $valid[2];
         $this->day = $valid[3];
@@ -47,7 +43,6 @@ class Date
 
     /**
      * Generates Date object with current datetime
-     *
      * @return Date
      */  
     public static function Now()
@@ -57,7 +52,6 @@ class Date
 
     /**
      * Generates Date object from given string
-     *
      * @param string $datetime Datetime string in YYYYMMDDHHmmSS format
      * @return Date
      */ 
@@ -68,7 +62,6 @@ class Date
     
     /**
      * Generates Date object from given Unix timestamp
-     *
      * @param int $timestamp
      * @return Date
      */ 
@@ -80,7 +73,6 @@ class Date
 
     /**
      * Generates timezone offset
-     *
      * @param bool $useSemiColon Set whether or not to include semicolon in timezone string
      * @throws StrictException
      * @return string Returns timezone offset in HHMM or HH:MM format
@@ -111,9 +103,7 @@ class Date
     
     /**
      * Shift the stored date in seconds
-     *
      * @param int $timeshift Amount in seconds to shift the stored time. Negative value will subtract time
-     *     
      * @return Date Returns self for fluent interface
      */
     public function AddTime($timeshift)
@@ -129,13 +119,20 @@ class Date
         $this->seconds = substr($date, 12, 2);        
         return $this;
     }
-        
+
+    /**
+     * __toString magic method
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->ToString();
+    }
+
     /**
      * Returns date in string format
-     *
      * @param string $format Set format for datetime string
      * @param bool $useLocalOffset Set whether or not to offset time by system timezone
-     *     
      * @return string Returns datetime
      */
     public function ToString($format = null, $useLocalOffset = false)
@@ -155,9 +152,7 @@ class Date
     
     /**
      * Returns date in int format
-     *
      * @param bool $useLocalOffset Set whether or not to offest time by system timezone
-     *     
      * @return int Returns datetime
      */
     public function ToInt($useLocalOffset = false)
@@ -172,9 +167,7 @@ class Date
     
     /**
      * Returns date in Unix timestamp format
-     *
      * @param bool $useLocalOffset Set whether or not to offset time by system timezone
-     *     
      * @return int Returns Unix timestamp
      */
     public function ToTime($useLocalOffset = false)
