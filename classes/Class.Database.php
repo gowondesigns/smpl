@@ -1,54 +1,114 @@
 <?php
 /**
  * Class.Database
- *
  * @package SMPL\Database
  */
 
+/*
+ANSI SQL92-Compliant Chainable Query Interface
+http://savage.net.au/SQL/sql-92.bnf.html
+example: http://docs.kohanaphp.com/libraries/database/builder
+
+//private $queryType
+//private $previousAction // retains the last method executed, __FUNCTION__
+
+Create()
+Retrieve()
+Update()
+Delete()
+Custom(query)
+
+// Getters/Setters
+UsingTable(table [, alias])
+
+// INSTEAD OF
+Item(item [, alias])
+SetValue(value) // Operates on the latest item initialized
+
+//WHAT ABOUT
+Get(item [, alias]) // Must check if the action is a Retrieve action
+Set(item, value)
+
+
+// Should throw Notice regarding Semantics of Fluid Interface if used any time after the first time
+Where() // Analogous to AndWhere()
+
+// Should throw Notice regarding Semantics of Fluid Interface if called before Where()
+AndWhere()
+OrWhere()
+
+// Start Predicates
+
+IsEqual(item, match)
+IsNotEqual(item, match) // "<>" instead of "!="
+IsLessThan(item,limit)
+IsLessThanOrEq(item,limit)
+IsGreaterThan(item,limit)
+IsGreaterThanOrEq(item,limit)
+
+IsBetween(item, min, max)// Must be Numeric
+
+IsIn(item, array set) //Must match to items in a set
+IsLike(item/s, needle)
+IsNotLike(item/s, needle)
+
+IsNull(item/s)
+IsNotNull(item/s)
+
+//FindIn //Change to MATCH ---vvv
+Matches(item/s, string)
+
+// End Predicates
+
+// Allow for complex clustering of predicates
+Cluster(alias<alphanumeric>, operator<OR|AND>, item, item[, item...])
+
+// must be numeric
+OrderBy(item, order)
+Limit(item, max)
+Offset(number)
+*/
+
 /**
  * Database interface
- *
  * @package Database\Interface
  */
 interface Database
 {
-    //[MUSTCHANGE] MUST CREATE A CONNECT METHOD
+    /**
+     * Statically create a query. Useful when one does not know the exact type
+     * of Database being used.
+     * @param \Database $database
+     * @return Query
+     */
     public static function NewQuery($database = null);    // Instantiate new query object
 
     /**
      * Generate a Create (Insert) query
-     *
      * @return Query
      */
     public function Create();
 
-
     /**
      * Generate a Retrieve (Select) query
-     *
      * @return Query
      */
     public function Retrieve();
 
     /**
      * Generate a Update query
-     *
      * @return Query
      */
     public function Update();
 
-
     /**
      * Generate a Delete query
-     *
      * @return Query
      */
     public function Delete();
 
-
     /**
      * Generate a custom query
-     *
      * @param $query
      * @return Query
      */
@@ -57,33 +117,77 @@ interface Database
 
 /**
  * MySQL Implementation of the Database interface
- *
  * @package Database\MySQL
  */
 class MySqlDatabase extends MySQLi implements Database
 {
+    /**
+     * MySQL Database host
+     * @var string $host
+     * @access protected     
+     */
     protected $host;
+
+    /**
+     * MySQL Database name
+     * @var string $name
+     * @access protected     
+     */
     protected $name;
+    
+    /**
+     * MySQL Database user name
+     * @var string $username
+     * @access protected     
+     */
     protected $username;
+    
+    /**
+     * MySQL Database password
+     * @var string $password
+     * @access protected     
+     */
     protected $password;
+    
+    /**
+     * MySQL Database table prefix
+     * @var string $prefix
+     * @access protected     
+     */
     protected $prefix;
 
+    /**
+     * MySQL Database constructor
+     * @param string $host
+     * @param string $name
+     * @param string $username
+     * @param string $password
+     * @param string $prefix
+     * @return \MySqlDatabase
+     */
     public function __construct($host, $name, $username, $password, $prefix)
     {
         $this->host = $host;
         $this->name = $name;
         $this->username = $username;
         $this->password = $password;
-        $this->prefix = $prefix;
-        
+        $this->prefix = $prefix;        
         parent::__construct($host, $username, $password, $name);
     }
 
     public static function NewQuery($database = null)
     {
+        if ($database instanceof MySqlDatabase) {
+            throw new StrictException();
+        }
         return new MySqlDatabaseQuery($database);
     }
 
+    /**
+     * Override MySQLi query() method to return MySqlDatabaseResult object
+     * @param string $query      
+     * @return Query
+     */
     public function Query($query)
     {
         Debug::Message('MySqlDatabase\Query: '.$query);
@@ -91,30 +195,52 @@ class MySqlDatabase extends MySQLi implements Database
         return new MySqlDatabaseResult($this);
     }
 
+    /**
+     * Generate a Create (Insert) query
+     * @return Query
+     */
     public function Create() 
     {
         $query = new MySqlDatabaseQuery($this);
         return $query->Create();
     }
     
+    /**
+     * Generate a Retrieve (Select) query
+     * @return Query
+     */
     public function Retrieve()
     {
         $query = new MySqlDatabaseQuery($this);
         return $query->Retrieve();
     }
-    
+
+    /**
+     * Generate a Update query
+     * @return Query
+     */    
     public function Update()
     {
         $query = new MySqlDatabaseQuery($this);
         return $query->Update();
     }
-    
+
+    /**
+     * Generate a Delete query
+     * @return Query
+     */    
     public function Delete()
     {
         $query = new MySqlDatabaseQuery($this);
         return $query->Create();
     }
 
+    /**
+     * Generate a custom query
+     * @param $queryString
+     * @internal param $query
+     * @return Query
+     */
     public function Custom($queryString)
     {
         $query = new MySqlDatabaseQuery($this);
@@ -124,7 +250,6 @@ class MySqlDatabase extends MySQLi implements Database
 
 /**
  * Database Query object that implements a fluent interface, abstracts away the syntax in creating simple DB queries
- *
  * @package Database\DatabaseResult
  */
 interface Query
@@ -338,10 +463,14 @@ class MySqlDatabaseQuery implements Query
 
     public function ToString()
     {
-        if(isset($this->custom))
+        if (isset($this->custom)) {
             return $this->custom;
-        else if(empty($this->action))
-            throw new StrictException("No query action was set.");
+        }
+        elseif (empty($this->action)) {
+            // [MUSTCHANGE]
+            //throw new WarningException("No query action was set."); // Should output
+            return get_class($this);
+        } 
         
         switch ($this->action)
         {
@@ -464,7 +593,9 @@ class MySqlDatabaseQuery implements Query
                 return $sql . PHP_EOL;
                 break;
             default:
-                return null;
+                // [MUSTCHANGE]
+                //throw new WarningException("No query action was set."); // Should output
+                return get_class($this);
         }
     }
     

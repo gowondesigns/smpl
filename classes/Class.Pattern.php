@@ -1,22 +1,18 @@
 <?php
 /**
  * Class.Pattern
- *
  * @package SMPL\Pattern
  */
 
 /**
  * Pattern Class
- *
- * Stores and validates REGEX patterns 
- * 
+ * Stores and validates REGEX patterns  
  * @package Pattern
  */
 class Pattern
 {
     /**
      * Regex signature to validate SMPL-standard Datetime strings: YYYYMMDDHHmmSS
-     *
      * @var string
      */
     const SIGNATURE_DATETIME = '/((?!0{4})\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])([0-1][0-9]|2[0-3])([0-5][0-9])([0-5][0-9])/';
@@ -27,8 +23,7 @@ class Pattern
      * /tags/<search-phrase>/<index-number>/ (Seeking through results)
      * /tags/<search-phrase>/date/ (sort results by date, most recent first)
      * /tags/<search-phrase>/date/<index-number>/ (Seeking through results)
-     * Issue: This also validates /tags/<search-phrase>///     
-     *      
+     * Issue: This also validates /tags/<search-phrase>///           
      * @var string
      */
     const SIGNATURE_URI_TAG_SEARCH = '/(tags)\/([A-Za-z0-9\-]+)\/{0,1}(date)*\/{0,1}(\d+)*/';
@@ -84,7 +79,6 @@ class Pattern
 
     /**
      * Empty private constructor to enforce "static-ness"
-     *
      * @return \Pattern
      */
     private function __construct() {}
