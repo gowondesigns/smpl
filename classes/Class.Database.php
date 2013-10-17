@@ -8,66 +8,439 @@
 ANSI SQL92-Compliant Chainable Query Interface
 http://savage.net.au/SQL/sql-92.bnf.html
 example: http://docs.kohanaphp.com/libraries/database/builder
+Before: 
+$database = Config::Database();
+$database->Update()
+    ->UsingTable("content")
+    ->UsingTable("blocks")
+    ->Item("publish-publish_flag-dropdown")->SetValue(Query::PUBLISHED)
+    ->Match("publish-publish_flag-dropdown", Query::TO_PUBLISH)
+    ->AndWhere()->LessThanOrEq("publish-publish_date-date", Date::Now()->ToInt())
+    ->Send(); // Slightly more terse, but also very tightly coupled, must have a Query type for each Database type
+    
+After:
+$database = Config::Database();
+$query = new Query('Publish pending articles')
+    ->Update()
+    ->UseTable(array('content','blocks'))
+    ->Set('publish-publish_flag-dropdown', Query::PUBLISHED)
+    ->Where()->IsEqual('publish-publish_flag-dropdown', Query::TO_PUBLISH)
+    ->AndWhere()->IsLessOrEq('publish-publish_date-date', Date::Now()->ToInt()); //Slightly more verbose, but domain agnostic and atomic
+$database->Execute($q); //Validation and Execute happens inside the Database class 
 
-//private $queryType
-//private $previousAction // retains the last method executed, __FUNCTION__
-
-Create()
-Retrieve()
-Update()
-Delete()
-Custom(query)
-
-// Getters/Setters
-UsingTable(table [, alias])
-
-// INSTEAD OF
-Item(item [, alias])
-SetValue(value) // Operates on the latest item initialized
-
-//WHAT ABOUT
-Get(item [, alias]) // Must check if the action is a Retrieve action
-Set(item, value)
-
-
-// Should throw Notice regarding Semantics of Fluid Interface if used any time after the first time
-Where() // Analogous to AndWhere()
-
-// Should throw Notice regarding Semantics of Fluid Interface if called before Where()
-AndWhere()
-OrWhere()
-
-// Start Predicates
-
-IsEqual(item, match)
-IsNotEqual(item, match) // "<>" instead of "!="
-IsLessThan(item,limit)
-IsLessThanOrEq(item,limit)
-IsGreaterThan(item,limit)
-IsGreaterThanOrEq(item,limit)
-
-IsBetween(item, min, max)// Must be Numeric
-
-IsIn(item, array set) //Must match to items in a set
-IsLike(item/s, needle)
-IsNotLike(item/s, needle)
-
-IsNull(item/s)
-IsNotNull(item/s)
-
-//FindIn //Change to MATCH ---vvv
-Matches(item/s, string)
-
-// End Predicates
-
-// Allow for complex clustering of predicates
-Cluster(alias<alphanumeric>, operator<OR|AND>, item, item[, item...])
-
-// must be numeric
-OrderBy(item, order)
-Limit(item, max)
-Offset(number)
 */
+
+class TestQuery
+{
+    const CREATE = 1;
+    const RETRIEVE = 2;
+    const UPDATE = 3;
+    const DELETE = 4;
+
+    /* Constants used in queries */
+    const LINK_AND = 0;
+    const LINK_OR = 1;
+    const SORT_ASC = 0;
+    const SORT_DESC = 1;
+    const PUBLISHED = 1;
+    const TO_PUBLISH = 2;
+    const UNPUBLISHED = 0;
+    const PRIORITY_HIGH = 1;
+    const PRIORITY_MED = 2;
+    const PRIORITY_LOW = 3;
+
+    /* Predicate Constants */
+    // predicates = array( type, item, value, link)
+    const IS_EQUAL = 1;
+    const IS_NOT_EQUAL = 2;
+    const IS_LESS_THAN= 3;
+    const IS_LESS_OREQ = 4;
+    const IS_GREATER_THAN= 5;
+    const IS_GREATER_OREQ = 6;
+    const IS_BETWEEN = 7;
+    const IS_IN = 8;
+    const IS_NOT_IN = 9;
+    const IS_LIKE = 10;
+    const IS_NOT_LIKE = 11;
+    const IS_NULL = 12;
+    const IS_NOT_NULL = 13;
+    const IS_MATCH = 14;
+        
+    private $description = null;
+    private $type = null;
+    private $previous = null;
+    
+    private $tables = array();
+    private $items = array();
+    private $values = array();
+    private $predicates = array();
+    private $clusters = array();
+    private $order = array();
+    private $limit = null;
+    private $offset = null;
+    
+    // Optional meta description to give context to a query
+    public function __construct($description = null)
+    {
+        if (isset($description) && !is_string($description)) {
+            throw ErrorException('Description must be of string type.');
+        }
+        
+        $this->description = $description;
+    }
+    
+    public function __toString()
+    {
+        if (isset($this->description))) {
+            return $this->description;
+        }
+        else {
+            return __CLASS__;
+        }
+    }
+    
+    public function Extract() {}
+    
+    public function Create()
+    {
+        $this->type = self::CREATE;
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function Retrieve()
+    {
+        $this->type = self::RETRIEVE;
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function Update()
+    {
+        $this->type = self::UPDATE;
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function Delete()
+    {
+        $this->type = self::DELETE;
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    // Can accept arrays
+    public function UseTable($table, $alias = null)
+    {
+        // For submitting multiple items in a single request: array( 'item', 'alias' => 'item', 'item', ...)
+        if (is_array($table)) {
+            foreach($table as $key => $value) {
+                if (is_numeric($key)) {
+                    $this->tables[] = array($value, null);
+                }
+                else {
+                    $this->tables[] = array($value, $key);
+                }
+            }
+        }
+        else {
+            $this->tables[] = array($table, $alias);
+        }
+
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    // Can accept arrays
+    public function Get($item, $alias = null)
+    {
+        if ($this->type !== self::RETRIEVE) {
+            throw WarningException('Get Method used when Query is not of Retrieve type.');
+        }
+        // For submitting multiple items in a single request: array( 'item', 'alias' => 'item', 'item', ...)
+        if (is_array($item)) {
+            foreach($item as $key => $value) {
+                if (is_numeric($key)) {
+                    $this->items[] = array($value, null);
+                }
+                else {
+                    $this->items[] = array($value, $key);
+                }
+            }
+        }
+        else {
+            $this->items[] = array($item, $alias);
+        }
+        
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function Set($item, $value)
+    {
+        if ($this->type !== self::CREATE && $this->type !== self::UPDATE) {
+            throw WarningException('Set Method used when Query is not of Create or Update type.');
+        }
+        
+        $this->items[] = array($item, null);
+        $this->values[] = $value;        
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function Where()
+    {
+        $count = count($this->predicates);
+        if ($count > 0 && $this->predicates[($count - 1)]['link'] === null) {
+            $this->predicates[($count - 1)]['link'] = self::LINK_AND;
+            throw new StrictException('The Where() method should appear before any predicate is set, and should only be used once.');
+        }
+        
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    // Should throw Notice regarding Semantics of Fluid Interface if called before Where()
+    public function AndWhere()
+    {
+        $count = count($this->predicates);
+        if ($count === 0) {
+            throw new StrictException('The AndWhere() method should not be used until a predicate has been set.');
+        }
+        elseif ($count > 0 && $this->predicates[($count - 1)]['link'] === null) {
+            $this->predicates[($count - 1)]['link'] = self::LINK_AND;
+        }
+    }
+    
+    public function OrWhere()
+    {
+        $count = count($this->predicates);
+        if ($count === 0) {
+            throw new StrictException('The OrWhere() method should not be used until a predicate has been set.');
+        }
+        elseif ($count > 0 && $this->predicates[($count - 1)]['link'] === null) {
+            $this->predicates[($count - 1)]['link'] = self::LINK_OR;
+        }
+    }
+
+    public function IsEqual($item, $value)
+    {        
+        $this->predicates[] = array(
+            'type' => self::IS_EQUAL,
+            'item' => $item,
+            'value' => $value,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }    
+    
+    public function IsNotEqual($item, $value)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_NOT_EQUAL,
+            'item' => $item,
+            'value' => $value,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsLessThan($item, $value)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_LESS_THAN,
+            'item' => $item,
+            'value' => $value,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+              
+    public function IsLessOrEq($item, $value)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_LESS_OREQ,
+            'item' => $item,
+            'value' => $value,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsGreaterThan($item, $value)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_GREATER_THAN,
+            'item' => $item,
+            'value' => $value,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsGreaterOrEq($item, $value)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_GREATER_OREQ,
+            'item' => $item,
+            'value' => $value,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsBetween($item, $min, $max)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_BETWEEN,
+            'item' => $item,
+            'value' => array('min' => $min, 'max' => $max),
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsIn($item, $set)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_IN,
+            'item' => $item,
+            'value' => $set,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsNotIn($item, $set)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_NOT IN,
+            'item' => $item,
+            'value' => $set,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsLike($item, $string)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_LIKE,
+            'item' => $item,
+            'value' => $string,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsNotLike($item, $string)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_NOT_LIKE,
+            'item' => $item,
+            'value' => $string,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+
+    public function IsNull($item)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_NULL,
+            'item' => $item,
+            'value' => null,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsNotNull($item)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_NOT_NULL,
+            'item' => $item,
+            'value' => null,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function IsMatch($items, $string)
+    {
+        $this->predicates[] = array(
+            'type' => self::IS_MATCH,
+            'item' => $item,
+            'value' => $value,
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    // Allow for complex clustering of predicates
+    public function Cluster($alias, $operator, $index1, $index2) {}
+    
+    // Can accept arrays
+    public function OrderBy($item, $order = self::SORT_ASC)
+    {
+        // For submitting multiple items in a single request: array( 'item', 'item' => order, 'item', ...)
+        if (is_array($item)) {
+            foreach($item as $key => $value) {
+                if (is_numeric($key)) {
+                    $this->order[] = array($value, self::SORT_ASC);
+                }
+                else {
+                    if ($value !== self::SORT_ASC) {
+                        $value = self::SORT_DESC;
+                    }
+                    $this->order[] = array($key, $value);
+                }
+            }
+        }
+        else {
+            if ($order !== self::SORT_ASC) {
+                $order = self::SORT_DESC;
+            }
+            $this->items[] = array($item, $order);
+        }
+        
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function Limit($max)
+    {
+        if (isset($this->limit)) {
+            throw NoticeException('Limit has been previously set. Value will be overwritten.');
+        }
+        
+        $this->limit = $max;
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
+    
+    public function Offset($amount)    
+    {
+        if (isset($this->offset)) {
+            throw NoticeException('Offset has been previously set. Value will be overwritten.');
+        }
+        
+        $this->limit = $max;
+        $this->previous = __FUNCTION__;
+        return $this;
+    }   
+}
 
 /**
  * Database interface
