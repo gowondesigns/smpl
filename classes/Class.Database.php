@@ -19,18 +19,20 @@ $database->Update()
     ->Send(); // Slightly more terse, but also very tightly coupled, must have a Query type for each Database type
     
 After:
-$database = Config::Database();
-$query = new Query('Publish pending articles')
+$query = Query::Build('Publish pending articles')
     ->Update()
     ->UseTable(array('content','blocks'))
     ->Set('publish-publish_flag-dropdown', Query::PUBLISHED)
     ->Where()->IsEqual('publish-publish_flag-dropdown', Query::TO_PUBLISH)
     ->AndWhere()->IsLessOrEq('publish-publish_date-date', Date::Now()->ToInt()); //Slightly more verbose, but domain agnostic and atomic
-$database->Execute($q); //Validation and Execute happens inside the Database class 
-
+Config::Database()->Execute($query); //Validation and Execution happens inside the Database class
 */
 
-class TestQuery
+/**
+ * ANSI SQL92-Compliant Chainable Query Interface
+ * @package Database\Query
+ */
+class Query
 {
     const CREATE = 1;
     const RETRIEVE = 2;
@@ -50,7 +52,6 @@ class TestQuery
     const PRIORITY_LOW = 3;
 
     /* Predicate Constants */
-    // predicates = array( type, item, value, link)
     const IS_EQUAL = 1;
     const IS_NOT_EQUAL = 2;
     const IS_LESS_THAN= 3;
@@ -80,10 +81,10 @@ class TestQuery
     private $offset = null;
     
     // Optional meta description to give context to a query
-    public function __construct($description = null)
+    private function __construct($description = null)
     {
         if (isset($description) && !is_string($description)) {
-            throw ErrorException('Description must be of string type.');
+            throw new ErrorException('Description must be of string type.');
         }
         
         $this->description = $description;
@@ -91,15 +92,31 @@ class TestQuery
     
     public function __toString()
     {
-        if (isset($this->description))) {
+        if (isset($this->description)) {
             return $this->description;
         }
         else {
             return __CLASS__;
         }
     }
-    
-    public function Extract() {}
+
+    public static function Build($description = null) {
+        return new self($description);
+    }
+
+    public function Extract() {
+        return array(
+            'type' => $this->type,
+            'tables' => $this->tables,
+            'items' => $this->items,
+            'values' => $this->values,
+            'predicates' => $this->predicates,
+            'clusters' => $this->clusters,
+            'order' => $this->order,
+            'limit' => $this->limit,
+            'offset' => $this->offset
+        );
+    }
     
     public function Create()
     {
@@ -153,7 +170,7 @@ class TestQuery
     public function Get($item, $alias = null)
     {
         if ($this->type !== self::RETRIEVE) {
-            throw WarningException('Get Method used when Query is not of Retrieve type.');
+            throw new WarningException('Get Method used when Query is not of Retrieve type.');
         }
         // For submitting multiple items in a single request: array( 'item', 'alias' => 'item', 'item', ...)
         if (is_array($item)) {
@@ -177,7 +194,7 @@ class TestQuery
     public function Set($item, $value)
     {
         if ($this->type !== self::CREATE && $this->type !== self::UPDATE) {
-            throw WarningException('Set Method used when Query is not of Create or Update type.');
+            throw new WarningException('Set Method used when Query is not of Create or Update type.');
         }
         
         $this->items[] = array($item, null);
@@ -193,7 +210,6 @@ class TestQuery
             $this->predicates[($count - 1)]['link'] = self::LINK_AND;
             throw new StrictException('The Where() method should appear before any predicate is set, and should only be used once.');
         }
-        
         $this->previous = __FUNCTION__;
         return $this;
     }
@@ -207,6 +223,8 @@ class TestQuery
         elseif ($count > 0 && $this->predicates[($count - 1)]['link'] === null) {
             $this->predicates[($count - 1)]['link'] = self::LINK_AND;
         }
+        $this->previous = __FUNCTION__;
+        return $this;
     }
     
     public function OrWhere()
@@ -218,6 +236,8 @@ class TestQuery
         elseif ($count > 0 && $this->predicates[($count - 1)]['link'] === null) {
             $this->predicates[($count - 1)]['link'] = self::LINK_OR;
         }
+        $this->previous = __FUNCTION__;
+        return $this;
     }
 
     public function IsEqual($item, $value)
@@ -319,7 +339,7 @@ class TestQuery
     public function IsNotIn($item, $set)
     {
         $this->predicates[] = array(
-            'type' => self::IS_NOT IN,
+            'type' => self::IS_NOT_IN,
             'item' => $item,
             'value' => $set,
             'link' => null
@@ -376,12 +396,12 @@ class TestQuery
         return $this;
     }
     
-    public function IsMatch($items, $string)
+    public function IsMatch($item, $string)
     {
         $this->predicates[] = array(
             'type' => self::IS_MATCH,
             'item' => $item,
-            'value' => $value,
+            'value' => $string,
             'link' => null
         );
         $this->previous = __FUNCTION__;
@@ -422,7 +442,7 @@ class TestQuery
     public function Limit($max)
     {
         if (isset($this->limit)) {
-            throw NoticeException('Limit has been previously set. Value will be overwritten.');
+            throw new NoticeException('Limit has been previously set. Value will be overwritten.');
         }
         
         $this->limit = $max;
@@ -433,10 +453,10 @@ class TestQuery
     public function Offset($amount)    
     {
         if (isset($this->offset)) {
-            throw NoticeException('Offset has been previously set. Value will be overwritten.');
+            throw new NoticeException('Offset has been previously set. Value will be overwritten.');
         }
         
-        $this->limit = $max;
+        $this->offset = $amount;
         $this->previous = __FUNCTION__;
         return $this;
     }   
@@ -449,44 +469,27 @@ class TestQuery
 interface Database
 {
     /**
-     * Statically create a query. Useful when one does not know the exact type
-     * of Database being used.
-     * @param \Database $database
-     * @return Query
+     * Perform a customized domain-specific query
+     * @param string $query
+     * @return DatabaseResult
      */
-    public static function NewQuery($database = null);    // Instantiate new query object
+    public function CustomQuery($query);
 
     /**
-     * Generate a Create (Insert) query
-     * @return Query
+     * Validate a query object
+     * @param \Query $query
+     * @return bool
      */
-    public function Create();
+    public function IsValid(Query $query);
 
     /**
-     * Generate a Retrieve (Select) query
-     * @return Query
+     * Perform a customized domain-specific query
+     * @param \Query $query
+     * @return DatabaseResult
      */
-    public function Retrieve();
-
-    /**
-     * Generate a Update query
-     * @return Query
-     */
-    public function Update();
-
-    /**
-     * Generate a Delete query
-     * @return Query
-     */
-    public function Delete();
-
-    /**
-     * Generate a custom query
-     * @param $query
-     * @return Query
-     */
-    public function Custom($query);
+    public function Execute(Query $query);
 }
+
 
 /**
  * MySQL Implementation of the Database interface
@@ -548,294 +551,39 @@ class MySqlDatabase extends MySQLi implements Database
         parent::__construct($host, $username, $password, $name);
     }
 
-    public static function NewQuery($database = null)
-    {
-        if ($database instanceof MySqlDatabase) {
-            throw new StrictException();
-        }
-        return new MySqlDatabaseQuery($database);
-    }
-
     /**
-     * Override MySQLi query() method to return MySqlDatabaseResult object
-     * @param string $query      
-     * @return Query
+     * Perform a customized domain-specific query
+     * @param string $query
+     * @return DatabaseResult
      */
-    public function Query($query)
-    {
+    public function CustomQuery($query) {
         Debug::Message('MySqlDatabase\Query: '.$query);
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
 
     /**
-     * Generate a Create (Insert) query
-     * @return Query
+     * Check if a query contains valid information to be successfully executed by the database.
+     * This does not check if the tables/columns referenced actually exist
+     * or IsValid()
+     * @param \Query $query
+     * @return bool
      */
-    public function Create() 
+    public function IsValid(Query $query)
     {
-        $query = new MySqlDatabaseQuery($this);
-        return $query->Create();
-    }
-    
-    /**
-     * Generate a Retrieve (Select) query
-     * @return Query
-     */
-    public function Retrieve()
-    {
-        $query = new MySqlDatabaseQuery($this);
-        return $query->Retrieve();
+        // check predicates, clusters, order, limit, offset
+        $data = $query->Extract();
+        return false;
     }
 
     /**
-     * Generate a Update query
-     * @return Query
-     */    
-    public function Update()
+     * Perform a customized domain-specific query
+     * @param \Query $query
+     * @return DatabaseResult
+     */
+    public function Execute(Query $query)
     {
-        $query = new MySqlDatabaseQuery($this);
-        return $query->Update();
-    }
-
-    /**
-     * Generate a Delete query
-     * @return Query
-     */    
-    public function Delete()
-    {
-        $query = new MySqlDatabaseQuery($this);
-        return $query->Create();
-    }
-
-    /**
-     * Generate a custom query
-     * @param $queryString
-     * @internal param $query
-     * @return Query
-     */
-    public function Custom($queryString)
-    {
-        $query = new MySqlDatabaseQuery($this);
-        return $query->Custom($queryString);
-    }
-}
-
-/**
- * Database Query object that implements a fluent interface, abstracts away the syntax in creating simple DB queries
- * @package Database\DatabaseResult
- */
-interface Query
-{   
-    /* Constants used in queries */
-    const SORT_ASC = 'ASC';
-    const SORT_DESC = 'DESC';
-    const PUBLISHED = 1;
-    const TO_PUBLISH = 2;
-    const UNPUBLISHED = 0;
-    const PRIORITY_HIGH = 1;
-    const PRIORITY_MED = 2;
-    const PRIORITY_LOW = 3;
-
-    /**
-     * Execute the query
-     * @param Database $database database that will be used to execute the query
-     * @return DatabaseResult The number of rows returned in the result
-     */
-    public function Send(Database $database = null);
-
-    /**
-     * Convert the query to a string
-     * @return string
-     */
-    public function ToString();
-
-    /**
-     * Generate a select-type Query
-     * @return \Query
-     */
-    public function Retrieve();
-
-    /**
-     * Generate a create-type Query
-     * @return \Query
-     */
-    public function Create();
-
-    /**
-     * Generate a update-type Query
-     * @return \Query
-     */
-    public function Update();
-
-    /**
-     * Generate a delete-type Query
-     * @return \Query
-     */
-    public function Delete();
-
-    /**
-     * Generate a custom Query
-     * @param string $query
-     * @return \Query
-     */
-    public function Custom($query);
-
-    /**
-     * Select SQL table to perform operation on
-     * @param string $table
-     * @param string $tableAlias
-     * @return \Query
-     */
-    public function UsingTable($table, $tableAlias = null);
-
-    /**
-     * Select a column from the SQL table
-     * @param string $item
-     * @param string $itemAlias
-     * @return \Query
-     */
-    public function Item($item, $itemAlias = null);
-
-    /**
-     * Assign a value to the preceding item
-     * @param string $value
-     * @return \Query
-     */
-    public function SetValue($value);
-
-    /**
-     * Modify match relationship of proceeding clause to OR
-     * @return \Query
-     */
-    public function OrWhere();
-
-    /**
-     * Modify match relationship of proceeding clause to AND
-     * @return \Query
-     */
-    public function AndWhere();
-
-    /**
-     * Add an equal-to match parameter to a SQL query
-     * @param string $item
-     * @param string $condition
-     * @return \Query
-     */
-    public function Match($item, $condition);
-
-    /**
-     * Add a not-equal-to match parameter to a SQL query
-     * @param string $item
-     * @param string $condition
-     * @return \Query
-     */
-    public function NotMatch($item, $condition);
-
-    /**
-     * Add a less-than match parameter to a SQL query
-     * @param string $item
-     * @param string $condition
-     * @return \Query
-     */
-    public function LessThan($item, $condition);
-
-    /**
-     * Add a greater-than match parameter to a SQL query
-     * @param string $item
-     * @param string $condition
-     * @return \Query
-     */
-    public function GreaterThan($item, $condition);
-
-    /**
-     * Add a less-than-or-equal-to match parameter to a SQL query
-     * @param string $item
-     * @param string $condition
-     * @return \Query
-     */
-    public function LessThanOrEq($item, $condition);
-
-    /**
-     * Add a greater-than-or-equal-to match parameter to a SQL query
-     * @param string $item
-     * @param string $condition
-     * @return \Query
-     */
-    public function GreaterThanOrEq($item, $condition);
-
-    /**
-     * Add a matching parameter to find <text> in SQL table items
-     * @param string $items
-     * @param string $text
-     * @return \Query
-     */
-    public function FindIn($items, $text);
-
-    /**
-     * Add a sorting parameter on a column in the SQL table
-     * @param string $item
-     * @param string $direction
-     * @return \Query
-     */
-    public function OrderBy($item, $direction);
-
-    /**
-     * Limits the amount of rows returned in the result set
-     * @param int $count
-     * @return \Query
-     */
-    public function Limit($count);
-
-    /**
-     * Set offset for the query result set
-     * @param int $amount
-     * @return \Query
-     */
-    public function Offset($amount);
-}
-
-class MySqlDatabaseQuery implements Query
-{
-    protected $database = null;
-    protected $action = null;   // Query Action: Select, Create (Insert), Update, Delete
-    protected $tables = array();  // Tables to be accessed in the query (Using)
-    protected $items = array();
-    protected $itemValues = array();
-    protected $whereClauses = array();
-    protected $whereClausesLogic = array();
-    protected $orderByLogic = array();
-    protected $resultLimit = null;
-    protected $resultOffset = null;
-    protected $custom = null;
-
-    public function __construct(MySqlDatabase $database = null)
-    {
-        if (isset($database)) {
-            $this->database = $database;
-        }
-    }
-
-    public function Send(Database $database = null)
-    {
-        if ($database instanceof MySqlDatabase) {
-            return $database->Query($this->ToString());
-        }
-        elseif (isset($this->database)) {
-            return $this->database->Query($this->ToString());
-        }
-        else {
-            throw new ErrorException("No database was set up.");
-        }
-    }
-
-    public function __toString()
-    {
-        return $this->ToString();
-    }
-
-    public function ToString()
-    {
+        return null;
         if (isset($this->custom)) {
             return $this->custom;
         }
@@ -843,13 +591,13 @@ class MySqlDatabaseQuery implements Query
             // [MUSTCHANGE]
             //throw new WarningException("No query action was set."); // Should output
             return get_class($this);
-        } 
-        
+        }
+
         switch ($this->action)
         {
             case "SELECT":
                 $sql = "SELECT";
-                
+
                 /* Select Items */
                 if(empty($this->items))
                     $sql .= " *";
@@ -865,10 +613,10 @@ class MySqlDatabaseQuery implements Query
                         else
                             $items[] .= "`{$expanded}` AS `{$key}`";
                     }
-                    
+
                     $sql .= ' '.implode(', ', $items);
                 }
-                
+
                 /* Select Tables*/
                 $tables = array();
                 foreach($this->tables as $key => $value)
@@ -878,9 +626,9 @@ class MySqlDatabaseQuery implements Query
                     else
                         $tables[] .= "`{$value}` AS `{$key}`";
                 }
-                
+
                 $sql .= ' FROM '.implode(', ', $tables);
-                
+
                 /* Where Clauses*/
                 if(!empty($this->whereClauses))
                 {
@@ -891,25 +639,25 @@ class MySqlDatabaseQuery implements Query
                         $sql .= (isset($this->whereClausesLogic[$key])) ? " {$this->whereClausesLogic[$key]}": null;
                     }
                 }
-                
+
                 /* Select Optimizers */
                 if(!empty($this->orderByLogic))
-                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);                
-                
+                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);
+
                 if(isset($this->resultLimit))
                     $sql .= ' LIMIT '.$this->resultLimit;
-                
+
                 if(isset($this->resultOffset))
                     $sql .= ' OFFSET '.$this->resultOffset;
-                                    
+
                 return $sql.PHP_EOL;
                 break;
-                
+
             case "INSERT":
                 $sql = "INSERT INTO `".array_values($this->tables)[0]."`";
                 $sql .= " (`".implode('`,`', $this->items)."`)";
                 $sql .= " VALUES('".implode("','", $this->itemValues)."')";
-                
+
                 return $sql.PHP_EOL;
                 break;
             case "UPDATE":
@@ -921,7 +669,7 @@ class MySqlDatabaseQuery implements Query
                     $items[] = " `{$column}` = '".$this->itemValues[$key]."'";
                 }
                 $sql .= ' SET'.implode(",", $items);
-                                
+
                 /* Where Clauses */
                 if(!empty($this->whereClauses))
                 {
@@ -932,14 +680,14 @@ class MySqlDatabaseQuery implements Query
                         $sql .= (isset($this->whereClausesLogic[$key])) ? " {$this->whereClausesLogic[$key]}": null;
                     }
                 }
-                
+
                 /* Select Optimizers */
                 if(!empty($this->orderByLogic))
-                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);                
-                
+                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);
+
                 if(isset($this->resultLimit))
                     $sql .= ' LIMIT '.$this->resultLimit;
-                
+
                 return $sql.PHP_EOL;
                 break;
             case "DELETE":
@@ -955,14 +703,14 @@ class MySqlDatabaseQuery implements Query
                         $sql .= (isset($this->whereClausesLogic[$key])) ? " {$this->whereClausesLogic[$key]}": null;
                     }
                 }
-                
+
                 /* Select Optimizers */
                 if(!empty($this->orderByLogic))
-                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);                
-                
+                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);
+
                 if(isset($this->resultLimit))
                     $sql .= ' LIMIT ' . $this->resultLimit;
-                
+
                 return $sql . PHP_EOL;
                 break;
             default:
@@ -971,272 +719,19 @@ class MySqlDatabaseQuery implements Query
                 return get_class($this);
         }
     }
-    
-    /* Action Methods */
-    public function Retrieve()
-    {
-        $this->action = "SELECT";
-        return $this;
-    }
-    
-    public function Create()
-    {
-        $this->action = "INSERT";
-        return $this;
-    }
-    
-    public function Update()
-    {
-        $this->action = "UPDATE";
-        return $this;
-    }
-    
-    public function Delete()
-    {
-        $this->action = "DELETE";
-        return $this;
-    }
 
-    public function Custom($query)
+    /**
+     * Override MySQLi query() method to return MySqlDatabaseResult object
+     * This may not be necessary anymore
+     * @param string $query
+     * @return DatabaseResult
+     *
+    public function Query($query)
     {
-        $this->custom = $query;
-        return $this;
-    }
-    
-    /* Selection Methods*/
-    public function UsingTable($table, $tableAlias = null)
-    {
-        if(isset($tableAlias))
-            $this->tables[$tableAlias] = $table;
-        else
-            $this->tables[$table] = $table;
-        return $this;
-    }
-
-    public function Item($item, $itemAlias = null)
-    {
-        if(isset($itemAlias))
-            $this->items[$itemAlias] = $item;
-        else
-            $this->items[$item] = $item;
-            
-        $this->itemValues[] = null;
-        return $this;
-    }    
-    
-    /* Create/Update Methods */
-    public function SetValue($value)
-    {
-        $count = count($this->items);
-        if($count < 1)
-            return $this;
-            
-        $this->itemValues[($count - 1)] = $value;
-                          
-        return $this;
-    }
-    
-    /* Where Clause Methods*/
-    public function OrWhere()
-    {
-        $count = count($this->whereClausesLogic);
-        
-        if($count < 1)
-            return $this;
-        
-        $this->whereClausesLogic[($count - 1)] = "OR";
-                          
-        return $this;
-    }
-    
-    public function AndWhere()
-    {
-        $count = count($this->whereClausesLogic);
-        
-        if($count < 1)
-            return $this;
-        
-        $this->whereClausesLogic[($count - 1)] = "AND";
-                          
-        return $this;
-    }
-    
-    public function Match($item, $condition)
-    {
-        if(is_string($condition))
-            $condition = "'{$condition}'";
-        
-        $expanded = explode('.', $item);
-        $item = implode('`.`', $expanded);
-        $where = "`{$item}` = ".$condition;
-        
-        $this->whereClauses[] = $where;
-        $this->whereClausesLogic[] = null;
-        
-        // Default to logical AND to join WHERE clauses        
-        $count = count($this->whereClausesLogic);
-        if($count > 1)
-            if(!isset($this->whereClausesLogic[($count - 2)]))
-                $this->whereClausesLogic[($count - 2)] = "AND";
-                          
-        return $this;
-    }
-
-    public function NotMatch($item, $condition)
-    {
-        if(is_string($condition))
-            $condition = "'{$condition}'";
-        
-        $expanded = explode('.', $item);
-        $item = implode('`.`', $expanded);
-        $where = "`{$item}` != ".$condition;
-        $this->whereClauses[] = $where;
-        $this->whereClausesLogic[] = null;
-        
-        // Default to logical AND to join WHERE clauses        
-        $count = count($this->whereClausesLogic);
-        if($count > 1)
-            if(!isset($this->whereClausesLogic[($count - 2)]))
-                $this->whereClausesLogic[($count - 2)] = "AND";
-                
-        return $this;
-    }
-        
-    public function LessThan($item, $condition)
-    {
-        if(!is_numeric($condition))
-            throw new StrictException("Condition must be numeric");
-        
-        $expanded = explode('.', $item);
-        $item = implode('`.`', $expanded);
-        $where = "`{$item}` < ".$condition;
-        $this->whereClauses[] = $where;
-        $this->whereClausesLogic[] = null;
-        
-        // Default to logical AND to join WHERE clauses        
-        $count = count($this->whereClausesLogic);
-        if($count > 1)
-            if(!isset($this->whereClausesLogic[($count - 2)]))
-                $this->whereClausesLogic[($count - 2)] = "AND";
-        
-        return $this;
-    }
-    
-    public function GreaterThan($item, $condition)
-    {
-        if(!is_numeric($condition))
-            throw new StrictException("Condition must be numeric");
-        
-        $expanded = explode('.', $item);
-        $item = implode('`.`', $expanded);
-        $where = "`{$item}` > ".$condition;
-        $this->whereClauses[] = $where;
-        $this->whereClausesLogic[] = null;
-        
-        // Default to logical AND to join WHERE clauses        
-        $count = count($this->whereClausesLogic);
-        if($count > 1)
-            if(!isset($this->whereClausesLogic[($count - 2)]))
-                $this->whereClausesLogic[($count - 2)] = "AND";
-                
-        return $this;
-    }
-
-    public function LessThanOrEq($item, $condition)
-    {
-        if(!is_numeric($condition))
-            throw new StrictException("Condition must be numeric");
-        
-        $expanded = explode('.', $item);
-        $item = implode('`.`', $expanded);
-        $where = "`{$item}` <= ".$condition;
-        $this->whereClauses[] = $where;
-        $this->whereClausesLogic[] = null;
-        
-        // Default to logical AND to join WHERE clauses        
-        $count = count($this->whereClausesLogic);
-        if($count > 1)
-            if(!isset($this->whereClausesLogic[($count - 2)]))
-                $this->whereClausesLogic[($count - 2)] = "AND";
-                
-        return $this;
-    }
-    
-    public function GreaterThanOrEq($item, $condition)
-    {
-        if(!is_numeric($condition))
-            throw new StrictException("Condition must be numeric");
-        
-        $expanded = explode('.', $item);
-        $item = implode('`.`', $expanded);
-        $where = "`{$item}` >= ".$condition;
-        $this->whereClauses[] = $where;
-        $this->whereClausesLogic[] = null;
-        
-        // Default to logical AND to join WHERE clauses        
-        $count = count($this->whereClausesLogic);
-        if($count > 1)
-            if(!isset($this->whereClausesLogic[($count - 2)]))
-                $this->whereClausesLogic[($count - 2)] = "AND";
-                
-        return $this;
-    }
-    
-    public function FindIn($items, $text)
-    {
-        if(is_array($items))
-        {
-            foreach($items as $key => $item)
-            {
-                $expanded = explode('.', $item);
-                $items[$key] = implode('`.`', $expanded);            
-            }
-            $match = implode(', ', $items);
-        }
-        else
-        {
-            $expanded = explode('.', $items);
-            $match = implode('`.`', $expanded);
-        }
-
-        $where = "MATCH({$match}) AGAINST('{$text}' IN BOOLEAN MODE)";
-        $this->whereClauses[] = $where;
-        $this->whereClausesLogic[] = null;
-        
-        // Default to logical AND to join WHERE clauses        
-        $count = count($this->whereClausesLogic);
-        if($count > 1)
-            if(!isset($this->whereClausesLogic[($count - 2)]))
-                $this->whereClausesLogic[($count - 2)] = "AND";
-                
-        return $this;
-    }
-    
-    /* Query Optimization Methods */
-    public function OrderBy($item, $direction = null)
-    {
-        if (null === $direction) {
-            $direction = self::SORT_ASC;
-        }
-
-        $item = str_replace('.', '`.`', $item);
-        $this->orderByLogic[] = '`' . $item . '` ' . $direction;
-
-        return $this;
-    }
-    
-    public function Limit($count)
-    {
-        $this->resultLimit = $count;
-        return $this;
-    }
-    
-    public function Offset($amount)
-    {
-        $this->resultOffset = $amount;
-        return $this;
-    }
-
+    Debug::Message('MySqlDatabase\Query: '.$query);
+    $this->real_query($query);
+    return new MySqlDatabaseResult($this);
+    } //*/
 }
 
 /**
