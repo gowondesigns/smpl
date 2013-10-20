@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Example SMPL XML Debug Log
+      Validate using http://www.w3.org/2001/03/webdata/xsv -->
+<!-- Filename Format \<error-folder>\log-<Date:YYYYMMDDHHmmSS>.xml -->
+<log>
+    <message number="1">
+        <description>Test</description>
+        <stack>
+            <method />
+            <method />
+            <method />
+            <method />
+        </stack>
+    </message>
+    <notice number="2">
+        <description>Test</description>
+        <stack>
+            <method />
+            <method />
+            <method />
+            <method />
+        </stack>
+    </notice>
+    <warning number="3">
+        <description>Test</description>
+        <stack>
+            <method />
+            <method />
+            <method />
+            <method />
+        </stack>
+    </warning>
+    <error number="4">
+        <severity value="32">Strict</severity>
+        <description>Test</description>
+        <stack>
+            <method />
+            <method />
+            <method />
+            <method />
+        </stack>
+    </error>
+</log>

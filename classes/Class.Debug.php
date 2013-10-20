@@ -1,11 +1,18 @@
 <?php
-/* SMPL Debug Class
-// Error Handling functions and Debug Messaging and Logging
-//
-//*/
+/**
+ * Class.Debug
+ * @package SMPL\Debug
+ */
 
+/**
+ * Debug Class
+ * Procedure: All issues throw a PHP standard error type. Debug error handler turns Errors into Exceptions that can be caught.
+ * Warnings and Notices only throw exceptions in Strict Mode. 
+ * @package Debug
+ */
 class Debug
 {
+    /* Setting Constants */
     const DEBUG_ON = true;
     const DEBUG_OFF = false;
     const STRICT_ON = true;

@@ -43,7 +43,7 @@ class Date
      */
     private function __construct($datetime)
     {
-        $valid = Pattern::Validate(Pattern::SIGNATURE_DATETIME, $datetime);
+        $valid = Pattern::Validate(Pattern::SIGNATURE_DATETIME, $datetime, Pattern::RETURN_MATCHES);
         if ($valid === false) {
             throw new StrictException('Invalid Date String: '. $datetime);
         }

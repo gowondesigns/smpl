@@ -11,6 +11,11 @@
  */
 class Pattern
 {
+    const RETURN_MATCHES = true;
+
+    const SQL_NAME = '/[A-Za-z][A-Za-z0-9\-\_]{0,29}/';
+
+    const SQL_NAME_WITH_PREPEND = '/[A-Za-z][A-Za-z0-9\-\_]{0,29}(.[A-Za-z][A-Za-z0-9\-\_]{0,29})?/';
     /**
      * Regex signature to validate SMPL-standard Datetime strings: YYYYMMDDHHmmSS
      * @var string
@@ -82,20 +87,24 @@ class Pattern
      * @return \Pattern
      */
     private function __construct() {}
-    
+
     /**
      * Validates REGEX patterns. Returns array of passing elements.
      * @param string $pattern
-     * @param string $subject     
+     * @param string $subject
+     * @param bool $returnMatches
      * @return mixed
-     */ 
-    public static function Validate($pattern, $subject)
+     */
+    public static function Validate($pattern, $subject, $returnMatches = false)
     {
         $matches = array();
         $valid = preg_match($pattern, $subject, $matches);
         
-        if ($valid === 1) {
+        if ($valid === 1 && $returnMatches === Pattern::RETURN_MATCHES) {
             return $matches;
+        }
+        elseif ($valid === 1) {
+            return true;
         }
         else {
             return false;

@@ -59,13 +59,13 @@ class Query
     const IS_GREATER_THAN= 5;
     const IS_GREATER_OREQ = 6;
     const IS_BETWEEN = 7;
-    const IS_IN = 8;
-    const IS_NOT_IN = 9;
-    const IS_LIKE = 10;
-    const IS_NOT_LIKE = 11;
-    const IS_NULL = 12;
-    const IS_NOT_NULL = 13;
-    const IS_MATCH = 14;
+    const IS_NOT_BETWEEN = 8;
+    const IS_IN = 9;
+    const IS_NOT_IN = 10;
+    const IS_LIKE = 11;
+    const IS_NOT_LIKE = 12;
+    const IS_NULL = 13;
+    const IS_NOT_NULL = 14;
         
     private $description = null;
     private $type = null;
@@ -79,17 +79,26 @@ class Query
     private $order = array();
     private $limit = null;
     private $offset = null;
-    
-    // Optional meta description to give context to a query
+
+    /**
+     * Private constructor. Object can only be created using the Build() method.
+     * @param string $description
+     * @throws ErrorException
+     * @return Query
+     */
     private function __construct($description = null)
     {
         if (isset($description) && !is_string($description)) {
-            throw new ErrorException('Description must be of string type.');
+            trigger_error('Description must be of string type.', E_USER_ERROR);
         }
-        
         $this->description = $description;
     }
     
+    /**
+     * Magic method overloading executing the object as a string. Will return the 
+     * Query description or simple 'Query' if description is null.     
+     * @return string
+     */
     public function __toString()
     {
         if (isset($this->description)) {
@@ -100,10 +109,20 @@ class Query
         }
     }
 
+    /**
+     * Factory method to generate Query objects. Meta description is used whenever
+     * the Query object is treated like a string.     
+     * @param string $description Meta description of the Query
+     * @return Query
+     */
     public static function Build($description = null) {
         return new self($description);
     }
 
+    /**
+     * Pass Query data for validation or execution
+     * @return array
+     */
     public function Extract() {
         return array(
             'type' => $this->type,
@@ -118,63 +137,103 @@ class Query
         );
     }
     
+    /**
+     * Set the Query type to perform a Create operation
+     * @return Query
+     */
     public function Create()
     {
         $this->type = self::CREATE;
         $this->previous = __FUNCTION__;
         return $this;
     }
-    
+
+    /**
+     * Set the Query type to perform a Create operation
+     * @return Query
+     */    
     public function Retrieve()
     {
         $this->type = self::RETRIEVE;
         $this->previous = __FUNCTION__;
         return $this;
     }
-    
+
+    /**
+     * Set the Query type to perform a Create operation
+     * @return Query
+     */    
     public function Update()
     {
         $this->type = self::UPDATE;
         $this->previous = __FUNCTION__;
         return $this;
     }
-    
+
+    /**
+     * Set the Query type to perform a Create operation
+     * @return Query
+     */    
     public function Delete()
     {
         $this->type = self::DELETE;
         $this->previous = __FUNCTION__;
         return $this;
     }
-    // Can accept arrays
+
+    /**
+     * Sets the tables used for the query. Optional alias must be non-numeric.
+     * Array format: array( 'table', 'alias' => 'table', 'table', ...)           
+     * @param string|array $table Table name or array of table names 
+     * @param string $alias Optional alias for the table selected. Not used when $table is an array.      
+     * @return Query
+     */
     public function UseTable($table, $alias = null)
     {
-        // For submitting multiple items in a single request: array( 'item', 'alias' => 'item', 'item', ...)
         if (is_array($table)) {
             foreach($table as $key => $value) {
                 if (is_numeric($key)) {
+                    if (!Pattern::Validate(Pattern::SQL_NAME, $value)) {
+                        trigger_error('Table and Alias names must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+                    }
                     $this->tables[] = array($value, null);
                 }
                 else {
+                    if (!Pattern::Validate(Pattern::SQL_NAME, $key) || !Pattern::Validate(Pattern::SQL_NAME, $value)) {
+                        trigger_error('Table and Alias names must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+                    }
                     $this->tables[] = array($value, $key);
                 }
             }
         }
         else {
+            if (!Pattern::Validate(Pattern::SQL_NAME, $table) || (isset($alias) && !Pattern::Validate(Pattern::SQL_NAME, $alias))) {
+                trigger_error('Table and Alias names must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+            }
             $this->tables[] = array($table, $alias);
         }
 
         $this->previous = __FUNCTION__;
         return $this;
     }
-    // Can accept arrays
+
+    /**
+     * Sets the columns returned in the DatabaseResults of this query. Optional alias must be non-numeric.
+     * Array format: array( 'item', 'alias' => 'item', 'item', ...)          
+     * @param string|array $item Column name or array of column names 
+     * @param string $alias Optional alias for the column selected. Not used when $item is an array.      
+     * @return Query
+     */
     public function Get($item, $alias = null)
     {
         if ($this->type !== self::RETRIEVE) {
-            throw new WarningException('Get Method used when Query is not of Retrieve type.');
+            trigger_error('Get Method used when Query is not of Retrieve type.', E_USER_WARNING);
         }
-        // For submitting multiple items in a single request: array( 'item', 'alias' => 'item', 'item', ...)
         if (is_array($item)) {
             foreach($item as $key => $value) {
+                if (!Pattern::Validate(Pattern::SQL_NAME_WITH_PREPEND, $key) || !Pattern::Validate(Pattern::SQL_NAME, $value)) {
+                    trigger_error('Item and Alias names must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+                }
                 if (is_numeric($key)) {
                     $this->items[] = array($value, null);
                 }
@@ -184,6 +243,9 @@ class Query
             }
         }
         else {
+            if (!Pattern::Validate(Pattern::SQL_NAME_WITH_PREPEND, $item) || !Pattern::Validate(Pattern::SQL_NAME, $alias)) {
+                trigger_error('Item and Alias names must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+            }
             $this->items[] = array($item, $alias);
         }
         
@@ -191,34 +253,51 @@ class Query
         return $this;
     }
     
+    /**
+     * Sets a value to a column used in the query.          
+     * @param string $item Column name
+     * @param string $value Value to be stored in the column      
+     * @return Query
+     */
     public function Set($item, $value)
     {
         if ($this->type !== self::CREATE && $this->type !== self::UPDATE) {
-            throw new WarningException('Set Method used when Query is not of Create or Update type.');
+            trigger_error('Set Method used when Query is not of Create or Update type.', E_USER_WARNING);
         }
-        
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->items[] = array($item, null);
         $this->values[] = $value;        
         $this->previous = __FUNCTION__;
         return $this;
     }
     
+    /**
+     * Semantic method to start the WHERE clause in a query. If used again, method will behave
+     * like the AndWhere() method.                    
+     * @return Query
+     */
     public function Where()
     {
         $count = count($this->predicates);
         if ($count > 0 && $this->predicates[($count - 1)]['link'] === null) {
             $this->predicates[($count - 1)]['link'] = self::LINK_AND;
-            throw new StrictException('The Where() method should appear before any predicate is set, and should only be used once.');
+            trigger_error('The Where() method should appear before any predicate is set, and should only be used once.', E_USER_WARNING);
         }
         $this->previous = __FUNCTION__;
         return $this;
     }
-    // Should throw Notice regarding Semantics of Fluid Interface if called before Where()
+    
+    /**
+     * Semantic method to append on to the WHERE clause, using an AND to link the proceeding predictate.              
+     * @return Query
+     */
     public function AndWhere()
     {
         $count = count($this->predicates);
         if ($count === 0) {
-            throw new StrictException('The AndWhere() method should not be used until a predicate has been set.');
+            trigger_error('The AndWhere() method should not be used until a predicate has been set.', E_USER_WARNING);
         }
         elseif ($count > 0 && $this->predicates[($count - 1)]['link'] === null) {
             $this->predicates[($count - 1)]['link'] = self::LINK_AND;
@@ -227,11 +306,15 @@ class Query
         return $this;
     }
     
+    /**
+     * Semantic method to append on to the WHERE clause, using an OR to link the proceeding predicate.
+     * @return Query
+     */
     public function OrWhere()
     {
         $count = count($this->predicates);
         if ($count === 0) {
-            throw new StrictException('The OrWhere() method should not be used until a predicate has been set.');
+            trigger_error('The OrWhere() method should not be used until a predicate has been set.', E_USER_WARNING);
         }
         elseif ($count > 0 && $this->predicates[($count - 1)]['link'] === null) {
             $this->predicates[($count - 1)]['link'] = self::LINK_OR;
@@ -240,8 +323,17 @@ class Query
         return $this;
     }
 
+    /**
+     * Predicate to check: <item> = <value>          
+     * @param string $item
+     * @param string|int $value      
+     * @return Query
+     */
     public function IsEqual($item, $value)
-    {        
+    {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_EQUAL,
             'item' => $item,
@@ -251,9 +343,18 @@ class Query
         $this->previous = __FUNCTION__;
         return $this;
     }    
-    
+
+    /**
+     * Predicate to check: <item> != <value>          
+     * @param string $item
+     * @param string|int $value      
+     * @return Query
+     */
     public function IsNotEqual($item, $value)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_NOT_EQUAL,
             'item' => $item,
@@ -263,9 +364,18 @@ class Query
         $this->previous = __FUNCTION__;
         return $this;
     }
-    
+
+    /**
+     * Predicate to check: <item> < <value>          
+     * @param string $item
+     * @param string|int $value      
+     * @return Query
+     */
     public function IsLessThan($item, $value)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_LESS_THAN,
             'item' => $item,
@@ -275,9 +385,18 @@ class Query
         $this->previous = __FUNCTION__;
         return $this;
     }
-              
+
+    /**
+     * Predicate to check: <item> <= <value>          
+     * @param string $item
+     * @param string|int $value      
+     * @return Query
+     */
     public function IsLessOrEq($item, $value)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_LESS_OREQ,
             'item' => $item,
@@ -288,8 +407,17 @@ class Query
         return $this;
     }
     
+    /**
+     * Predicate to check: <item> > <value>          
+     * @param string $item
+     * @param string|int $value      
+     * @return Query
+     */
     public function IsGreaterThan($item, $value)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_GREATER_THAN,
             'item' => $item,
@@ -300,8 +428,17 @@ class Query
         return $this;
     }
     
+    /**
+     * Predicate to check: <item> >= <value>          
+     * @param string $item
+     * @param string|int $value      
+     * @return Query
+     */
     public function IsGreaterOrEq($item, $value)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_GREATER_OREQ,
             'item' => $item,
@@ -312,8 +449,18 @@ class Query
         return $this;
     }
     
+    /**
+     * Predicate to check: <min> < <item> < <max>, inclusive          
+     * @param string $item
+     * @param string|int $min
+     * @param string|int $max           
+     * @return Query
+     */
     public function IsBetween($item, $min, $max)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_BETWEEN,
             'item' => $item,
@@ -323,9 +470,40 @@ class Query
         $this->previous = __FUNCTION__;
         return $this;
     }
+
+    /**
+     * Predicate to check: <min> < <item> < <max>, inclusive
+     * @param string $item
+     * @param string|int $min
+     * @param string|int $max
+     * @return Query
+     */
+    public function IsNotBetween($item, $min, $max)
+    {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
+        $this->predicates[] = array(
+            'type' => self::IS_NOT_BETWEEN,
+            'item' => $item,
+            'value' => array('min' => $min, 'max' => $max),
+            'link' => null
+        );
+        $this->previous = __FUNCTION__;
+        return $this;
+    }
     
+    /**
+     * Predicate to check: <item> belongs to <set>{.,..,...}          
+     * @param string $item
+     * @param array $set      
+     * @return Query
+     */
     public function IsIn($item, $set)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_IN,
             'item' => $item,
@@ -336,8 +514,17 @@ class Query
         return $this;
     }
     
+    /**
+     * Predicate to check: <item> does not belong to <set>{.,..,...}          
+     * @param string $item
+     * @param array $set      
+     * @return Query
+     */
     public function IsNotIn($item, $set)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_NOT_IN,
             'item' => $item,
@@ -350,6 +537,9 @@ class Query
     
     public function IsLike($item, $string)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_LIKE,
             'item' => $item,
@@ -362,6 +552,9 @@ class Query
     
     public function IsNotLike($item, $string)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_NOT_LIKE,
             'item' => $item,
@@ -374,6 +567,9 @@ class Query
 
     public function IsNull($item)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_NULL,
             'item' => $item,
@@ -386,6 +582,9 @@ class Query
     
     public function IsNotNull($item)
     {
+        if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+            trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
         $this->predicates[] = array(
             'type' => self::IS_NOT_NULL,
             'item' => $item,
@@ -395,21 +594,54 @@ class Query
         $this->previous = __FUNCTION__;
         return $this;
     }
-    
-    public function IsMatch($item, $string)
+
+    /**
+     * Cluster predicates into groups. Useful for complex WHERE clauses. Overrides
+     * basic link logic in $this->predicates.
+     * @param string $name Name of the cluster to be refernced in nested clusters
+     * @param int $operator link cluster with either the LINK_AND or LINK_OR constant
+     * @param int|string $index1
+     * @param int|string $index2, ...
+     * @return Query
+     */
+    public function Cluster(/** @noinspection PhpUnusedParameterInspection */
+        $name, $operator, $index1, $index2)
     {
-        $this->predicates[] = array(
-            'type' => self::IS_MATCH,
-            'item' => $item,
-            'value' => $string,
-            'link' => null
-        );
+        $args = func_get_args();
+        $name = array_shift($args);
+
+        if (!Pattern::Validate(Pattern::SQL_NAME, $name)) {
+            trigger_error('Cluster name \''. $name .'\' not valid.  Name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+        }
+        if (array_key_exists($name, $this->clusters)) {
+            trigger_error('\'' . $name . '\' cluster already exists. This will overwrite that cluster.', E_USER_WARNING);
+        }
+        
+        $operator = array_shift($args);
+
+        if ($operator !== Query::LINK_AND && $operator !== Query::LINK_OR) {
+            trigger_error('Cluster operator must be Query::LINK_AND or Query::LINK_OR.', E_USER_ERROR);
+        }
+
+        for ($i = 0; $i < count($args); $i++) {
+            if (is_numeric($args[$i]) && !isset($this->predicates[($args[$i] - 1)])) {
+                trigger_error('There are only ' . count($this->predicates) . ' predicates available. \'' . $args[$i] . '\' is not a valid option.', E_USER_ERROR);
+            }
+            elseif (!is_numeric($args[$i]) && !isset($this->clusters[($args[$i])])) {
+                trigger_error('\'' . $args[$i] . '\' is not a name of a cluster.', E_USER_ERROR);
+            }
+
+            /*/
+            if (is_numeric($args[$i])) {
+                $args[$i] = '<<' . $args[$i] . '>>';
+            } //*/
+        }
+
+        $this->clusters[$name] = array($operator, implode(',', $args));
+        
         $this->previous = __FUNCTION__;
         return $this;
     }
-    
-    // Allow for complex clustering of predicates
-    public function Cluster($alias, $operator, $index1, $index2) {}
     
     // Can accept arrays
     public function OrderBy($item, $order = self::SORT_ASC)
@@ -417,6 +649,9 @@ class Query
         // For submitting multiple items in a single request: array( 'item', 'item' => order, 'item', ...)
         if (is_array($item)) {
             foreach($item as $key => $value) {
+                if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+                    trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+                }
                 if (is_numeric($key)) {
                     $this->order[] = array($value, self::SORT_ASC);
                 }
@@ -429,6 +664,9 @@ class Query
             }
         }
         else {
+            if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+                trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
+            }
             if ($order !== self::SORT_ASC) {
                 $order = self::SORT_DESC;
             }
@@ -441,8 +679,11 @@ class Query
     
     public function Limit($max)
     {
+        if (!is_int($max) || $max < 0) {
+            trigger_error('Limit must be a positive integer.', E_USER_ERROR);
+        }
         if (isset($this->limit)) {
-            throw new NoticeException('Limit has been previously set. Value will be overwritten.');
+            trigger_error('Limit has been previously set. Value will be overwritten.', E_USER_NOTICE);
         }
         
         $this->limit = $max;
@@ -452,8 +693,11 @@ class Query
     
     public function Offset($amount)    
     {
+        if (!is_int($amount) || $amount < 0) {
+            trigger_error('Offset must be a positive integer.', E_USER_ERROR);
+        }
         if (isset($this->offset)) {
-            throw new NoticeException('Offset has been previously set. Value will be overwritten.');
+            trigger_error('Offset has been previously set. Value will be overwritten.', E_USER_NOTICE);
         }
         
         $this->offset = $amount;
@@ -554,7 +798,7 @@ class MySqlDatabase extends MySQLi implements Database
     /**
      * Perform a customized domain-specific query
      * @param string $query
-     * @return DatabaseResult
+     * @return MySqlDatabaseResult
      */
     public function CustomQuery($query) {
         Debug::Message('MySqlDatabase\Query: '.$query);
@@ -571,153 +815,297 @@ class MySqlDatabase extends MySQLi implements Database
      */
     public function IsValid(Query $query)
     {
-        // check predicates, clusters, order, limit, offset
+        // check type, clusters
         $data = $query->Extract();
-        return false;
+
+        // Validate Query Type is set
+        if (!isset($data['type'])) {
+            return false;
+        }
+
+        // Validate Query Clusters
+        if (isset($data['clusters'])) {
+            $clustered = array();
+            $totalStatements = count($data['predicates']) + count($data['clusters']);
+
+            foreach ($data['clusters'] as $value) {
+                $cluster = explode(',', $value[1]);
+                foreach ($cluster as $name) {
+                    // Check if referenced predicate exists
+                    if (is_numeric($name) && !array_key_exists(($name - 1), $data['predicates'])) {
+                        return false;
+                    }
+                    // Check if referenced cluster exists
+                    if (!is_numeric($name) && !array_key_exists($name, $data['clusters'])) {
+                        return false;
+                    }
+                }
+                $clustered = array_merge($clustered, explode(',', $value[1]));
+            }
+
+            if (($totalStatements - 1) !== count($clustered)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
      * Perform a customized domain-specific query
      * @param \Query $query
-     * @return DatabaseResult
+     * @return MySqlDatabaseResult
      */
     public function Execute(Query $query)
     {
-        return null;
-        if (isset($this->custom)) {
-            return $this->custom;
-        }
-        elseif (empty($this->action)) {
-            // [MUSTCHANGE]
-            //throw new WarningException("No query action was set."); // Should output
-            return get_class($this);
+        if (!$this->IsValid($query)) {
+            trigger_error('Query(' . $query . ') is not a valid MySQL Query.', E_USER_ERROR);
         }
 
-        switch ($this->action)
+        $data = $query->Extract();
+        $sql = null;
+
+        switch ($data['type'])
         {
-            case "SELECT":
+            case Query::CREATE:
+                $items = array();
+                $values = array();
+
+                for ($i = 0; $i < count($data['items']); $i++) {
+                    $items[] = $data['items'][$i][0];
+
+                    if (is_numeric($data['values'][$i])) {
+                        $values[] = $data['values'][$i];
+                    }
+                    else {
+                        $values[] = '\'' . $data['values'][$i] . '\'';
+                    }
+                }
+
+                $sql = 'INSERT INTO `' . $data['tables'][0][0] . '`';
+                $sql .= ' (`' . implode('`, `', $items) . '`)';
+                $sql .= ' VALUES(' . implode(', ', $values) . ')';
+                return $sql . PHP_EOL;
+            break;
+            case Query::RETRIEVE:
                 $sql = "SELECT";
 
                 /* Select Items */
-                if(empty($this->items))
+                if(empty($data['items'])) {
                     $sql .= " *";
-                else
-                {
+                }
+                else {
                     $items = array();
-                    foreach($this->items as $key => $value)
-                    {
-                        $expanded = explode('.', $value);
-                        $expanded = implode('`.`', $expanded);
-                        if($key == $value)
-                            $items[] .= "`{$expanded}`";
-                        else
-                            $items[] .= "`{$expanded}` AS `{$key}`";
+                    foreach($data['items'] as $value) {
+                        $expanded = '`' . str_replace('.', '`.`', $value[1]) . '`';
+                        if(isset($value[2])) {
+                            $items[] = $expanded . ' AS `'. $value[2] . '`';
+                        }
+                        else {
+                            $items[] = $expanded;
+                        }
                     }
-
-                    $sql .= ' '.implode(', ', $items);
+                    $sql .= ' ' . implode(', ', $items);
                 }
 
                 /* Select Tables*/
                 $tables = array();
-                foreach($this->tables as $key => $value)
-                {
-                    if($key == $value)
-                        $tables[] .= "`{$key}`";
-                    else
-                        $tables[] .= "`{$value}` AS `{$key}`";
-                }
-
-                $sql .= ' FROM '.implode(', ', $tables);
-
-                /* Where Clauses*/
-                if(!empty($this->whereClauses))
-                {
-                    $sql .= ' WHERE';
-                    foreach($this->whereClauses as $key => $clause)
-                    {
-                        $sql .= " {$clause}";
-                        $sql .= (isset($this->whereClausesLogic[$key])) ? " {$this->whereClausesLogic[$key]}": null;
+                foreach($data['tables'] as $value) {
+                    if(isset($value[2])) {
+                        $tables[] = '`' . $value[1] . '` AS `'. $value[2] . '`';
+                    }
+                    else {
+                        $items[] = '`' . $value[1] . '`';
                     }
                 }
 
-                /* Select Optimizers */
-                if(!empty($this->orderByLogic))
-                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);
-
-                if(isset($this->resultLimit))
-                    $sql .= ' LIMIT '.$this->resultLimit;
-
-                if(isset($this->resultOffset))
-                    $sql .= ' OFFSET '.$this->resultOffset;
-
-                return $sql.PHP_EOL;
-                break;
-
-            case "INSERT":
-                $sql = "INSERT INTO `".array_values($this->tables)[0]."`";
-                $sql .= " (`".implode('`,`', $this->items)."`)";
-                $sql .= " VALUES('".implode("','", $this->itemValues)."')";
-
-                return $sql.PHP_EOL;
-                break;
-            case "UPDATE":
-                $sql = "UPDATE `".implode("`,`", $this->tables)."`";
-
+                $sql .= ' FROM ' . implode(', ', $tables);
+            break;
+            case Query::UPDATE:
+                $sql = 'UPDATE `' . $data['tables'][0][0] . '`';
                 $items = array();
-                foreach(array_values($this->items) as $key => $column)
-                {
-                    $items[] = " `{$column}` = '".$this->itemValues[$key]."'";
-                }
-                $sql .= ' SET'.implode(",", $items);
 
-                /* Where Clauses */
-                if(!empty($this->whereClauses))
-                {
-                    $sql .= ' WHERE';
-                    foreach($this->whereClauses as $key => $clause)
-                    {
-                        $sql .= " {$clause}";
-                        $sql .= (isset($this->whereClausesLogic[$key])) ? " {$this->whereClausesLogic[$key]}": null;
+                for ($i = 0; $i < count($data['items']); $i++) {
+                    $item = '`' . $data['items'][$i][0] . '`';
+
+                    if (is_numeric($data['values'][$i])) {
+                        $items[] = $item . ' = ' . $data['values'][$i];
+                    }
+                    else {
+                        $items[] = $item . ' = \'' . $data['values'][$i] . '\'';
                     }
                 }
 
-                /* Select Optimizers */
-                if(!empty($this->orderByLogic))
-                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);
-
-                if(isset($this->resultLimit))
-                    $sql .= ' LIMIT '.$this->resultLimit;
-
-                return $sql.PHP_EOL;
-                break;
-            case "DELETE":
-                $sql = "DELETE FROM `".array_values($this->tables)[0]."`";
-
-                /* Where Clauses */
-                if(!empty($this->whereClauses))
-                {
-                    $sql .= ' WHERE';
-                    foreach($this->whereClauses as $key => $clause)
-                    {
-                        $sql .= " {$clause}";
-                        $sql .= (isset($this->whereClausesLogic[$key])) ? " {$this->whereClausesLogic[$key]}": null;
-                    }
-                }
-
-                /* Select Optimizers */
-                if(!empty($this->orderByLogic))
-                    $sql .= ' ORDER BY '.implode(', ', $this->orderByLogic);
-
-                if(isset($this->resultLimit))
-                    $sql .= ' LIMIT ' . $this->resultLimit;
-
-                return $sql . PHP_EOL;
-                break;
+                $sql .= ' SET ' . implode(',', $items);
+            break;
+            case Query::DELETE:
+                $sql = 'DELETE FROM `' . $data['tables'][0][0] . '`';
+            break;
             default:
-                // [MUSTCHANGE]
-                //throw new WarningException("No query action was set."); // Should output
-                return get_class($this);
+                trigger_error('Not recognizable query type for Query(' . $query . ').', E_USER_ERROR);
+            break;
         }
+
+        /* Where Clauses*/
+        if (isset($data['predicates']))
+        {
+            $sql .= ' WHERE ';
+            $predicates = array();
+            $links = array();
+
+            foreach ($data['predicates'] as $predicate)
+            {
+                $item = '`' . str_replace('.', '`.`', $predicate['item']) . '`';
+
+                switch ($predicate['type'])
+                {
+                    case Query::IS_EQUAL:
+                        $predicates[] = $item . ' = ' . $predicate['value'];
+                    break;
+                    case Query::IS_NOT_EQUAL:
+                        $predicates[] = $item . ' <> ' . $predicate['value'];
+                    break;
+                    case Query::IS_LESS_THAN:
+                        $predicates[] = $item . ' < ' . $predicate['value'];
+                    break;
+                    case Query::IS_LESS_OREQ:
+                        $predicates[] = $item . ' <= ' . $predicate['value'];
+                    break;
+                    case Query::IS_GREATER_THAN:
+                        $predicates[] = $item . ' > ' . $predicate['value'];
+                    break;
+                    case Query::IS_GREATER_OREQ:
+                        $predicates[] = $item . ' >= ' . $predicate['value'];
+                    break;
+                    case Query::IS_BETWEEN:
+                        $predicates[] = $item . ' BETWEEN ' . $predicate['value']['min'] . ' AND ' . $predicate['value']['max'];
+                    break;
+                    case Query::IS_NOT_BETWEEN:
+                        $predicates[] = $item . ' NOT BETWEEN ' . $predicate['value']['min'] . ' AND ' . $predicate['value']['max'];
+                    break;
+                    case Query::IS_IN:
+                        for ($i = 0; $i < count($predicate['value']); $i++) {
+                            if (!is_numeric($predicate['value'][$i])) {
+                                $predicate['value'][$i] = '\'' . $predicate['value'][$i] . '\'';
+                            }
+                        }
+                        $predicates[] = $item . ' IN (' . implode(', ', $predicate['value']) . ')';
+                    break;
+                    case Query::IS_NOT_IN:
+                        for ($i = 0; $i < count($predicate['value']); $i++) {
+                            if (!is_numeric($predicate['value'][$i])) {
+                                $predicate['value'][$i] = '\'' . $predicate['value'][$i] . '\'';
+                            }
+                        }
+                        $predicates[] = $item . ' NOT IN (' . implode(', ', $predicate['value']) . ')';
+                    break;
+                    case Query::IS_LIKE:
+                        $predicates[] = $item . ' LIKE \'' . $predicate['value'] . '\'';
+                    break;
+                    case Query::IS_NOT_LIKE:
+                        $predicates[] = $item . ' NOT LIKE \'' . $predicate['value'] . '\'';
+                    break;
+                    case Query::IS_NULL:
+                        $predicates[] = $item . ' IS NULL';
+                    break;
+                    case Query::IS_NOT_NULL:
+                        $predicates[] = $item . ' IS NOT NULL';
+                    break;
+                }
+
+
+                if ($predicate['link'] === Query::LINK_AND) {
+                    $links[] = ' AND ';
+                }
+                elseif ($predicate['link'] === Query::LINK_OR) {
+                    $links[] = ' OR ';
+                }
+                else {
+                    $links[] = '';
+                }
+            }
+
+            if (isset($data['clusters'])) {
+                // Start with the last cluster
+                list($link, $cluster) = array_pop($data['clusters']);
+
+                $cluster = explode(',', $cluster);
+                for ($i = 0; $i < count($cluster); $i++) {
+                    if (is_numeric($cluster[$i])) {
+                        $cluster[$i] = '<<' . $cluster[$i] . '>>';
+                    }
+                }
+                $cluster = implode(',', $cluster);
+
+                if ($link === Query::LINK_AND) {
+                    $cluster = str_replace(',', ' AND ', $cluster);
+                }
+                else {
+                    $cluster = str_replace(',', ' OR ', $cluster);
+                }
+
+                // Build complete where clause by inserting clusters
+                foreach (array_reverse($data['clusters']) as $key => $value) {
+                    list($link, $phrase) = $value;
+
+                    $phrase = explode(',', $phrase);
+                    for ($i = 0; $i < count($phrase); $i++) {
+                        if (is_numeric($phrase[$i])) {
+                            $phrase[$i] = '<<' . $phrase[$i] . '>>';
+                        }
+                    }
+                    $phrase = implode(',', $phrase);
+
+                    $cluster = str_replace($key, '(' . $phrase . ')', $cluster);
+
+                    if ($link === Query::LINK_AND) {
+                        $cluster = str_replace(',', ' AND ', $cluster);
+                    }
+                    else {
+                        $cluster = str_replace(',', ' OR ', $cluster);
+                    }
+                }
+
+                // Replace numbers with predicates
+                for ($i = 0; $i < count($predicates); $i++) {
+                    $cluster = str_replace('<<' . ($i + 1) . '>>', $predicates[$i], $cluster);
+                }
+            }
+            else {
+                $cluster = null;
+                for ($i = 0; $i < count($predicates); $i++) {
+                    $cluster .= $predicates[$i].$links[$i];
+                }
+            }
+
+            //Append to query
+            $sql .= $cluster;
+        }
+
+        /* Query Optimizers */
+        if (!empty($data['order'])) {
+            $order = array();
+
+            for ($i = 0; $i < count($data['order']); $i++) {
+                if ($data['order'][$i][1] === Query::SORT_ASC) {
+                    $data['order'][$i][1] = 'ASC';
+                }
+                else {
+                    $data['order'][$i][1] = 'DESC';
+                }
+                $order[] = implode(' ',$data['order'][$i]);
+            }
+
+            $sql .= ' ORDER BY ' . implode(', ',$order);
+        }
+        if (isset($data['limit'])) {
+            $sql .= ' LIMIT ' . $data['limit'];
+        }
+        if (isset($data['offset'])) {
+            $sql .= ' OFFSET ' . $data['offset'];
+        }
+
+        return $sql . PHP_EOL;
     }
 
     /**
@@ -805,7 +1193,7 @@ class MySqlDatabaseResult extends MySQLi_Result implements DatabaseResult
         return $this->num_rows;
     }
 
-    /* Inhereted Properties:
+    /* Inherited Properties:
     int $current_field ;
     int $field_count;
     array $lengths;
@@ -813,7 +1201,7 @@ class MySqlDatabaseResult extends MySQLi_Result implements DatabaseResult
     $type;
     */
 
-    /* Inhereted Methods:
+    /* Inherited Methods:
     __construct
     close
     free_result
