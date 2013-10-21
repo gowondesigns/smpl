@@ -22,16 +22,15 @@ class Sitemap
     public static function RenderXML()
     {
         header("Content-Type: application/xml charset=utf-8");
-        $database = Config::Database();
         
         $xml = "<\x3Fxml version=\"1.0\" encoding=\"utf-8\"\x3F>\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-        $result = $database->Retrieve()
-            ->UsingTable("categories")
-            ->Item("title_mung-field")
-            ->Match("publish_flag-checkbox", 1)
-            ->Send();
+        $result = Config::Database()->Execute(Query::Build('Sitemap\\RenderXML: Get published categories')
+            ->Retrieve()
+            ->UseTable('categories')
+            ->Get('title_mung-field')
+            ->Where()->IsEqual('publish_flag-checkbox', Query::PUBLISHED));
 
         while($category = $result->Fetch())
         {
@@ -40,11 +39,11 @@ class Sitemap
             $xml .= "\n\t</url>\n";
         }
         
-        $result = $database->Retrieve()
-            ->UsingTable("content")
-            ->Match("meta-static_page_flag-checkbox", 1)
-            ->AndWhere()->Match("publish-publish_flag-dropdown", 2)
-            ->Send();
+        $result = Config::Database()->Execute(Query::Build('Sitemap\\RenderXML: Get published pages')
+            ->Retrieve()
+            ->UseTable('content')
+            ->Where()->IsEqual('meta-static_page_flag-checkbox', 1)
+            ->AndWhere()->IsEqual('publish_flag-checkbox', Query::PUBLISHED));
             
         while($pages = $result->Fetch())
         {

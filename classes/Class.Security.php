@@ -58,7 +58,7 @@ class Security
     
         $password = str_shuffle($password);
 
-        if(!$add_dashes)
+        if(!$useDashes)
 		        return $password;
 
         $dash_len = floor(sqrt($length));
@@ -159,7 +159,7 @@ class Security
                 if (isset($_SESSION[$key]['auth']['period']) && $_SESSION[$key]['auth']['period'] > Date::Now()->ToInt())
                 {
                     $_SESSION[$key]['auth']['period'] = Date::Now()->ToInt() + 10000;
-                    $this->currentSessionValid = true;
+                    self::$currentSessionValid = true;
                 }
                 else
                 { 
@@ -178,7 +178,8 @@ class Security
     {
         if(!Security::Authenticate())
             return false;
-        
+
+        $key = md5(Config::Get('siteURL'));
         if (isset($_SESSION[$key]['auth']['access'][$level]))
             return $_SESSION[$key]['auth']['access'][$level];
         else
@@ -191,12 +192,11 @@ class Security
         $username = md5(Security::FilterXSS($username) );
         $password = md5(Security::FilterXSS($password) );
 
-        $database = Config::Database();
-        $result = $database->Retrieve()
-            ->UsingTable("users")
-            ->Match("account-user_name-hash", $username)
-            ->AndWhere()->Match("account-password-hash", $password)
-            ->Execute($database);
+        $result = Config::Database()->Execute(Query::Build('Security\\Login: Verify user')
+            ->Retrieve()
+            ->UseTable('users')
+            ->Where()->IsEqual('account-user_name-hash', $username)
+            ->AndWhere()->IsEqual('account-password-hash', $password));
     
         if($value = $result->Fetch())
         {

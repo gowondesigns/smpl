@@ -2,6 +2,7 @@
 --    id -OR-
 --    item_name-item_type -OR-
 --    item_group-item_name-item_type
+-- MAKE SURE NO NAME IS 30+ CHARS LONG
 
 
 DROP TABLE IF EXISTS settings;

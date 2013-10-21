@@ -1,18 +1,20 @@
 <?php
-/* SMPL Feed Classes
-// 
-//
-//*/
+/**
+ * Class.Feed
+ * @package SMPL\Feed
+ */
 
-
+/**
+ * Feed Class
+ * @package Feed
+ */
 class Feed
 {
     public static function Generate()
     {
         $feed = null;
         $type = Config::Get('feedDefaultType').'Feed';
-        $category = null;                                                                                       
-        $database = Config::Database();
+        $category = null;
  
         if(count(Content::Uri()) > 3)
             throw new ErrorException("URI Error.");
@@ -32,34 +34,37 @@ class Feed
             if(isset(Content::Uri()[2]))
                 $type = ucfirst(Content::Uri()[2]).'Feed';
 
-            $result = $database->Retrieve()
-                ->UsingTable("categories")
-                ->Item("id")
-                ->Match("title_mung-field", Content::Uri()[0])
-                ->Send();
+            $result = Config::Database()->Execute(Query::Build('Feed\\Generate: Get category')
+                ->Retrieve()
+                ->UseTable('categories')
+                ->Get('id')
+                ->Where()->IsEqual('title_mung-field', Content::Uri()[0]));
             $category = $result->Fetch();
         }
 
-        Debug::Message("Feed\Render: Creating new feed object of type ".$type);
+        Debug::Message("Feed\\Generate: Creating new feed object of type ".$type);
         if(class_exists($type) && is_subclass_of($type,'IFeed'))
             $feed = new $type;
         else
             throw new ErrorException("{$type} is not a compatible IFeed object or does not exist.");
 
         // Populate feed with proper articles
-        $query = $database->Retrieve()
-            ->UsingTable("content")
-            ->Item("id")
-            ->Match("publish-publish_flag-dropdown", 2)
-            ->AndWhere()->Match("meta-static_page_flag-checkbox", 0)
-            ->OrderBy("publish-publish_date-date", false)
+        $query = Query::Build('Feed\\Generate: Get relevant articles')
+            ->Retrieve()
+            ->UseTable('content')
+            ->Get('id')
+            ->Where()->IsEqual('publish-publish_flag-dropdown', Query::PUBLISHED)
+            ->AndWhere()->IsEqual('meta-static_page_flag-checkbox', 0)
+            ->OrderBy('publish-publish_date-date', Query::SORT_DESC)
             ->Limit(Config::Get('feedItemLimit'));
         
-        if(isset($category['id']))
-            $query->AndWhere()->Match("meta-category-dropdown",$category['id'])
-                ->AndWhere()->Match("meta-indexed_flag-checkbox", 1);
+        if(isset($category['id'])) {
+            $query->AndWhere()->IsEqual('meta-category-dropdown', $category['id'])
+                ->AndWhere()->IsEqual('meta-indexed_flag-checkbox', 1);
+        }
+
         
-        $list = $query->Send();
+        $list = Config::Database()->Execute($query);
         
         while($item = $list->Fetch())
         {

@@ -13,9 +13,9 @@ class Pattern
 {
     const RETURN_MATCHES = true;
 
-    const SQL_NAME = '/[A-Za-z][A-Za-z0-9\-\_]{0,29}/';
+    const SQL_NAME = '/[A-Za-z][A-Za-z0-9\-_]{0,29}/';
 
-    const SQL_NAME_WITH_PREPEND = '/[A-Za-z][A-Za-z0-9\-\_]{0,29}(.[A-Za-z][A-Za-z0-9\-\_]{0,29})?/';
+    const SQL_NAME_WITH_PREPEND = '/[A-Za-z][A-Za-z0-9\-_]{0,29}(.[A-Za-z][A-Za-z0-9\-_]{0,29})?/';
     /**
      * Regex signature to validate SMPL-standard Datetime strings: YYYYMMDDHHmmSS
      * @var string

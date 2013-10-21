@@ -4,30 +4,6 @@
  * @package SMPL\Database
  */
 
-/*
-ANSI SQL92-Compliant Chainable Query Interface
-http://savage.net.au/SQL/sql-92.bnf.html
-example: http://docs.kohanaphp.com/libraries/database/builder
-Before: 
-$database = Config::Database();
-$database->Update()
-    ->UsingTable("content")
-    ->UsingTable("blocks")
-    ->Item("publish-publish_flag-dropdown")->SetValue(Query::PUBLISHED)
-    ->Match("publish-publish_flag-dropdown", Query::TO_PUBLISH)
-    ->AndWhere()->LessThanOrEq("publish-publish_date-date", Date::Now()->ToInt())
-    ->Send(); // Slightly more terse, but also very tightly coupled, must have a Query type for each Database type
-    
-After:
-$query = Query::Build('Publish pending articles')
-    ->Update()
-    ->UseTable(array('content','blocks'))
-    ->Set('publish-publish_flag-dropdown', Query::PUBLISHED)
-    ->Where()->IsEqual('publish-publish_flag-dropdown', Query::TO_PUBLISH)
-    ->AndWhere()->IsLessOrEq('publish-publish_date-date', Date::Now()->ToInt()); //Slightly more verbose, but domain agnostic and atomic
-Config::Database()->Execute($query); //Validation and Execution happens inside the Database class
-*/
-
 /**
  * ANSI SQL92-Compliant Chainable Query Interface
  * @package Database\Query
@@ -144,7 +120,7 @@ class Query
     public function Create()
     {
         $this->type = self::CREATE;
-        $this->previous = __FUNCTION__;
+        $this->previous = self::CREATE;
         return $this;
     }
 
@@ -155,7 +131,7 @@ class Query
     public function Retrieve()
     {
         $this->type = self::RETRIEVE;
-        $this->previous = __FUNCTION__;
+        $this->previous = self::RETRIEVE;
         return $this;
     }
 
@@ -166,7 +142,7 @@ class Query
     public function Update()
     {
         $this->type = self::UPDATE;
-        $this->previous = __FUNCTION__;
+        $this->previous = self::UPDATE;
         return $this;
     }
 
@@ -177,7 +153,7 @@ class Query
     public function Delete()
     {
         $this->type = self::DELETE;
-        $this->previous = __FUNCTION__;
+        $this->previous = self::DELETE;
         return $this;
     }
 
@@ -231,7 +207,7 @@ class Query
         }
         if (is_array($item)) {
             foreach($item as $key => $value) {
-                if (!Pattern::Validate(Pattern::SQL_NAME_WITH_PREPEND, $key) || !Pattern::Validate(Pattern::SQL_NAME, $value)) {
+                if (!Pattern::Validate(Pattern::SQL_NAME_WITH_PREPEND, $value) || (!is_numeric($key) && !Pattern::Validate(Pattern::SQL_NAME, $key))) {
                     trigger_error('Item and Alias names must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
                 }
                 if (is_numeric($key)) {
@@ -243,7 +219,7 @@ class Query
             }
         }
         else {
-            if (!Pattern::Validate(Pattern::SQL_NAME_WITH_PREPEND, $item) || !Pattern::Validate(Pattern::SQL_NAME, $alias)) {
+            if (!Pattern::Validate(Pattern::SQL_NAME_WITH_PREPEND, $item)  || (isset($alias) && !Pattern::Validate(Pattern::SQL_NAME, $alias))) {
                 trigger_error('Item and Alias names must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
             }
             $this->items[] = array($item, $alias);
@@ -670,7 +646,7 @@ class Query
             if ($order !== self::SORT_ASC) {
                 $order = self::SORT_DESC;
             }
-            $this->items[] = array($item, $order);
+            $this->order[] = array($item, $order);
         }
         
         $this->previous = __FUNCTION__;
@@ -695,6 +671,9 @@ class Query
     {
         if (!is_int($amount) || $amount < 0) {
             trigger_error('Offset must be a positive integer.', E_USER_ERROR);
+        }
+        if (!isset($this->limit)) {
+            trigger_error('Limit has not previously been set. Offset can only be used with a Limit.', E_USER_WARNING);
         }
         if (isset($this->offset)) {
             trigger_error('Offset has been previously set. Value will be overwritten.', E_USER_NOTICE);
@@ -820,11 +799,12 @@ class MySqlDatabase extends MySQLi implements Database
 
         // Validate Query Type is set
         if (!isset($data['type'])) {
+            Debug::Message('Validator: Type');
             return false;
         }
 
         // Validate Query Clusters
-        if (isset($data['clusters'])) {
+        if (!empty($data['clusters'])) {
             $clustered = array();
             $totalStatements = count($data['predicates']) + count($data['clusters']);
 
@@ -833,10 +813,12 @@ class MySqlDatabase extends MySQLi implements Database
                 foreach ($cluster as $name) {
                     // Check if referenced predicate exists
                     if (is_numeric($name) && !array_key_exists(($name - 1), $data['predicates'])) {
+                        Debug::Message('Validator: Predicates');
                         return false;
                     }
                     // Check if referenced cluster exists
                     if (!is_numeric($name) && !array_key_exists($name, $data['clusters'])) {
+                        Debug::Message('Validator: Cluster');
                         return false;
                     }
                 }
@@ -844,6 +826,7 @@ class MySqlDatabase extends MySQLi implements Database
             }
 
             if (($totalStatements - 1) !== count($clustered)) {
+                Debug::Message('Validator: NumClusters');
                 return false;
             }
         }
@@ -865,6 +848,8 @@ class MySqlDatabase extends MySQLi implements Database
         $data = $query->Extract();
         $sql = null;
 
+        // XSS ALL VALUES
+
         switch ($data['type'])
         {
             case Query::CREATE:
@@ -878,14 +863,19 @@ class MySqlDatabase extends MySQLi implements Database
                         $values[] = $data['values'][$i];
                     }
                     else {
-                        $values[] = '\'' . $data['values'][$i] . '\'';
+                        // SQL-ify non-numeric data
+                        $values[] = '\'' . $this->real_escape_string($data['values'][$i]) . '\'';
                     }
                 }
 
                 $sql = 'INSERT INTO `' . $data['tables'][0][0] . '`';
                 $sql .= ' (`' . implode('`, `', $items) . '`)';
                 $sql .= ' VALUES(' . implode(', ', $values) . ')';
-                return $sql . PHP_EOL;
+
+                Debug::Message('MySqlDatabase\\Execute: ' . $sql);
+                //return $sql . PHP_EOL;
+                $this->real_query($sql);
+                return new MySqlDatabaseResult($this);
             break;
             case Query::RETRIEVE:
                 $sql = "SELECT";
@@ -897,9 +887,9 @@ class MySqlDatabase extends MySQLi implements Database
                 else {
                     $items = array();
                     foreach($data['items'] as $value) {
-                        $expanded = '`' . str_replace('.', '`.`', $value[1]) . '`';
-                        if(isset($value[2])) {
-                            $items[] = $expanded . ' AS `'. $value[2] . '`';
+                        $expanded = '`' . str_replace('.', '`.`', $value[0]) . '`';
+                        if(isset($value[1])) {
+                            $items[] = $expanded . ' AS `'. $value[1] . '`';
                         }
                         else {
                             $items[] = $expanded;
@@ -911,11 +901,11 @@ class MySqlDatabase extends MySQLi implements Database
                 /* Select Tables*/
                 $tables = array();
                 foreach($data['tables'] as $value) {
-                    if(isset($value[2])) {
-                        $tables[] = '`' . $value[1] . '` AS `'. $value[2] . '`';
+                    if(isset($value[1])) {
+                        $tables[] = '`' . $value[0] . '` AS `'. $value[1] . '`';
                     }
                     else {
-                        $items[] = '`' . $value[1] . '`';
+                        $tables[] = '`' . $value[0] . '`';
                     }
                 }
 
@@ -978,9 +968,11 @@ class MySqlDatabase extends MySQLi implements Database
                         $predicates[] = $item . ' >= ' . $predicate['value'];
                     break;
                     case Query::IS_BETWEEN:
+                        //[MUSTCHANGE]
                         $predicates[] = $item . ' BETWEEN ' . $predicate['value']['min'] . ' AND ' . $predicate['value']['max'];
                     break;
                     case Query::IS_NOT_BETWEEN:
+                        //[MUSTCHANGE]
                         $predicates[] = $item . ' NOT BETWEEN ' . $predicate['value']['min'] . ' AND ' . $predicate['value']['max'];
                     break;
                     case Query::IS_IN:
@@ -1021,11 +1013,11 @@ class MySqlDatabase extends MySQLi implements Database
                     $links[] = ' OR ';
                 }
                 else {
-                    $links[] = '';
+                    $links[] = null;
                 }
             }
 
-            if (isset($data['clusters'])) {
+            if (!empty($data['clusters'])) {
                 // Start with the last cluster
                 list($link, $cluster) = array_pop($data['clusters']);
 
@@ -1071,9 +1063,15 @@ class MySqlDatabase extends MySQLi implements Database
                     $cluster = str_replace('<<' . ($i + 1) . '>>', $predicates[$i], $cluster);
                 }
             }
+            // Use basic predicate logic
             else {
                 $cluster = null;
-                for ($i = 0; $i < count($predicates); $i++) {
+                $end = count($predicates);
+                for ($i = 0; $i < $end; $i++) {
+                    if ($i != ($end - 1) && $links[$i] === null) {
+                        trigger_error('No link type has been set for predicate \'' . $predicates[($i + 1)] . '\'. Using \'AND\'.', E_USER_WARNING);
+                        $links[$i] = ' AND ';
+                    }
                     $cluster .= $predicates[$i].$links[$i];
                 }
             }
@@ -1084,6 +1082,7 @@ class MySqlDatabase extends MySQLi implements Database
 
         /* Query Optimizers */
         if (!empty($data['order'])) {
+            var_dump($data['order']);
             $order = array();
 
             for ($i = 0; $i < count($data['order']); $i++) {
@@ -1100,12 +1099,16 @@ class MySqlDatabase extends MySQLi implements Database
         }
         if (isset($data['limit'])) {
             $sql .= ' LIMIT ' . $data['limit'];
-        }
-        if (isset($data['offset'])) {
-            $sql .= ' OFFSET ' . $data['offset'];
+
+            if (isset($data['offset'])) {
+                $sql .= ' OFFSET ' . $data['offset'];
+            }
         }
 
-        return $sql . PHP_EOL;
+        Debug::Message('MySqlDatabase\\Execute: ' . $sql);
+        //return $sql . PHP_EOL;
+        $this->real_query($sql);
+        return new MySqlDatabaseResult($this);
     }
 
     /**

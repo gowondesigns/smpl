@@ -48,7 +48,7 @@ function CreateDatabase()
 {
     $database = Config::Database();
     $file = file_get_contents('./data/database.sql', true);
-    $database->Custom($file)->Send();
+    $database->CustomQuery($file);
     return "Database Created";    
 }
 
@@ -262,13 +262,13 @@ function ClearAllData()
 {
     $database = Config::Database();
     
-    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'api')->Send();
-    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'blocks')->Send();
-    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'categories')->Send();
-    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'content')->Send();
-    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'settings')->Send();
-    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'spaces')->Send();
-    $database->Custom('TRUNCATE TABLE ' . Config::DB_PREFIX . 'users')->Send();
+    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'api');
+    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'blocks');
+    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'categories');
+    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'content');
+    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'settings');
+    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'spaces');
+    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'users');
     
     return "All Data Clear";
 }

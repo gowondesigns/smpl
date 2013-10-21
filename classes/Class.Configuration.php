@@ -16,7 +16,7 @@
     const DB_HOST = 'localhost';
     const DB_NAME = 'smpl';
     const DB_USER = 'root';
-    const DB_PASS = 'root';
+    const DB_PASS = '';
     const DB_PREFIX = '';
     const USE_MODREWRITE = false;
     const USE_SSL = false;
@@ -103,12 +103,11 @@
       */
     public static function Get($name)
     {
-        $database = Config::Database();
-        $result = $database->Retrieve()
-            ->UsingTable("settings")
-            ->Item("value-field")
-            ->Match("name-hidden", $name)
-            ->Send();
+        $result = Config::Database()->Execute(Query::Build('Config\\Get: Retrieve system settings.')
+            ->Retrieve()
+            ->UseTable('settings')
+            ->Get('value-field')
+            ->Where()->IsEqual('name-hidden', $name));
         
         $value = $result->Fetch();
         if (is_null($value)) {
