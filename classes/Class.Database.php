@@ -10,19 +10,19 @@
  */
 class Query
 {
-    const CREATE = 1;
-    const RETRIEVE = 2;
-    const UPDATE = 3;
-    const DELETE = 4;
+    const TYPE_CREATE = 1;
+    const TYPE_RETRIEVE = 2;
+    const TYPE_UPDATE = 3;
+    const TYPE_DELETE = 4;
 
     /* Constants used in queries */
     const LINK_AND = 0;
     const LINK_OR = 1;
     const SORT_ASC = 0;
     const SORT_DESC = 1;
-    const PUBLISHED = 1;
-    const TO_PUBLISH = 2;
-    const UNPUBLISHED = 0;
+    const PUB_NOT = 0;
+    const PUB_ACTIVE = 1;
+    const PUB_FUTURE = 2;
     const PRIORITY_HIGH = 1;
     const PRIORITY_MED = 2;
     const PRIORITY_LOW = 3;
@@ -30,7 +30,7 @@ class Query
     /* Predicate Constants */
     const IS_EQUAL = 1;
     const IS_NOT_EQUAL = 2;
-    const IS_LESS_THAN= 3;
+    const IS_LESS_THAN = 3;
     const IS_LESS_OREQ = 4;
     const IS_GREATER_THAN= 5;
     const IS_GREATER_OREQ = 6;
@@ -59,7 +59,6 @@ class Query
     /**
      * Private constructor. Object can only be created using the Build() method.
      * @param string $description
-     * @throws ErrorException
      * @return Query
      */
     private function __construct($description = null)
@@ -119,8 +118,8 @@ class Query
      */
     public function Create()
     {
-        $this->type = self::CREATE;
-        $this->previous = self::CREATE;
+        $this->type = self::TYPE_CREATE;
+        $this->previous = __FUNCTION__;
         return $this;
     }
 
@@ -130,8 +129,8 @@ class Query
      */    
     public function Retrieve()
     {
-        $this->type = self::RETRIEVE;
-        $this->previous = self::RETRIEVE;
+        $this->type = self::TYPE_RETRIEVE;
+        $this->previous = __FUNCTION__;
         return $this;
     }
 
@@ -141,8 +140,8 @@ class Query
      */    
     public function Update()
     {
-        $this->type = self::UPDATE;
-        $this->previous = self::UPDATE;
+        $this->type = self::TYPE_UPDATE;
+        $this->previous = __FUNCTION__;
         return $this;
     }
 
@@ -152,8 +151,8 @@ class Query
      */    
     public function Delete()
     {
-        $this->type = self::DELETE;
-        $this->previous = self::DELETE;
+        $this->type = self::TYPE_DELETE;
+        $this->previous = __FUNCTION__;
         return $this;
     }
 
@@ -202,7 +201,7 @@ class Query
      */
     public function Get($item, $alias = null)
     {
-        if ($this->type !== self::RETRIEVE) {
+        if ($this->type !== self::TYPE_RETRIEVE) {
             trigger_error('Get Method used when Query is not of Retrieve type.', E_USER_WARNING);
         }
         if (is_array($item)) {
@@ -237,7 +236,7 @@ class Query
      */
     public function Set($item, $value)
     {
-        if ($this->type !== self::CREATE && $this->type !== self::UPDATE) {
+        if ($this->type !== self::TYPE_CREATE && $this->type !== self::TYPE_UPDATE) {
             trigger_error('Set Method used when Query is not of Create or Update type.', E_USER_WARNING);
         }
         if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
@@ -426,7 +425,7 @@ class Query
     }
     
     /**
-     * Predicate to check: <min> < <item> < <max>, inclusive          
+     * Predicate to check: (<item> => <min> AND <item> <= <max>)          
      * @param string $item
      * @param string|int $min
      * @param string|int $max           
@@ -448,7 +447,7 @@ class Query
     }
 
     /**
-     * Predicate to check: <min> < <item> < <max>, inclusive
+     * Predicate to check: (<item> < <min> OR <item> > <max>), inclusive
      * @param string $item
      * @param string|int $min
      * @param string|int $max
@@ -780,7 +779,7 @@ class MySqlDatabase extends MySQLi implements Database
      * @return MySqlDatabaseResult
      */
     public function CustomQuery($query) {
-        Debug::Message('MySqlDatabase\Query: '.$query);
+        Debug::Message('MySqlDatabase\\CustomQuery: '.$query);
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
@@ -799,7 +798,7 @@ class MySqlDatabase extends MySQLi implements Database
 
         // Validate Query Type is set
         if (!isset($data['type'])) {
-            Debug::Message('Validator: Type');
+            Debug::Message('Database\\IsValid: Query('. $query .') Failed type integrity check.');
             return false;
         }
 
@@ -813,12 +812,12 @@ class MySqlDatabase extends MySQLi implements Database
                 foreach ($cluster as $name) {
                     // Check if referenced predicate exists
                     if (is_numeric($name) && !array_key_exists(($name - 1), $data['predicates'])) {
-                        Debug::Message('Validator: Predicates');
+                        Debug::Message('Database\\IsValid: Query('. $query .') Failed predicate integrity check.');
                         return false;
                     }
                     // Check if referenced cluster exists
                     if (!is_numeric($name) && !array_key_exists($name, $data['clusters'])) {
-                        Debug::Message('Validator: Cluster');
+                        Debug::Message('Database\\IsValid: Query('. $query .') Failed cluster integrity check (1).');
                         return false;
                     }
                 }
@@ -826,7 +825,7 @@ class MySqlDatabase extends MySQLi implements Database
             }
 
             if (($totalStatements - 1) !== count($clustered)) {
-                Debug::Message('Validator: NumClusters');
+                Debug::Message('Database\\IsValid: Query('. $query .') Failed cluster integrity check (2).');
                 return false;
             }
         }
@@ -835,7 +834,7 @@ class MySqlDatabase extends MySQLi implements Database
     }
 
     /**
-     * Perform a customized domain-specific query
+     * Execute given query
      * @param \Query $query
      * @return MySqlDatabaseResult
      */
@@ -848,11 +847,9 @@ class MySqlDatabase extends MySQLi implements Database
         $data = $query->Extract();
         $sql = null;
 
-        // XSS ALL VALUES
-
         switch ($data['type'])
         {
-            case Query::CREATE:
+            case Query::TYPE_CREATE:
                 $items = array();
                 $values = array();
 
@@ -864,6 +861,7 @@ class MySqlDatabase extends MySQLi implements Database
                     }
                     else {
                         // SQL-ify non-numeric data
+                        // Should XSS Sanitize ALL VALUES
                         $values[] = '\'' . $this->real_escape_string($data['values'][$i]) . '\'';
                     }
                 }
@@ -877,7 +875,7 @@ class MySqlDatabase extends MySQLi implements Database
                 $this->real_query($sql);
                 return new MySqlDatabaseResult($this);
             break;
-            case Query::RETRIEVE:
+            case Query::TYPE_RETRIEVE:
                 $sql = "SELECT";
 
                 /* Select Items */
@@ -911,7 +909,7 @@ class MySqlDatabase extends MySQLi implements Database
 
                 $sql .= ' FROM ' . implode(', ', $tables);
             break;
-            case Query::UPDATE:
+            case Query::TYPE_UPDATE:
                 $sql = 'UPDATE `' . $data['tables'][0][0] . '`';
                 $items = array();
 
@@ -928,7 +926,7 @@ class MySqlDatabase extends MySQLi implements Database
 
                 $sql .= ' SET ' . implode(',', $items);
             break;
-            case Query::DELETE:
+            case Query::TYPE_DELETE:
                 $sql = 'DELETE FROM `' . $data['tables'][0][0] . '`';
             break;
             default:
@@ -968,12 +966,12 @@ class MySqlDatabase extends MySQLi implements Database
                         $predicates[] = $item . ' >= ' . $predicate['value'];
                     break;
                     case Query::IS_BETWEEN:
-                        //[MUSTCHANGE]
-                        $predicates[] = $item . ' BETWEEN ' . $predicate['value']['min'] . ' AND ' . $predicate['value']['max'];
+                        $predicates[] = '(' . $item . ' >= ' . $predicate['value']['min'] . ' AND '. $item . ' <= ' . $predicate['value']['max'] .')';
+                        //$predicates[] = $item . ' BETWEEN ' . $predicate['value']['min'] . ' AND ' . $predicate['value']['max'];
                     break;
                     case Query::IS_NOT_BETWEEN:
-                        //[MUSTCHANGE]
-                        $predicates[] = $item . ' NOT BETWEEN ' . $predicate['value']['min'] . ' AND ' . $predicate['value']['max'];
+                        $predicates[] = '(' . $item . ' < ' . $predicate['value']['min'] . ' OR '. $item . ' > ' . $predicate['value']['max'] .')';
+                        //$predicates[] = $item . ' NOT BETWEEN ' . $predicate['value']['min'] . ' AND ' . $predicate['value']['max'];
                     break;
                     case Query::IS_IN:
                         for ($i = 0; $i < count($predicate['value']); $i++) {

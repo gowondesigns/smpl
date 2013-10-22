@@ -7,7 +7,6 @@
 
 /**
  * Contains database configuration information and site settings getter method
- * 
  * @package Config
  */
  final class Config
@@ -37,7 +36,6 @@
      * @param string $username
      * @param string $password
      * @param string $prefix                    
-     * @throws StrictException
      * @return Database
      */
     public static function Database($databaseType = null, $host = null, $name = null, $username = null, $password = null, $prefix = null)
@@ -54,7 +52,7 @@
         else {
             $databaseType .= 'Database';
             if (is_a($databaseType, 'Database', true)) {
-                throw new StrictException($databaseType . ' does not implement the Database interface.');
+                trigger_error($databaseType . ' does not implement the Database interface.', E_USER_ERROR);
             }
             if (!isset($host)) {
                 $host = Config::DB_HOST;
@@ -98,7 +96,6 @@
      /**
       * Gets system settings by name
       * @param string $name name of the system setting, matching 'name-hidden' in settings database
-      * @throws WarningException
       * @return string
       */
     public static function Get($name)
@@ -111,7 +108,8 @@
         
         $value = $result->Fetch();
         if (is_null($value)) {
-            throw new WarningException("Could not find setting '{$value}'");
+            trigger_error('Could not find setting \'' . $value . '\'', E_USER_WARNING);
+            $value['value-field'] = null;
         }
         return $value['value-field'];
     }

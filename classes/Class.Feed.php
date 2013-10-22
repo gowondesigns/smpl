@@ -53,7 +53,7 @@ class Feed
             ->Retrieve()
             ->UseTable('content')
             ->Get('id')
-            ->Where()->IsEqual('publish-publish_flag-dropdown', Query::PUBLISHED)
+            ->Where()->IsEqual('publish-publish_flag-dropdown', Query::PUB_ACTIVE)
             ->AndWhere()->IsEqual('meta-static_page_flag-checkbox', 0)
             ->OrderBy('publish-publish_date-date', Query::SORT_DESC)
             ->Limit(Config::Get('feedItemLimit'));

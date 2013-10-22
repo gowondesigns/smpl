@@ -38,14 +38,13 @@ class Date
      * via public methods. Formed from a datetime string in the
      * format: YYYYMMDDHHmmSS. The datetime is always interpreted as UTC.
      * @param $datetime
-     * @throws StrictException
      * @return Date
      */
     private function __construct($datetime)
     {
         $valid = Pattern::Validate(Pattern::SIGNATURE_DATETIME, $datetime, Pattern::RETURN_MATCHES);
         if ($valid === false) {
-            throw new StrictException('Invalid Date String: '. $datetime);
+            trigger_error('Invalid Date String: '. $datetime, E_USER_ERROR);
         }
         $this->year = $valid[1];
         $this->month = $valid[2];
@@ -61,7 +60,7 @@ class Date
      */  
     public static function Now()
     {
-        return new self(date("YmdHis"));
+        return new self(date('YmdHis'));
     }
 
     /**
@@ -81,21 +80,20 @@ class Date
      */ 
     public static function FromTime($time)
     {
-        $string = date("YmdHis", $time);
+        $string = date('YmdHis', $time);
         return new self($string);
     }
 
     /**
      * Generates timezone offset
      * @param bool $suppressSemiColon Set whether or not to include semicolon in timezone string
-     * @throws StrictException
      * @return string Returns timezone offset in HHMM or HH:MM format
      */
     public static function TimeZone($suppressSemiColon = false)
     {
         $value = intval(Config::Get('dateOffset'));
         if ($value > 14 || $value < -12) {
-            throw new StrictException("System Timezone offset of ".$value." is invalid.");
+            trigger_error('System Timezone offset of ' . $value . ' is invalid.', E_USER_ERROR);
         }
         
         if ($value < 0) {
@@ -313,7 +311,7 @@ class Date
         $time = mktime($this->hours, $this->minutes, $this->seconds, $this->month, $this->day, $this->year);
         
         if (null === $format) {
-            $format = "YmdHis";
+            $format = 'YmdHis';
         }
         
         if ($useLocalOffset) {
@@ -335,7 +333,7 @@ class Date
         if ($useLocalOffset)
             $time += (intval(Config::Get('dateOffset')) * 3600);
         
-        return floatval(date("YmdHis", $time));
+        return floatval(date('YmdHis', $time));
     }
     
     /**

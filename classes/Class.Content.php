@@ -160,14 +160,14 @@ class Content
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
-            ->Item("publish-publish_flag-dropdown")->SetValue(Query::PUBLISHED)
-            ->Match("publish-publish_flag-dropdown", Query::TO_PUBLISH)
+            ->Item("publish-publish_flag-dropdown")->SetValue(Query::PUB_ACTIVE)
+            ->Match("publish-publish_flag-dropdown", Query::PUB_FUTURE)
             ->AndWhere()->LessThanOrEq("publish-publish_date-date", Date::Now()->ToInt())
             ->Send();
         $database->Update()
             ->UsingTable("content")
             ->UsingTable("blocks")
-            ->Item("publish-publish_flag-dropdown")->SetValue(Query::UNPUBLISHED)
+            ->Item("publish-publish_flag-dropdown")->SetValue(Query::PUB_NOT)
             ->Item("publish-unpublish_flag-checkbox")->SetValue(0)
             ->Match("publish-unpublish_flag-checkbox", 1)
             ->AndWhere()->LessThanOrEq("publish-unpublish_date-date", Date::Now()->ToInt())
@@ -446,18 +446,19 @@ Otherwise, look for the space being called
     
     public static function GenerateMetaKeywords()
     {
-        $database = Config::Database();
+        // [MUSTCHANGE] Should use this for pages and articles.
         $uri = Content::Uri();
-        if($uri[1] == 'articles' && isset($uri[2]))        
-            $query = $database->Retrieve()
-                    ->UsingTable("content")
-                    ->Item("content-tags-field")
-                    ->Match("content-title_mung-field", $uri[2])
-                    ->Send()->Fetch();
-        else
-            throw new StrictException();
-        
-        echo '<meta name="keywords" content="'.$query['content-tags-field'].'"/>';
+        if ($uri[1] == 'articles' && isset($uri[2])) {
+            $article = Config::Database()->Execute(Query::Build('Grab content tags.')
+                ->Retrieve()
+                ->UseTable('content')
+                ->Get('content-tags-field')
+                ->Where()->IsEqual('content-title_mung-field', $uri[2]))->Fetch();
+        }        
+        else {
+            trigger_error('Could not find article in URI.', E_USER_WARNING);
+        }
+        echo '<meta name="keywords" content="' . $article['content-tags-field'] . '"/>';
     }
 
     public static function RenderArticle()
@@ -485,22 +486,22 @@ class Space
     public function __construct($titleMung)
     {
         $database = Config::Database();      
-        $space = $database->Retrieve()
-            ->Item('id')
-            ->UsingTable("spaces")
-            ->Match("title_mung-field", $titleMung)
-            ->Send()->Fetch();
+        $space = $database->Execute(Query::Build('Grab space')
+            ->Retrieve()
+            ->UseTable('spaces')
+            ->Get('id')
+            ->Where()->IsEqual('title_mung-field', $titleMung))->Fetch();
             
-        $blocks = $database->Retrieve()
-            ->Item('id')
-            ->UsingTable("blocks")
-            ->Match("meta-space-dropdown", $space['id'])
-            ->AndWhere()->Match('publish-publish_flag-dropdown', Query::STATE_PUBLISHED)
+        $blocks = $database->Execute(Query::Build('Grab space')
+            ->Retrieve()
+            ->UseTable('blocks')
+            ->Get('id')
+            ->Where()->IsEqual('meta-space-dropdown', $space['id'])
+            ->AndWhere()->IsEqual('publish-publish_flag-dropdown', Query::STATE_PUBLISHED)
             ->OrderBy('meta-priority-dropdown', Query::SORT_DESC)
-            ->OrderBy('item', Query::SORT_ASC)
-            ->Send();
+            ->OrderBy('item', Query::SORT_ASC));
             
-        while($block = $blocks->Fetch())
+        while ($block = $blocks->Fetch())
         {
             $this->blocks = new Block($block['id']);
         }
@@ -511,7 +512,9 @@ class Space
     public function Render()
     {
         foreach($this->blocks as $block)
+        {
             $block->Render();
+        }
     }
 }
 
@@ -533,48 +536,43 @@ class Page implements IContent
     protected $date;
     protected $tags = null;
     
-    public function __construct($data)
+    public function __construct($idOrData)
     {
         $database = Config::Database();
-        if(is_numeric($data))
-        {
-            $page = $database->Retrieve()
-                ->UsingTable("content")
-                ->Match("id", $data)
-                ->Send()->Fetch();
+        if (is_numeric($idOrData)) {
+            $page = $database->Execute(Query::Build('Grab page using ID')
+                ->Retrieve()
+                ->UseTable('content')
+                ->Where()->IsEqual('id', $idOrData))->Fetch();
         }
-        elseif($data instanceof DatabaseResult)
-        {
-            $page = $data->Fetch();
+        elseif ($idOrData instanceof DatabaseResult) {
+            $page = $idOrData->Fetch();
         }
-        else
-            throw new ErrorException("Passed argument not numeric or of type DatabaseResult");
+        else {
+            trigger_error('Passed argument not numeric or of type DatabaseResult.', E_USER_ERROR);
+        }
             
         $this->id = $page['id'];
         $this->title = $page['content-title-field'];
         $this->date = Date::FromString($page['meta-date-date']);
         
         $this->tags = explode(',', $page['content-tags-field']);
-        foreach ($this->tags as $key => $value)
-        {
+        foreach ($this->tags as $key => $value) {
             $this->tags[$key] = trim($value);
         }
 
-        $category = $database->Retrieve()
-                ->UsingTable("categories")
-                ->Match("id", $page['meta-category-dropdown'])
-                ->Send()->Fetch();
-        $this->categoryMung = $category['title_mung-field']; 
-
-        
-        //parent::__construct($page['content-title_mung-field'], $page['content-body-textarea']);
+        $category = $database->Execute(Query::Build('Grab page category using ID')
+            ->Retrieve()
+            ->UseTable('categories')
+            ->Where()->IsEqual('id', $page['meta-category-dropdown']))->Fetch();
+        $this->categoryMung = $category['title_mung-field'];
     }
     
     public function Get($data)
     {
-        if($data == 'tags')
+        if ($data == 'tags') {
             return implode(', ', $this->tags);
-            
+        }
         return $this->$data;
     }
     
@@ -595,19 +593,18 @@ class Article extends Page
     {
         $database = Config::Database(); 
         
-        if(is_numeric($idOrData))
-        { 
-            $article = $database->Retrieve()
-                ->UsingTable("content")
-                ->Match("id", $idOrData)
-                ->Send()->Fetch();
+        if (is_numeric($idOrData)) { 
+            $article = $database->Execute(Query::Build('Grab article using ID')
+                ->Retrieve()
+                ->UseTable('content')
+                ->Where()->IsEqual('id', $idOrData))->Fetch();
         }
-        elseif($idOrData instanceof DatabaseResult)
-        {
+        elseif ($idOrData instanceof DatabaseResult) {
             $article = $idOrData->Fetch();
         }
-        else
-            throw new ErrorException("Passed argument not numeric or of type DatabaseResult");
+        else {
+            trigger_error('Passed argument not numeric or of type DatabaseResult.', E_USER_ERROR);
+        }
 
         $this->id = $article['id'];
         $this->title = $article['content-title-field'];
@@ -616,18 +613,15 @@ class Article extends Page
         $this->date = Date::FromString($article['meta-date-date']);
         $this->author = Content::GetAuthorById($article['meta-author-dropdown']);
         $this->category = Content::GetCategoryById($article['meta-category-dropdown']); 
-        
-        
         $this->tags = explode(',', $article['content-tags-field']);
-        foreach ($this->tags as $key => $value)
-        {
+        foreach ($this->tags as $key => $value) {
             $this->tags[$key] = trim($value);
         }
 
-        $category = $database->Retrieve()
-                ->UsingTable("categories")
-                ->Match("id", $article['meta-category-dropdown'])
-                ->Send()->Fetch();
+        $category = $database->Execute(Query::Build('Grab article category using ID')
+            ->Retrieve()
+            ->UseTable('categories')
+            ->Where()->IsEqual('id', $page['meta-category-dropdown']))->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
     }
     
@@ -668,29 +662,28 @@ class Block implements IContent
     protected $body;
     private $redirectLocation = null;
     
-    public function __construct($id, MySQLi_Result $data = null)
+    public function __construct($idOrData)
     {
-        if (null === $data)
-        {
-            $database = Config::Database();
-            $data = $database->Retrieve()
-                ->UsingTable("blocks")
-                ->Match("id", $id)
-                ->Send();
+        if (is_numeric($idOrData)) { 
+            $block = $database->Execute(Query::Build('Grab article using ID')
+                ->Retrieve()
+                ->UseTable('blocks')
+                ->Where()->IsEqual('id', $idOrData))->Fetch();
         }
-        
-        $block = $data->Fetch();
+        elseif ($idOrData instanceof DatabaseResult) {
+            $block = $idOrData->Fetch();
+        }
+        else {
+            trigger_error('Passed argument not numeric or of type DatabaseResult.', E_USER_ERROR);
+        }
         $this->redirectLocation = $block['redirect_location-field'];
-        
-        
-        //parent::__construct($block['content-title_mung-field'], $block['content-body-textarea']);
     }
     
     public function Get($data)
     {
-        if($data == 'tags')
+        if ($data == 'tags') {
             return implode(', ', $this->tags);
-            
+        }
         return $this->$data;
     }
     
