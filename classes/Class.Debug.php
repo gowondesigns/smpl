@@ -71,7 +71,7 @@ class Debug
             array_shift($stack); // Remove top level of stack, redundant info
 
             // Get the function/method that called it
-            $caller = (isset($stack[0]['class'])) ? $stack[0]['class'] . '\\' : NULL;
+            $caller = (isset($stack[0]['class'])) ? $stack[0]['class'] . "\\" : NULL;
             $caller .= (isset($msg)) ? $stack[0]['function'] . ': ' : $stack[0]['function'];       
             $message = array(
                 'type' => 0,
@@ -96,7 +96,7 @@ class Debug
         if (in_array($error['type'], $criticalErrors))
         {
             $error['message'] = htmlentities($error['message']);
-            $lastError = '<b>EXECUTION ENDED BY FATAL ERROR</b> in <b>' . $error['file'] . '(' . $error['line'] . '):</b> .' $error['message'] . '\n';
+            $lastError = '<b>EXECUTION ENDED BY FATAL ERROR</b> in <b>' . $error['file'] . '(' . $error['line'] . '):</b> '. $error['message'] . "\n";
             self::$isVerbose = self::VERBOSE_ON;
             self::$isDebug = self::DEBUG_ON;
         }
@@ -118,12 +118,12 @@ class Debug
         /* Output error and debug messages */
         if($showMessages)
         {
-            echo (self::$isVerbose) ? '\n\n<pre>\n': '\n\n<!--\n';
+            echo (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
             echo $lastError;
             
             // Should this include information about the database? Is so, need to make interface
             echo 'Server Specs: PHP ' . PHP_VERSION . ' (' . PHP_OS . 
-                '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) . 'kb\n';
+                '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) . "kb\n";
             $idx = 1;        
             
             for($i = 0; $i < count(self::$log); $i++)
@@ -133,16 +133,16 @@ class Debug
                     continue;
                 }
                     
-                $text = '\n\n#' . ($idx++) . ' ';
+                $text = "\n\n#" . ($idx++) . ' ';
                 switch($msg['type'])
                 {
                     case 0:
-                        $text .= 'MESSAGE\t- ';
+                        $text .= "MESSAGE\t- ";
                     break;
                         
                     case E_WARNING:
                     case E_USER_WARNING:
-                        $text .= 'WARNING\t- ';
+                        $text .= "<b>WARNING</b>\t- ";
                     break;
                         
                     case E_NOTICE:
@@ -150,22 +150,22 @@ class Debug
                     case E_DEPRECATED:
                     case E_USER_DEPRECATED:
                     case E_STRICT:
-                        $text .= 'NOTICE \t- ';
+                        $text .= "<b>NOTICE</b> \t- ";
                     break;
                     
                     case E_USER_ERROR:
                     case E_RECOVERABLE_ERROR:
                     default:
-                        $text .= 'ERROR  \t- ';
+                        $text .= "<b>ERROR</b>  \t- ";
                     break;
                 }
                 
-                $text .= $msg['message'] . '\n\t\tStack trace:';
+                $text .= $msg['message'] . "\n\t\tStack trace:";
     
                 for($j = 0; $j < count($msg['stack']); $j++)
                 {
                     $stack = $msg['stack'][$j];
-                    $text .= '\n\t\t#' . ($j + 1) . ' ' . $stack['file'] . '(' . $stack['line'] . '): ';
+                    $text .= "\n\t\t#" . ($j + 1) . ' ' . $stack['file'] . '(' . $stack['line'] . '): ';
                     if (isset($stack['class'])) {
                         $text .= $stack['class'];
                     }
@@ -178,7 +178,7 @@ class Debug
                 echo $text;
             }
     
-            echo (self::$isVerbose) ? '\n</pre>': '\n-->';
+            echo (self::$isVerbose) ? "\n</pre>": "\n-->";
         }        
         
         // If Log is to be stored, do that. [MUSTCHANGE]
@@ -208,14 +208,14 @@ class Debug
         switch ($err_severity) {
             case E_USER_ERROR:
             case E_RECOVERABLE_ERROR:
-                $message['message'] = '<b>ERROR</b> in <b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
+                $message['message'] = '<b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
                 $message['stack'] = $stack;
                 array_push(self::$log, $message);
             break;
         
             case E_WARNING:
             case E_USER_WARNING:
-                $message['message'] = '<b>WARNING</b> in <b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
+                $message['message'] = '<b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
                 $message['stack'] = $stack;            
                 array_push(self::$log, $message);
                 if (!self::$isStrict) {
@@ -228,7 +228,7 @@ class Debug
             case E_DEPRECATED:
             case E_USER_DEPRECATED:
             case E_STRICT:
-                $message['message'] = '<b>NOTICE</b> in <b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
+                $message['message'] = '<b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
                 $message['stack'] = $stack;            
                 array_push(self::$log, $message);
                 if (!self::$isStrict) {
@@ -258,7 +258,7 @@ class Debug
     {
         // Suppress default FATAL ERROR message on uncaught exceptions
         // Immediately pass to Execution End
-        self::ExecutionEnd();
+        echo "Uncaught exception: " , $e->getMessage(), "\n";
     }
 
     /**
@@ -295,7 +295,7 @@ class Debug
             default:                    throw new UnknownErrorException     ($err_msg, 0, $err_severity, $err_file, $err_line);
         }
         /* Don't execute PHP internal error handler */
-        return true;
+        //return true;
     }
 }
 

@@ -108,7 +108,7 @@
         
         $value = $result->Fetch();
         if (is_null($value)) {
-            trigger_error('Could not find setting \'' . $value . '\'', E_USER_WARNING);
+            trigger_error('Could not find setting \'' . $name . '\'', E_USER_WARNING);
             $value['value-field'] = null;
         }
         return $value['value-field'];

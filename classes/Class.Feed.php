@@ -16,21 +16,20 @@ class Feed
         $type = Config::Get('feedDefaultType').'Feed';
         $category = null;
  
-        if(count(Content::Uri()) > 3)
-            throw new ErrorException("URI Error.");
+        if (count(Content::Uri()) > 3) {
+            trigger_error('URI Error.', E_USER_ERROR);
+        }
               
         // First analyze query string
         // Default feed = /feed/
         // OR /feed/<feed-type>/
-        if(Content::Uri()[0] == 'feed')
-        {
+        if (Content::Uri()[0] == 'feed') {
             if(isset(Content::Uri()[1]))
                 $type = ucfirst(Content::Uri()[1]).'Feed';
         }
         // /<category-title>/feed/
         // /<category-title>/feed/<feed-type>/
-        else if (Content::Uri()[1] == 'feed')
-        {
+        else if (Content::Uri()[1] == 'feed') {
             if(isset(Content::Uri()[2]))
                 $type = ucfirst(Content::Uri()[2]).'Feed';
 
@@ -45,8 +44,9 @@ class Feed
         Debug::Message("Feed\\Generate: Creating new feed object of type ".$type);
         if(class_exists($type) && is_subclass_of($type,'IFeed'))
             $feed = new $type;
-        else
-            throw new ErrorException("{$type} is not a compatible IFeed object or does not exist.");
+        else {
+            trigger_error($type . 'is not a compatible IFeed object or does not exist.', E_USER_ERROR);
+        }
 
         // Populate feed with proper articles
         $query = Query::Build('Feed\\Generate: Get relevant articles')

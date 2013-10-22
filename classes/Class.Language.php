@@ -19,16 +19,14 @@ class Language
     
     public static function Create($languageCode = null)
     {
-        if(isset($languageCode))
+        if (isset($languageCode)) {
             return new LanguageSet($languageCode);
-        
-        if (null === self::$langInstance)
-        {
+        }
+        if (null === self::$langInstance) {
             $languageCode = Config::Get("languageDefault");
-            Debug::Message("Language\Initializing system language to: ".$languageCode);
+            Debug::Message('Initializing system language to: ' . $languageCode);
             self::$langInstance = new LanguageSet($languageCode);
         }
-
         return self::$langInstance;
     }
     
@@ -40,10 +38,10 @@ class Language
     
     public static function Reset($languageCode = null)
     {
-        if (null === $languageCode)
+        if (null === $languageCode) {
             $languageCode = Config::Get("languageDefault");
-        
-        Debug::Message("Language\Resetting system language to: ".$languageCode);
+        }
+        Debug::Message('Resetting system language to: ' . $languageCode);
         self::$langInstance = new LanguageSet($languageCode);
         return self::$langInstance;
     }
@@ -188,16 +186,15 @@ class LanguageSet
         );
         
          
-        if($languageCode != "en-US")
-        {
+        if ($languageCode != "en-US") {
             include("smpl-languages/lang.".$languageCode.".php");
-            if(!isset($SMPL_LANG_DESC) || !isset($SMPL_LANG_CODE) || !isset($SMPL_LANG_PHRASES))
-                throw new UserErrorException('Cannot find language file for language code"'.$languageCode.'" in '.__DIR__.'/smpl-languages/');
+            if (!isset($SMPL_LANG_DESC) || !isset($SMPL_LANG_CODE) || !isset($SMPL_LANG_PHRASES)) {
+                trigger_error('Cannot find language file for language code"' . $languageCode . '" in ' . __DIR__ . '/smpl-languages/', E_USER_ERROR);
+            }
             
             $this->language = $SMPL_LANG_DESC;
             $this->languageCode = $SMPL_LANG_CODE;
-            foreach ($SMPL_LANG_PHRASES as $key => $value)
-            {
+            foreach ($SMPL_LANG_PHRASES as $key => $value) {
                 $this->Update($key, $value);
             }
             
@@ -218,27 +215,26 @@ class LanguageSet
     // Use language phrase    
     public function Phrase($key)
     {
-        if (isset($this->languagePhrases[$key]))
+        if (isset($this->languagePhrases[$key])) {
             return $this->languagePhrases[$key];
-        else
+        }
+        else {
+            trigger_error('Phrase \'' . $key . '\' does not exist in ' . $this->language . '-' . $this->languageCode, E_USER_WARNING);
             return $key;
-            //throw new UserErrorException("Phrase \"{$key}\" does not exist in {$this->language}-{$this->languageCode}"); 
+        }
     }
     
     // Add/Update/Remove the content of a particular phrase, the changes are global    
     public function Update($key, $value)
     {
         // If the value is set to NULL, then the key will be removed from the phrase list
-        if(null === $value)
-        {
-            if(isset($this->languagePhrases[$key]))
-            {
+        if ($value === null) {
+            if (isset($this->languagePhrases[$key])) {
                 unset($this->languagePhrases[$key]);
             }
         }
         // The default behavior is to replace the value an entry to the phrase list, or add a new phrase if it doesn't already exist 
-        else
-        {
+        else {
             $this->languagePhrases[$key] = $value;
         }
     }  

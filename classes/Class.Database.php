@@ -870,7 +870,7 @@ class MySqlDatabase extends MySQLi implements Database
                 $sql .= ' (`' . implode('`, `', $items) . '`)';
                 $sql .= ' VALUES(' . implode(', ', $values) . ')';
 
-                Debug::Message('MySqlDatabase\\Execute: ' . $sql);
+                Debug::Message($sql);
                 //return $sql . PHP_EOL;
                 $this->real_query($sql);
                 return new MySqlDatabaseResult($this);
@@ -944,6 +944,10 @@ class MySqlDatabase extends MySQLi implements Database
             foreach ($data['predicates'] as $predicate)
             {
                 $item = '`' . str_replace('.', '`.`', $predicate['item']) . '`';
+
+                if (is_string($predicate['value'])) {
+                    $predicate['value'] = '\'' . $this->real_escape_string($predicate['value']) . '\'';
+                }
 
                 switch ($predicate['type'])
                 {
@@ -1090,7 +1094,7 @@ class MySqlDatabase extends MySQLi implements Database
                 else {
                     $data['order'][$i][1] = 'DESC';
                 }
-                $order[] = implode(' ',$data['order'][$i]);
+                $order[] = '`' . $data['order'][$i][0] . '` ' . $data['order'][$i][1] ;//implode(' ',$data['order'][$i]);
             }
 
             $sql .= ' ORDER BY ' . implode(', ',$order);
@@ -1103,7 +1107,7 @@ class MySqlDatabase extends MySQLi implements Database
             }
         }
 
-        Debug::Message('MySqlDatabase\\Execute: ' . $sql);
+        Debug::Message($sql);
         //return $sql . PHP_EOL;
         $this->real_query($sql);
         return new MySqlDatabaseResult($this);
