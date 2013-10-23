@@ -273,7 +273,7 @@ function ClearAllData()
     return "All Data Clear";
 }
 
-function gibberish($numParagraphs = 1, $wordsPerParagragh = 10, $maxWordLength = 20)
+function gibberish($numParagraphs = 1, $wordsPerParagraph = 10, $maxWordLength = 20)
 {
     $bank = array_merge(range('a', 'z'), range('A', 'Z'));
     $paragraphs = array();
@@ -282,7 +282,7 @@ function gibberish($numParagraphs = 1, $wordsPerParagragh = 10, $maxWordLength =
     {
         $words = array();
         
-        for ($j = 0; $j < $wordsPerParagragh; $j++)
+        for ($j = 0; $j < $wordsPerParagraph; $j++)
         {
             shuffle($bank);
             $word = implode($bank);

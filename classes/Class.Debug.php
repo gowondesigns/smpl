@@ -7,7 +7,7 @@
 /**
  * Debug Static Class
  * Procedure: All issues throw a PHP standard error type. Debug error handler turns Errors into Exceptions that can be caught.
- * Warnings and Notices only throw exceptions in Strict Mode.
+ * Warnings and Notices only throw exceptions in Strict Mode. Logging defaults to PHP error log.
  * @package Debug
  */
 class Debug
@@ -41,9 +41,7 @@ class Debug
      * @param bool $setStrict TRUE => All errors pass as exceptions | FALSE => Notices and Warnings passed as messages
      * @param bool $setVerbose Debug errors are printed to screeen (on false, debug errors are passed as HTML5 comments)
      * @param bool $setLogging TRUE => Store Debug in XML file
-     * @param string $logPath Path to error log directory                    
-     * @throws StrictException
-     * @return void
+     * @param string $logPath Path to error log directory
      */
     public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null)
     {
@@ -62,8 +60,6 @@ class Debug
     /**
      * Send message to Debugger
      * @param string $msg Message stored in the Debug Log
-     * @throws StrictException
-     * @return void
      */
     public static function Message($msg = null)
     {
@@ -83,8 +79,7 @@ class Debug
     
     /**
      * Debug handler for the end of execution.
-     * Triggered by an unhandled error or the end of execution.     
-     * @return void
+     * Triggered by an unhandled error or the end of execution.
      */
     public static function ExecutionEnd() {
         // The following error types cannot be handled with a user defined function:
@@ -124,7 +119,7 @@ class Debug
             // Should this include information about the database? Is so, need to make interface
             echo 'Server Specs: PHP ' . PHP_VERSION . ' (' . PHP_OS . 
                 '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) . "kb\n";
-            $idx = 1;        
+            $j = 1;
             
             for($i = 0; $i < count(self::$log); $i++)
             {
@@ -133,7 +128,7 @@ class Debug
                     continue;
                 }
                     
-                $text = "\n\n#" . ($idx++) . ' ';
+                $text = "\n\n#" . ($j++) . ' ';
                 switch($msg['type'])
                 {
                     case 0:
@@ -162,10 +157,10 @@ class Debug
                 
                 $text .= $msg['message'] . "\n\t\tStack trace:";
     
-                for($j = 0; $j < count($msg['stack']); $j++)
+                for($k = 0; $k < count($msg['stack']); $k++)
                 {
-                    $stack = $msg['stack'][$j];
-                    $text .= "\n\t\t#" . ($j + 1) . ' ' . $stack['file'] . '(' . $stack['line'] . '): ';
+                    $stack = $msg['stack'][$k];
+                    $text .= "\n\t\t#" . ($k + 1) . ' ' . $stack['file'] . '(' . $stack['line'] . '): ';
                     if (isset($stack['class'])) {
                         $text .= $stack['class'];
                     }
@@ -176,12 +171,16 @@ class Debug
                 }
                 
                 echo $text;
+
+                // If set, append to standard php log, eventually output to XML [MUSTCHANGE]
+                // Also utilize path.
+                if (self::$isLogging) {
+                    error_log($text, 1);
+                }
             }
     
             echo (self::$isVerbose) ? "\n</pre>": "\n-->";
-        }        
-        
-        // If Log is to be stored, do that. [MUSTCHANGE]
+        }
     }
 
     /**
@@ -191,14 +190,16 @@ class Debug
      * @param string $err_msg
      * @param string $err_file
      * @param int $err_line
-     * @param array $err_context                    
-     * @throws ErrorException
+     * @param array $err_context
      * @return bool
      */
     public static function ErrorHandler($err_severity, $err_msg, $err_file, $err_line, array $err_context)
     {
         // The following error types cannot be handled with a user defined function:
         // E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING
+
+        // $err_context is an array including all variables that existed in the scope that the error was triggered
+        // How best and when to implement? [MUSTCHANGE]
         
         $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         array_shift($stack);
@@ -242,7 +243,6 @@ class Debug
                 array_push(self::$log, $message);
             break;
         }
-        
         self::ThrowException($err_severity, $err_msg, $err_file, $err_line, $err_context);
 
         // Don't execute PHP internal error handler
@@ -250,15 +250,13 @@ class Debug
     }
     
     /**
-     * Generates timezone offset
-     * @param Exception $e Set whether or not to include semicolon in timezone string
-     * @return void
+     * Debug Exception Handler to suppress default FATAL ERROR message on uncaught exceptions
+     * @param Exception $e
      */
     public static function ExceptionHandler(Exception $e)
     {
-        // Suppress default FATAL ERROR message on uncaught exceptions
-        // Immediately pass to Execution End
-        echo "Uncaught exception: " , $e->getMessage(), "\n";
+        echo "<pre>\nUncaught <b>" . get_class($e) . '</b> thrown in <b>' . $e->getFile() . ':' . $e->getLine() .
+            "</b>\n\twith message <b>'" . $e->getMessage() . "'</b>\n\tStack trace:\n\n" . $e->getTraceAsString() . "\n\n</pre>";
     }
 
     /**
