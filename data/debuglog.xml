@@ -2,42 +2,50 @@
 <!-- Example SMPL XML Debug Log
       Validate using http://www.w3.org/2001/03/webdata/xsv -->
 <!-- Filename Format \<error-folder>\log-<Date:YYYYMMDDHHmmSS>.xml -->
-<log>
-    <message number="1">
+<logset version="0.1.0" timedate="YYYYMMDDHHmmSS">
+    <log type="message" number="1">
+        <severity value="0">NONE</severity>
         <description>Test</description>
         <stack>
-            <method />
-            <method />
-            <method />
-            <method />
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
         </stack>
-    </message>
-    <notice number="2">
+    </log>
+    <log type="notice" number="2">
+        <severity value="8">E_NOTICE</severity>
         <description>Test</description>
         <stack>
-            <method />
-            <method />
-            <method />
-            <method />
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
         </stack>
-    </notice>
-    <warning number="3">
+        <context>
+            <var><!-- Serialized variable information --></var>
+        </context>
+    </log>
+    <log type="warning" number="3">
+        <severity value="2">E_WARNING</severity>
         <description>Test</description>
         <stack>
-            <method />
-            <method />
-            <method />
-            <method />
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
         </stack>
-    </warning>
-    <error number="4">
-        <severity value="32">Strict</severity>
+        <context>
+            <var><!-- Serialized variable information --></var>
+        </context>
+    </log>
+    <log type="error" number="4">
+        <severity value="32">E_STRICT</severity>
         <description>Test</description>
         <stack>
-            <method />
-            <method />
-            <method />
-            <method />
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
+            <method path="C:\xampp\htdocs\smpl\smpl.dev.php(31)" line="249">Dummy::Method()</method>
         </stack>
-    </error>
-</log>
+        <context>
+            <var><!-- Serialized variable information --></var>
+        </context>
+    </log>
+</logset>

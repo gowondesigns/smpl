@@ -12,21 +12,90 @@
  */
 class Debug
 {
-    /* Setting Constants */
+    /**
+     * Turn on Debug Messages, all uses of Debug::Message() are captured
+     */
     const DEBUG_ON = true;
+    
+    /**
+     * Turn off Debugger Messages
+     */
     const DEBUG_OFF = false;
+    
+    /**
+     * Turn on Strict Debugging: E_WARNING, E_USER_WARNING, E_NOTICE, E_USER_NOTICE, 
+     * E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED, E_USER_DEPRECATED, E_STRICT
+     * will generate Exceptions 
+     */
     const STRICT_ON = true;
+    
+    /**
+     * Turn on Strict Debugging, only E_USER_ERROR, E_RECOVERABLE_ERROR will
+     * generate exceptions     
+     */
     const STRICT_OFF = false;
+    
+    /**
+     * Turn on Verbose Output, log encapsulated in <pre> tag at the end of execution
+     */
     const VERBOSE_ON = true;
+    
+    /**
+     * Turn off Verbose Output, log encapsulated in <!-- --> tag at the end of execution
+     */
     const VERBOSE_OFF = false;
+    
+    /**
+     * Turn on Debugger Logging, output is stored in flat file
+     */
     const LOGGING_ON = true;
+    
+    /**
+     * Turn on Debugger Logging, output is not stored
+     */
     const LOGGING_OFF = false;
     
+   /**
+    * Use Debug Messages
+    * @var bool $isDebug
+    */
     private static $isDebug = false;
+    
+   /**
+    * Use Strict Debugging
+    * @var bool $isStrict
+    */
     private static $isStrict = false;
+    
+   /**
+    * Use Verbose Output
+    * @var bool $isVerbose
+    */
     private static $isVerbose = false;
+    
+   /**
+    * Use Debug Logging
+    * @var bool $isLogging
+    */
     private static $isLogging = false;
+    
+   /**
+    * Stores whether the Debug has already been set    
+    * @var bool $isInitialized                                              
+    */
+    private static $isInitialized = false;
+    
+   /**
+    * Debug log for messages and errors
+    * @var array $log
+    */
     private static $log = array();
+    
+   /**
+    * Path to the file to store the log in
+    * @todo Currently logging to error_log, eventually log to XML flatfile    
+    * @var string $logPath                                              
+    */
     private static $logPath = null;
 
     /**
@@ -36,12 +105,13 @@ class Debug
     private function __construct() {} 
     
     /**
-     * Send message to Debugger
+     * Initialize (or Reset) Debugger settings and set custom handlers
      * @param bool $setDebugMode TRUE => Store Debug messages in log
      * @param bool $setStrict TRUE => All errors pass as exceptions | FALSE => Notices and Warnings passed as messages
-     * @param bool $setVerbose Debug errors are printed to screeen (on false, debug errors are passed as HTML5 comments)
+     * @param bool $setVerbose Debug errors are printed to screen (on false, debug errors are passed as HTML5 comments)
      * @param bool $setLogging TRUE => Store Debug in XML file
      * @param string $logPath Path to error log directory
+     * @return bool Returns TRUE on initial use, FALSE on subsequent uses     
      */
     public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null)
     {
@@ -51,10 +121,17 @@ class Debug
         self::$isLogging = $setLogging;
         self::$logPath = $logPath;
         
-        error_reporting(-1);
-        set_error_handler(array('Debug', 'ErrorHandler'));
-        set_exception_handler(array('Debug', 'ExceptionHandler'));
-        register_shutdown_function(array('Debug', 'ExecutionEnd'));
+        if (self::$isInitialized) {
+            self::Message('Debugger was reset.');
+            return false;
+        }
+        else {
+            error_reporting(-1);
+            set_error_handler(array('Debug', 'ErrorHandler'));
+            set_exception_handler(array('Debug', 'ExceptionHandler'));
+            register_shutdown_function(array('Debug', 'ExecutionEnd'));
+            return true;
+        }
     }
     
     /**
@@ -74,12 +151,13 @@ class Debug
                 'message' => $caller . $msg,
                 'stack' => $stack
                 );           
-            array_push(self::$log, $message);
+            self::$log[] = $message;
     }
     
     /**
-     * Debug handler for the end of execution.
+     * Handler for the end of execution.
      * Triggered by an unhandled error or the end of execution.
+     * @todo Implement XML for Debug Logging     
      */
     public static function ExecutionEnd() {
         // The following error types cannot be handled with a user defined function:
@@ -98,7 +176,7 @@ class Debug
         
         // Show messages if anything > Message occurs or log is set in debug mode
         $showMessages = false;
-        if (self::$isDebug && isset(self::$log)) {
+        if (self::$isDebug && !empty(self::$log)) {
             $showMessages = true;
         }
         else {
@@ -111,7 +189,7 @@ class Debug
         }
         
         /* Output error and debug messages */
-        if($showMessages)
+        if ($showMessages)
         {
             echo (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
             echo $lastError;
@@ -185,7 +263,8 @@ class Debug
 
     /**
      * Custom Error Handler to log and output more human-friendly errors.
-     * Converts catchable errors into exceptions so they can be handled by developers.           
+     * Converts catchable errors into exceptions so they can be handled by developers.
+     * @todo Implement Error Context array to provide more detailed information for debugging. Maybe only output on Debug Log                
      * @param int $err_severity
      * @param string $err_msg
      * @param string $err_file
@@ -197,53 +276,30 @@ class Debug
     {
         // The following error types cannot be handled with a user defined function:
         // E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING
-
+        $errors = array(E_WARNING, E_USER_WARNING, E_NOTICE, E_USER_NOTICE,
+            E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED, E_USER_DEPRECATED,
+            E_STRICT, E_USER_ERROR, E_RECOVERABLE_ERROR);
+            
         // $err_context is an array including all variables that existed in the scope that the error was triggered
         // How best and when to implement? [MUSTCHANGE]
         
         $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         array_shift($stack);
-        $message = array('type' => $err_severity);
+        $message = array('type' => $err_severity, 'stack' => $stack);
         $err_msg = htmlentities($err_msg);
-        
-        switch ($err_severity) {
-            case E_USER_ERROR:
-            case E_RECOVERABLE_ERROR:
-                $message['message'] = '<b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
-                $message['stack'] = $stack;
-                array_push(self::$log, $message);
-            break;
-        
-            case E_WARNING:
-            case E_USER_WARNING:
-                $message['message'] = '<b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
-                $message['stack'] = $stack;            
-                array_push(self::$log, $message);
-                if (!self::$isStrict) {
-                    return true;
-                }
-            break;
-                
-            case E_NOTICE:
-            case E_USER_NOTICE:
-            case E_DEPRECATED:
-            case E_USER_DEPRECATED:
-            case E_STRICT:
-                $message['message'] = '<b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
-                $message['stack'] = $stack;            
-                array_push(self::$log, $message);
-                if (!self::$isStrict) {
-                    return true;
-                }
-            break;
-                
-            default:
-                $message['message'] = '<b>UNKNOWN ERROR TYPE</b> in <b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
-                $message['stack'] = $stack;            
-                array_push(self::$log, $message);
-            break;
+
+        if (in_array($err_severity, $errors)) {
+            $message['message'] = '<b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
         }
-        self::ThrowException($err_severity, $err_msg, $err_file, $err_line, $err_context);
+        else {
+            $message['message'] = '<b>UNKNOWN ERROR TYPE</b> in <b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
+        }
+        
+        self::$log[] = $message;
+        
+        if (self::$isStrict || $err_severity === E_USER_ERROR || $err_severity === E_RECOVERABLE_ERROR) {
+            self::ThrowException($err_severity, $err_msg, $err_file, $err_line, $err_context);
+        }
 
         // Don't execute PHP internal error handler
         return true;
@@ -296,8 +352,6 @@ class Debug
         //return true;
     }
 }
-
-/* Create exception classes for every type of error that can be caught by the system*/
 
 /**
  * Wrapper for Exceptions caused by E_WARNING 
