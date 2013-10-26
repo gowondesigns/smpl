@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <!-- definition of attributes -->
+    <xsd:attribute name="version" type="xsd:string"/>
+
+    <!-- definition of simple elements -->
+    <xsd:element name="notice" type="xsd:string"/>
+    
+    <!-- definition of complex elements -->
+    <xsd:element name="smpl">
+      <xsd:complexType>
+        <xsd:sequence>
+          <xsd:any processContents="skip" namespace="http://www.w3.org/2001/XMLSchema"
+          minOccurs="0" maxOccurs="1"/>
+          <xsd:element ref="current" minOccurs="1" maxOccurs="1"/>
+          <xsd:element ref="security" minOccurs="0" maxOccurs="1"/>
+          <xsd:element ref="changelog" minOccurs="1" maxOccurs="1"/>
+        </xsd:sequence>
+      </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="current">
+      <xsd:complexType>
+        <xsd:sequence>
+          <xsd:element ref="release" minOccurs="1" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="security">
+      <xsd:complexType>
+        <xsd:sequence>
+          <xsd:element ref="notice" minOccurs="0" maxOccurs="1"/>
+          <xsd:element ref="risk" minOccurs="1" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="changelog">
+      <xsd:complexType>
+        <xsd:sequence>
+          <xsd:element ref="item" minOccurs="1" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute ref="version" use="required"/>
+      </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="release">
+      <xsd:complexType>
+          <xsd:attribute name="version" type="xsd:string" use="required"/>
+          <xsd:attribute name="pre" default="none" use="optional">
+              <xsd:simpleType>
+                  <xsd:restriction base="xsd:NMTOKEN">
+                      <xsd:enumeration value="alpha"/>
+                      <xsd:enumeration value="beta"/>
+                      <xsd:enumeration value="rc"/>
+                      <xsd:enumeration value="rc1"/>
+                      <xsd:enumeration value="rc2"/>
+                      <xsd:enumeration value="none"/>
+                  </xsd:restriction>
+              </xsd:simpleType>
+          </xsd:attribute>
+          <xsd:attribute name="href" type="xsd:string" use="required"/>
+      </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="risk">
+      <xsd:complexType>
+          <xsd:attribute name="version" type="xsd:string" use="required"/>
+          <xsd:attribute name="fix" type="xsd:string" use="optional"/>
+          <xsd:attribute name="href" type="xsd:string" use="optional"/>
+      </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="item">
+      <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+              <xsd:attribute name="type" use="required">
+                  <xsd:simpleType>
+                      <xsd:restriction base="xsd:NMTOKEN">
+                          <xsd:enumeration value="add"/>
+                          <xsd:enumeration value="remove"/>
+                          <xsd:enumeration value="minor"/>
+                      </xsd:restriction>
+                  </xsd:simpleType>
+              </xsd:attribute>
+            </xsd:extension>
+          </xsd:simpleContent>
+      </xsd:complexType>
+    </xsd:element>    
+</xsd:schema> 

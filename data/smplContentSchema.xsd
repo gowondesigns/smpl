@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+<!-- definition of custom types -->
+<xsd:simpleType name="md5HashType">
+  <xsd:restriction base="xsd:token">
+    <xsd:pattern value="^[0-9a-f]{32}$"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="base64HashType">
+  <xsd:restriction base="xsd:token">
+    <xsd:pattern value="^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="dateTimeType">
+  <xsd:restriction base="xsd:token">
+    <xsd:pattern value="^((?!0{4})\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])([0-1][0-9]|2[0-3])([0-5][0-9])([0-5][0-9])$"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:simpleType name="stringMungType">
+  <xsd:restriction base="xsd:token">
+    <xsd:pattern value="^[A-Za-z0-9\-]+$"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<!-- definition of attributes -->
+<xsd:attribute name="static" type="xsd:boolean"/>
+<xsd:attribute name="indexed" type="xsd:boolean"/>
+<xsd:attribute name="mung" type="stringMungType"/>
+<xsd:attribute name="active" type="xsd:boolean"/>
+
+<xsd:attribute name="id">
+  <xsd:simpleType>
+    <xsd:restriction base="xsd:integer">
+      <xsd:minInclusive value="1"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:attribute>
+
+<xsd:attribute name="status">
+  <xsd:simpleType>
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="pub_not"/>
+      <xsd:enumeration value="pub_active"/>
+      <xsd:enumeration value="pub_future"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:attribute>
+
+<!-- definition of simple elements -->
+<xsd:element name="author" type="md5HashType"/>
+<xsd:element name="date" type="dateTimeType"/>
+<xsd:element name="body" type="base64HashType"/>
+<xsd:element name="tag" type="stringMungType"/>
+
+<!-- definition of complex elements -->
+<xsd:element name="content">
+  <xsd:complexType>
+    <xsd:sequence>
+      <xsd:element ref="meta" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="title" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="body" minOccurs="1" maxOccurs="1"/>
+    </xsd:sequence>
+    <xsd:attribute ref="static" use="required"/>
+    <xsd:attribute ref="indexed" use="required"/>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="meta">
+  <xsd:complexType>
+    <xsd:sequence>
+      <xsd:element ref="author" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="category" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="date" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="publish" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="unpublish" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="tagset" minOccurs="0" maxOccurs="1"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="category">
+  <xsd:complexType>
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute ref="id" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="publish">
+  <xsd:complexType>
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute ref="status" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="unpublish">
+  <xsd:complexType>
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute ref="active" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="tagset">
+  <xsd:complexType>
+    <xsd:sequence>
+      <xsd:element ref="tag" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="title">
+  <xsd:complexType>
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute ref="mung" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+</xsd:element>
+
+</xsd:schema>

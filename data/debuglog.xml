@@ -1,8 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- Example SMPL XML Debug Log
       Validate using http://www.w3.org/2001/03/webdata/xsv -->
 <!-- Filename Format \<error-folder>\log-<Date:YYYYMMDDHHmmSS>.xml -->
-<logset version="0.1.0" timedate="YYYYMMDDHHmmSS">
+<logset version="0.1.0" timedate="YYYYMMDDHHmmSS"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="logsetSchema.xsd">
     <log type="message" number="1">
         <severity value="0">NONE</severity>
         <description>Test</description>

@@ -779,7 +779,7 @@ class MySqlDatabase extends MySQLi implements Database
      * @return MySqlDatabaseResult
      */
     public function CustomQuery($query) {
-        Debug::Message('MySqlDatabase\\CustomQuery: '.$query);
+        Debug::Message($query);
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }

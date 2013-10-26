@@ -1,19 +1,22 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- Example SMPL Content XML Serialized Data
       Validate using http://www.w3.org/2001/03/webdata/xsv -->
-<content static="true" indexed="true">
+<content static="true" indexed="true"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="smplContentSchema.xsd">
     <meta>
         <author>[hash:MD5]</author>
         <category id="3">Sample Category</category>
         <date>YYYYMMDDHHmmSS</date>
+        <!-- status=(pub_not|pub_active|pub_future) -->        
+        <publish status="pub_active">YYYYMMDDHHmmSS</publish>
+        <unpublish active="true">YYYYMMDDHHmmSS</unpublish>
+        <tagset>
+            <tag>Sample</tag>
+            <tag>Page</tag>
+            <tag>Tags</tag>
+        </tagset>
     </meta>
     <title mung="sample-static-page">Sample Static Page</title>
     <body>[Base64Encoded data]</body>
-    <tagset>
-        <tag>Sample</tag>
-        <tag>Page</tag>
-        <tag>Tags</tag>
-    </tagset>
-    <publish status="published">YYYYMMDDHHmmSS</publish><!-- status=(notpublished|published|topublish) -->
-    <unpublish active="true">YYYYMMDDHHmmSS</unpublish>
 </content>

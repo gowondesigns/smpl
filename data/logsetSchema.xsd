@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+<!-- definition of custom types -->
+<xsd:simpleType name="dateTimeType">
+  <xsd:restriction base="xsd:token">
+    <xsd:pattern value="((?!0{4})\d{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])([0-1][0-9]|2[0-3])([0-5][0-9])([0-5][0-9])"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<!-- definition of attributes -->
+<xsd:attribute name="version" type="xsd:string"/>
+<xsd:attribute name="datetime" type="dateTimeType"/>
+<xsd:attribute name="path" type="xsd:string"/>
+
+<xsd:attribute name="type">
+  <xsd:simpleType>
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="message"/>
+      <xsd:enumeration value="warning"/>
+      <xsd:enumeration value="notice"/>
+      <xsd:enumeration value="error"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:attribute>
+
+<xsd:attribute name="number">
+  <xsd:simpleType>
+    <xsd:restriction base="xsd:integer">
+      <xsd:minInclusive value="1"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:attribute>
+
+<xsd:attribute name="value">
+  <xsd:simpleType>
+    <xsd:restriction base="xsd:integer">
+      <xsd:enumeration value="0"/>
+      <xsd:enumeration value="1"/>
+      <xsd:enumeration value="2"/>
+      <xsd:enumeration value="4"/>
+      <xsd:enumeration value="8"/>
+      <xsd:enumeration value="16"/>
+      <xsd:enumeration value="32"/>
+      <xsd:enumeration value="64"/>
+      <xsd:enumeration value="128"/>
+      <xsd:enumeration value="256"/>
+      <xsd:enumeration value="512"/>
+      <xsd:enumeration value="1024"/>
+      <xsd:enumeration value="2048"/>
+      <xsd:enumeration value="4096"/>
+      <xsd:enumeration value="8192"/>
+      <xsd:enumeration value="16384"/>
+      <xsd:enumeration value="32767"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:attribute>
+
+<xsd:attribute name="line">
+  <xsd:simpleType>
+    <xsd:restriction base="xsd:integer">
+      <xsd:minInclusive value="1"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:attribute>
+
+<!-- definition of simple elements -->
+<xsd:element name="description" type="xsd:string"/>
+<xsd:element name="var" type="xsd:string"/>
+
+<!-- definition of complex elements -->
+<xsd:element name="logset">
+  <xsd:complexType>
+    <xsd:sequence>
+      <xsd:element ref="severity" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="description" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="stack" minOccurs="1" maxOccurs="1"/>
+      <xsd:element ref="context" minOccurs="0" maxOccurs="1"/>
+    </xsd:sequence>
+    <xsd:attribute ref="version" use="required"/>
+    <xsd:attribute ref="datetime" use="required"/>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="severity">
+  <xsd:complexType>
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute ref="value" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="stack">
+  <xsd:complexType>
+    <xsd:sequence>
+      <xsd:element ref="method" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="method">
+  <xsd:complexType>
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute ref="path" use="required"/>
+        <xsd:attribute ref="line" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+</xsd:element>
+
+<xsd:element name="context">
+  <xsd:complexType>
+    <xsd:sequence>
+      <xsd:element ref="var" minOccurs="1" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:element>
+
+</xsd:schema>

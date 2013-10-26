@@ -114,6 +114,7 @@ class Date
     }
 
     /**
+     * Modified from Kohana: http://kohanaframework.org/3.0/guide/api/Date#span
      * Returns time difference between two timestamps, in human readable format.
      * If the second timestamp is not given, the current time will be used.
      * Also consider using [Date::FuzzySpan] when displaying a span.
@@ -176,6 +177,7 @@ class Date
     }
 
     /**
+     * Modified from Kohana: http://kohanaframework.org/3.0/guide/api/Date#fuzzy_span
      * Returns the difference between a time and now in a "fuzzy" way.
      * Displaying a fuzzy time instead of a date is usually faster to read and understand.
      *

@@ -113,8 +113,7 @@ class Debug
      * @param string $logPath Path to error log directory
      * @return bool Returns TRUE on initial use, FALSE on subsequent uses     
      */
-    public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null)
-    {
+    public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null) {
         self::$isDebug = $setDebugMode;
         self::$isStrict = $setStrict;
         self::$isVerbose = $setVerbose;
@@ -138,8 +137,7 @@ class Debug
      * Send message to Debugger
      * @param string $msg Message stored in the Debug Log
      */
-    public static function Message($msg = null)
-    {
+    public static function Message($msg = null) {
             $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
             array_shift($stack); // Remove top level of stack, redundant info
 
