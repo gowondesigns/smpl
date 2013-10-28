@@ -93,7 +93,6 @@ class Debug
     
    /**
     * Path to the file to store the log in
-    * @todo Currently logging to error_log, eventually log to XML flatfile    
     * @var string $logPath                                              
     */
     private static $logPath = null;
@@ -121,14 +120,15 @@ class Debug
         self::$logPath = $logPath;
         
         if (self::$isInitialized) {
-            self::Message('Debugger was reset.');
+            self::Message('Debugger was previously initialized. Overriding values.');
             return false;
         }
         else {
-            error_reporting(-1);
+            error_reporting(0); //Completely disable PHP messaging
             set_error_handler(array('Debug', 'ErrorHandler'));
             set_exception_handler(array('Debug', 'ExceptionHandler'));
             register_shutdown_function(array('Debug', 'ExecutionEnd'));
+            self::$isInitialized = true;
             return true;
         }
     }
@@ -155,7 +155,6 @@ class Debug
     /**
      * Handler for the end of execution.
      * Triggered by an unhandled error or the end of execution.
-     * @todo Implement XML for Debug Logging     
      */
     public static function ExecutionEnd() {
         // The following error types cannot be handled with a user defined function:
@@ -185,76 +184,128 @@ class Debug
                 }
             }
         }
-        
-        /* Output error and debug messages */
-        if ($showMessages)
-        {
-            echo (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
-            echo $lastError;
-            
+
+            $text = (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
             // Should this include information about the database? Is so, need to make interface
-            echo 'Server Specs: PHP ' . PHP_VERSION . ' (' . PHP_OS . 
+            $text .= $lastError . "\nServer Specs: PHP " . PHP_VERSION . ' (' . PHP_OS .
                 '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) . "kb\n";
+
+            $exportXML = array(
+                '@attributes' => array(
+                    'version' => '0.1.0',
+                    'datetime' => Date::Now()->ToString(),
+                    'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+                    'xsi:noNamespaceSchemaLocation' => 'logsetSchema.xsd'
+                ),
+                'log' => array()
+            );
+
             $j = 1;
-            
             for($i = 0; $i < count(self::$log); $i++)
             {
                 $msg = self::$log[$i];
                 if (!self::$isDebug && $msg['type'] == 0) {
                     continue;
                 }
-                    
-                $text = "\n\n#" . ($j++) . ' ';
+
+                $log = array(
+                    '@attributes' => array(
+                        'type' => null,
+                        'number' => $j
+                    ),
+                    'severity' => array(
+                        '@attributes' => array(
+                            'value' => $msg['type'],
+                        ),
+                        '@value' => null
+                    ),
+                    'description' => $msg['message'],
+                    'stack' => array(
+                        'method' => array()
+                    )
+                );
+
+                $text .= "\n\n#" . ($j++) . ' ';
                 switch($msg['type'])
                 {
                     case 0:
                         $text .= "MESSAGE\t- ";
+                        $log['@attributes']['type'] = 'message';
+                        $log['severity']['@value'] = 'NONE';
                     break;
                         
                     case E_WARNING:
                     case E_USER_WARNING:
-                        $text .= "<b>WARNING</b>\t- ";
+                    case E_DEPRECATED:
+                    case E_USER_DEPRECATED:
+                    case E_STRICT:
+                        $text .= "<b style=\"color: #0000cd\">WARNING</b>\t- ";
+                    $log['@attributes']['type'] = 'warning';
+                    $log['severity']['@value'] = 'WARNING';
                     break;
                         
                     case E_NOTICE:
                     case E_USER_NOTICE:
-                    case E_DEPRECATED:
-                    case E_USER_DEPRECATED:
-                    case E_STRICT:
-                        $text .= "<b>NOTICE</b> \t- ";
+                        $text .= "<b style=\"color: #0000cd\">NOTICE</b> \t- ";
+                    $log['@attributes']['type'] = 'notice';
+                    $log['severity']['@value'] = 'NOTICE';
                     break;
                     
                     case E_USER_ERROR:
                     case E_RECOVERABLE_ERROR:
                     default:
-                        $text .= "<b>ERROR</b>  \t- ";
+                        $text .= "<b style=\"color: #cd0000\">ERROR</b>  \t- ";
+                        $log['@attributes']['type'] = 'error';
+                        $log['severity']['@value'] = 'ERROR';
                     break;
                 }
                 
                 $text .= $msg['message'] . "\n\t\tStack trace:";
     
-                for($k = 0; $k < count($msg['stack']); $k++)
+                for($k = 0, $length = count($msg['stack']); $k < $length; $k++)
                 {
                     $stack = $msg['stack'][$k];
                     $text .= "\n\t\t#" . ($k + 1) . ' ' . $stack['file'] . '(' . $stack['line'] . '): ';
+                    $caller = null;
+
                     if (isset($stack['class'])) {
-                        $text .= $stack['class'];
+                        $caller .= $stack['class'];
                     }
                     if (isset($stack['type'])) {
-                        $text .= $stack['type'];
+                        $caller .= $stack['type'];
                     }
-                    $text .= $stack['function'] . '()';
-                }
-                
-                echo $text;
+                    $caller .= $stack['function'] . '()';
+                    $text .= $caller;
 
-                // If set, append to standard php log, eventually output to XML [MUSTCHANGE]
-                // Also utilize path.
-                if (self::$isLogging) {
+                    $log['stack']['method'][] = array(
+                        '@attributes' => array(
+                            'path' => $stack['file'],
+                            'line' => $stack['line']
+                        ),
+                        '@value' => $caller
+                    );
+                }
+
+                $exportXML['log'][] = $log;
+            }
+
+        /* Output error and debug messages */
+        if ($showMessages)
+        {
+            echo $text;
+            if (self::$isLogging) {
+
+                try {
+                    self::$logPath .= '\log-' . Date::Now()->ToString() . '.xml';
+                    $xml = XML::createXML('logset', $exportXML);
+                    $xml->save(self::$logPath);
+                }
+                catch(Exception $e) {
+                    echo "\n\n#". $j. "<b style=\"color: #cd0000\">ERROR</b>\t- Could not export log to XML file '" . self::$logPath . "'. Saving log to the PHP error log.";
                     error_log($text, 1);
                 }
             }
-    
+
             echo (self::$isVerbose) ? "\n</pre>": "\n-->";
         }
     }
@@ -262,7 +313,6 @@ class Debug
     /**
      * Custom Error Handler to log and output more human-friendly errors.
      * Converts catchable errors into exceptions so they can be handled by developers.
-     * @todo Implement Error Context array to provide more detailed information for debugging. Maybe only output on Debug Log                
      * @param int $err_severity
      * @param string $err_msg
      * @param string $err_file
@@ -277,25 +327,25 @@ class Debug
         $errors = array(E_WARNING, E_USER_WARNING, E_NOTICE, E_USER_NOTICE,
             E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED, E_USER_DEPRECATED,
             E_STRICT, E_USER_ERROR, E_RECOVERABLE_ERROR);
-            
-        // $err_context is an array including all variables that existed in the scope that the error was triggered
-        // How best and when to implement? [MUSTCHANGE]
         
         $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         array_shift($stack);
-        $message = array('type' => $err_severity, 'stack' => $stack);
+        $message = array('type' => $err_severity, 'stack' => $stack, 'context' => null);
         $err_msg = htmlentities($err_msg);
 
         if (in_array($err_severity, $errors)) {
             $message['message'] = '<b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
+            if ($err_severity == E_USER_ERROR || $err_severity == E_RECOVERABLE_ERROR) {
+                $message['context'] = $err_context;
+            }
         }
         else {
             $message['message'] = '<b>UNKNOWN ERROR TYPE</b> in <b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
         }
-        
+
         self::$log[] = $message;
-        
-        if (self::$isStrict || $err_severity === E_USER_ERROR || $err_severity === E_RECOVERABLE_ERROR) {
+
+        if (self::$isStrict || $err_severity == E_USER_ERROR || $err_severity == E_RECOVERABLE_ERROR) {
             self::ThrowException($err_severity, $err_msg, $err_file, $err_line, $err_context);
         }
 
@@ -310,7 +360,14 @@ class Debug
     public static function ExceptionHandler(Exception $e)
     {
         echo "<pre>\nUncaught <b>" . get_class($e) . '</b> thrown in <b>' . $e->getFile() . ':' . $e->getLine() .
-            "</b>\n\twith message <b>'" . $e->getMessage() . "'</b>\n\tStack trace:\n\n" . $e->getTraceAsString() . "\n\n</pre>";
+            "</b>\n\twith message <b>'" . $e->getMessage() . "'</b>\n\tStack trace:\n\n" . $e->getTraceAsString();
+
+        if (is_a($e, 'ErrorExceptionWithContext')) {
+            /** @var $e ErrorExceptionWithContext */
+            echo "'</b>\n\n\tError Context:\n\n" . $e->getErrorContextAsString();
+        }
+
+        echo "\n</pre>";
     }
 
     /**
@@ -328,26 +385,63 @@ class Debug
         // The following error types cannot be handled with a user defined function:
         // E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING
         
-        // error was suppressed with the @-operator
+        /*/ error was suppressed with the @-operator
         if (0 === error_reporting()) {
             return false;
         }
-        
+        //*/
+
         switch ($err_severity)
         {
-            case E_WARNING:             throw new WarningException          ($err_msg, 0, $err_severity, $err_file, $err_line);
-            case E_NOTICE:              throw new NoticeException           ($err_msg, 0, $err_severity, $err_file, $err_line);
-            case E_USER_ERROR:          throw new UserErrorException        ($err_msg, 0, $err_severity, $err_file, $err_line);
-            case E_USER_WARNING:        throw new UserWarningException      ($err_msg, 0, $err_severity, $err_file, $err_line);
-            case E_USER_NOTICE:         throw new UserNoticeException       ($err_msg, 0, $err_severity, $err_file, $err_line);
-            case E_STRICT:              throw new StrictException           ($err_msg, 0, $err_severity, $err_file, $err_line);
-            case E_RECOVERABLE_ERROR:   throw new RecoverableErrorException ($err_msg, 0, $err_severity, $err_file, $err_line);
-            case E_DEPRECATED:          throw new DeprecatedException       ($err_msg, 0, $err_severity, $err_file, $err_line);
-            case E_USER_DEPRECATED:     throw new UserDeprecatedException   ($err_msg, 0, $err_severity, $err_file, $err_line);
-            default:                    throw new UnknownErrorException     ($err_msg, 0, $err_severity, $err_file, $err_line);
+            case E_WARNING:             throw new WarningException          ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            case E_NOTICE:              throw new NoticeException           ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            case E_USER_ERROR:          throw new UserErrorException        ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            case E_USER_WARNING:        throw new UserWarningException      ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            case E_USER_NOTICE:         throw new UserNoticeException       ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            case E_STRICT:              throw new StrictException           ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            case E_RECOVERABLE_ERROR:   throw new RecoverableErrorException ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            case E_DEPRECATED:          throw new DeprecatedException       ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            case E_USER_DEPRECATED:     throw new UserDeprecatedException   ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
+            default:                    throw new UnknownErrorException     ($err_msg, 0, $err_severity, $err_file, $err_line, $err_context);
         }
         /* Don't execute PHP internal error handler */
         //return true;
+    }
+}
+
+
+/**
+ * Wrapper for Exceptions caused by E_WARNING
+ * @package Debug\Exception\Warning
+ */
+class ErrorExceptionWithContext extends ErrorException
+{
+    protected $errorContext;
+
+    public function __construct($message, $code, $severity, $filename, $lineno, $err_context = null) {
+        //public __construct ([ string $message = "" [, int $code = 0 [, int $severity = 1 [, string $filename = __FILE__ [, int $lineno = __LINE__ [, Exception $previous = NULL ]]]]]] )
+        parent::__construct($message, $code, $severity, $filename, $lineno);
+        $this->errorContext = $err_context;
+    }
+
+    public function getErrorContext()
+    {
+        return $this->errorContext;
+    }
+
+    public function getErrorContextAsString()
+    {
+        $context = null;
+        foreach ($this->errorContext as $name => $value) {
+            $context .= '$' . $name . ': ';
+            if ($value === null) {
+                $context .= "NULL;\n";
+            }
+            else {
+                $context .= serialize($value) . "\n";
+            }
+        }
+        return $context;
     }
 }
 
@@ -355,60 +449,60 @@ class Debug
  * Wrapper for Exceptions caused by E_WARNING 
  * @package Debug\Exception\Warning
  */
-class WarningException              extends ErrorException {}
+class WarningException              extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by E_NOTICE
  * @package Debug\Exception\Notice
  */
-class NoticeException               extends ErrorException {}
+class NoticeException               extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by E_USER_ERROR 
  * @package Debug\Exception\UserError
  */
-class UserErrorException            extends ErrorException {}
+class UserErrorException            extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by E_USER_WARNING 
  * @package Debug\Exception\UserWarning
  */
-class UserWarningException          extends ErrorException {}
+class UserWarningException          extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by E_USER_NOTICE 
  * @package Debug\Exception\UserNotice
  */
-class UserNoticeException           extends ErrorException {}
+class UserNoticeException           extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by E_STRICT
  * @package Debug\Exception\Strict
  */
-class StrictException               extends ErrorException {}
+class StrictException               extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by E_RECOVERABLE_ERROR
  * @package Debug\Exception\Recoverable
  */
-class RecoverableErrorException     extends ErrorException {}
+class RecoverableErrorException     extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by E_DEPRECATED
  * @package Debug\Exception\Deprecated
  */
-class DeprecatedException           extends ErrorException {}
+class DeprecatedException           extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by E_USER_DEPRECATED
  * @package Debug\Exception\UserDeprecated
  */
-class UserDeprecatedException       extends ErrorException {}
+class UserDeprecatedException       extends ErrorExceptionWithContext {}
 
 /**
  * Wrapper for Exceptions caused by unknown errors 
  * @package Debug\Exception\Unknown
  */
-class UnknownErrorException         extends ErrorException {}
+class UnknownErrorException         extends ErrorExceptionWithContext {}
 
 ?>

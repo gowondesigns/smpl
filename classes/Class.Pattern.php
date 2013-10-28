@@ -19,6 +19,11 @@ class Pattern
     /**
      * Regex SQL column names: Alphanumeric string, must begin with alpha, up to 30 char length
      */
+    const XML_VALID_TAG_NAME = '/^[a-z_]+[a-z0-9\:\-\.\_]*[^:]*$/i';
+
+    /**
+     * Regex SQL column names: Alphanumeric string, must begin with alpha, up to 30 char length
+     */
     const SQL_NAME = '/[A-Za-z][A-Za-z0-9\-_]{0,29}/';
 
     /**
