@@ -14,7 +14,16 @@
  */
 class XML
 {
+    /**
+     * Shared instance of 
+     * @var DOMDocument $xml
+     */
     private static $xml = null;
+    
+    /**
+     * String encoding for XML document
+     * @var string $encoding
+     */
     private static $encoding = 'UTF-8';
 
     /**
@@ -24,21 +33,21 @@ class XML
      * @param $formatOutput
      */
     public static function Initialize($version = '1.0', $encoding = 'UTF-8', $formatOutput = true) {
-        self::$xml = new DomDocument($version, $encoding);
+        self::$xml = new DOMDocument($version, $encoding);
         self::$xml->formatOutput = $formatOutput;
         self::$encoding = $encoding;
     }
 
     /**
-     * Convert an Array to XML
-     * @param string $node_name - name of the root node to be converted
-     * @param array $arr - aray to be converterd
-     * @return DomDocument
+     * Create XML from given array
+     * @param string $rootNodeName - name of the root node to be converted
+     * @param array $inputArray - aray to be converterd
+     * @return DOMDocument
      */
-    public static function CreateXML($node_name, $arr=array()) {
+    public static function CreateXML($rootNodeName, $inputArray = array()) {
         /** @var $xml DOMDocument */
         $xml = self::GetXmlRoot();
-        $xml->appendChild(self::ConvertArrayToXml($node_name, $arr));
+        $xml->appendChild(self::ConvertArrayToXml($rootNodeName, $inputArray));
 
         self::$xml = null;    // clear the xml node in the class for 2nd time use.
         return $xml;
@@ -117,6 +126,7 @@ class XML
 
     /*
      * Get the root XML node, if there isn't one, create it.
+     * @return DOMDocument     
      */
     private static function GetXmlRoot()
     {
@@ -128,14 +138,16 @@ class XML
 
     /*
      * Get string representation of boolean value
+     * @param mixed $value
+     * @return mixed          
      */
     private static function BooleanToString($value)
     {
         if ($value === true) {
-            return true;
+            return 'true';
         }
         elseif ($value === false) {
-            return false;
+            return 'false';
         }
         return $value;
     }
@@ -143,6 +155,8 @@ class XML
     /*
      * Check if the tag name or attribute name contains illegal characters
      * Ref: http://www.w3.org/TR/xml/#sec-common-syn
+     * @param string $tag
+     * @return bool          
      */
     private static function IsValidTagName($tag){
         $matches = Pattern::Validate(Pattern::XML_VALID_TAG_NAME, $tag, Pattern::RETURN_MATCHES);

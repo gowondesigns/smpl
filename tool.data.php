@@ -56,69 +56,30 @@ function GenerateNewData()
     $queries = array();
     $errors = array();
 
-
     /* Generate Settings */
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('siteURL')
-        ->Item('title-label')->SetValue('Site URL')
-        ->Item('value-field')->SetValue('http://localhost/smpl/')->Send();
+    $settings = array(
+        array('site_url', 'Site URL', 'http://localhost/smpl/'),
+        array('site_title', 'Site Title', 'My SMPL Site'),
+        array('site_description', 'Site Description', 'My SMPL Site is a website that hosts pages and articles.'),
+        array('site_mung_length', 'SEO URL Max Length', 50),
+        array('markdown_active', 'Parse Articles for Markdown', true),
+        array('list_max_num', 'Max # of items per page listed in categorical view', 10),
+        array('feed_default_type', 'Default feed format', 'Atom'),
+        array('feed_item_limit', 'Max # items in feed', 5),
+        array('permalink_salt', 'Salt integer for unique permalinks', rand(0,62)),
+        array('language_default', 'Default language', 'en-US'),
+        array('date_offset', 'Timezone Offset for Dates and Timestamps', rand(-12,14)),
+        array('article_format', 'Article format', '<h1>[category]&nbsp;/&nbsp;[title]</h1>\n<p>[body]</p>')
+    );
     
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('siteTitle')
-        ->Item('title-label')->SetValue('Site Title')
-        ->Item('value-field')->SetValue('My SMPL Site')->Send();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('siteDescription')
-        ->Item('title-label')->SetValue('Site Description')
-        ->Item('value-field')->SetValue('My SMPL Site is a website that hosts pages and articles.')->Send();
+    foreach ($settings as $setting) {
+        $errors[] = $database->Execute(Query::Build()->Create()
+            ->UseTable('settings')
+            ->Set('name-hidden', $setting[0])
+            ->Set('title-label', $setting[1])
+            ->Set('value-field', $setting[2]));
+    }
 
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('siteMungLength')
-        ->Item('title-label')->SetValue('SEO URL Max Length')
-        ->Item('value-field')->SetValue(50)->Send();
-
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('MarkdownActive')
-        ->Item('title-label')->SetValue('Parse Articles for Markdown')
-        ->Item('value-field')->SetValue(true)->Send();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('listMaxNum')
-        ->Item('title-label')->SetValue('Max # of items per page listed in categorical view')
-        ->Item('value-field')->SetValue(10)->Send();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('feedDefaultType')
-        ->Item('title-label')->SetValue('Default feed format')
-        ->Item('value-field')->SetValue('Atom')->Send();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('feedItemLimit')
-        ->Item('title-label')->SetValue('Max # items in feed')
-        ->Item('value-field')->SetValue(5)->Send();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('permalinkSalt')
-        ->Item('title-label')->SetValue('Salt integer for unique permalinks')
-        ->Item('value-field')->SetValue(rand(0,62))->Send();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('languageDefault')
-        ->Item('title-label')->SetValue('Default language')
-        ->Item('value-field')->SetValue('en-US')->Send();
-    
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('dateOffset')
-        ->Item('title-label')->SetValue('Date Timezone Offset')
-        ->Item('value-field')->SetValue(rand(-12,14))->Send();
-
-    $errors[] = $database->Create()->UsingTable("settings")
-        ->Item('name-hidden')->SetValue('articleFormat')
-        ->Item('title-label')->SetValue('Article Format')
-        ->Item('value-field')->SetValue("<h1>[category]&nbsp;/&nbsp;[title]</h1>\n<p>[body]</p>")->Send();
-
-    
     /* Generate Users */
     for($i = 0; $i < 16; $i++)
     {
@@ -257,17 +218,21 @@ echo $result; # prints: <p>Hello <strong>Parsedown</strong>!</p>
 
 function ClearAllData()
 {
-    $database = Config::Database();
-    
-    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'api');
-    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'blocks');
-    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'categories');
-    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'content');
-    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'settings');
-    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'spaces');
-    $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'users');
-    
-    return "All Data Clear";
+    $database = Config::Database();    
+    if (is_a($database, 'MySqlDatabase')) {
+        $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'api');
+        $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'blocks');
+        $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'categories');
+        $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'content');
+        $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'settings');
+        $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'spaces');
+        $database->CustomQuery('TRUNCATE TABLE ' . Config::DB_PREFIX . 'users');
+        return "All Data Clear";
+    }
+    else {
+        return 'Could not clear data from the database.';
+    }
+
 }
 
 function gibberish($numParagraphs = 1, $wordsPerParagraph = 10, $maxWordLength = 20)

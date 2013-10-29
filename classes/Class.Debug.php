@@ -55,46 +55,46 @@ class Debug
      */
     const LOGGING_OFF = false;
     
-   /**
-    * Use Debug Messages
-    * @var bool $isDebug
-    */
+    /**
+     * Use Debug Messages
+     * @var bool $isDebug
+     */
     private static $isDebug = false;
     
-   /**
-    * Use Strict Debugging
-    * @var bool $isStrict
-    */
+    /**
+     * Use Strict Debugging
+     * @var bool $isStrict
+     */
     private static $isStrict = false;
     
-   /**
-    * Use Verbose Output
-    * @var bool $isVerbose
-    */
+    /**
+     * Use Verbose Output
+     * @var bool $isVerbose
+     */
     private static $isVerbose = false;
     
-   /**
-    * Use Debug Logging
-    * @var bool $isLogging
-    */
+    /**
+     * Use Debug Logging
+     * @var bool $isLogging
+     */
     private static $isLogging = false;
     
-   /**
-    * Stores whether the Debug has already been set    
-    * @var bool $isInitialized                                              
-    */
+    /**
+     * Stores whether the Debug has already been set    
+     * @var bool $isInitialized                                              
+     */
     private static $isInitialized = false;
     
-   /**
-    * Debug log for messages and errors
-    * @var array $log
-    */
+    /**
+     * Debug log for messages and errors
+     * @var array $log
+     */
     private static $log = array();
     
-   /**
-    * Path to the file to store the log in
-    * @var string $logPath                                              
-    */
+    /**
+     * Path to the file to store the log in
+     * @var string $logPath                                              
+     */
     private static $logPath = null;
 
     /**
@@ -185,128 +185,127 @@ class Debug
             }
         }
 
-            $text = (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
-            // Should this include information about the database? Is so, need to make interface
-            $text .= $lastError . "\nServer Specs: PHP " . PHP_VERSION . ' (' . PHP_OS .
-                '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) . "kb\n";
+        $text = (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
+        // Should this include information about the database? Is so, need to make interface
+        $text .= $lastError . "\nServer Specs: PHP " . PHP_VERSION . ' (' . PHP_OS .
+            '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) . "kb\n";
 
-            $exportXML = array(
+        $exportXML = array(
+            '@attributes' => array(
+                'version' => '0.1.0',
+                'datetime' => Date::Now()->ToString(),
+                'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+                'xsi:noNamespaceSchemaLocation' => 'logsetSchema.xsd'
+            ),
+            'log' => array()
+        );
+
+        $j = 1;
+        for($i = 0; $i < count(self::$log); $i++)
+        {
+            $msg = self::$log[$i];
+            if (!self::$isDebug && $msg['type'] == 0) {
+                continue;
+            }
+
+            $log = array(
                 '@attributes' => array(
-                    'version' => '0.1.0',
-                    'datetime' => Date::Now()->ToString(),
-                    'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
-                    'xsi:noNamespaceSchemaLocation' => 'logsetSchema.xsd'
+                    'type' => null,
+                    'number' => $j
                 ),
-                'log' => array()
+                'severity' => array(
+                    '@attributes' => array(
+                        'value' => $msg['type'],
+                    ),
+                    '@value' => null
+                ),
+                'description' => $msg['message'],
+                'stack' => array(
+                    'method' => array()
+                )
             );
 
-            $j = 1;
-            for($i = 0; $i < count(self::$log); $i++)
+            $text .= "\n\n#" . ($j++) . ' ';
+            switch($msg['type'])
             {
-                $msg = self::$log[$i];
-                if (!self::$isDebug && $msg['type'] == 0) {
-                    continue;
-                }
+                case 0:
+                    $text .= "MESSAGE\t- ";
+                    $log['@attributes']['type'] = 'message';
+                    $log['severity']['@value'] = 'NONE';
+                break;
 
-                $log = array(
-                    '@attributes' => array(
-                        'type' => null,
-                        'number' => $j
-                    ),
-                    'severity' => array(
-                        '@attributes' => array(
-                            'value' => $msg['type'],
-                        ),
-                        '@value' => null
-                    ),
-                    'description' => $msg['message'],
-                    'stack' => array(
-                        'method' => array()
-                    )
-                );
+                case E_WARNING:
+                case E_USER_WARNING:
+                case E_DEPRECATED:
+                case E_USER_DEPRECATED:
+                case E_STRICT:
+                    $text .= "<b style=\"color: #0000cd\">WARNING</b>\t- ";
+                $log['@attributes']['type'] = 'warning';
+                $log['severity']['@value'] = 'WARNING';
+                break;
 
-                $text .= "\n\n#" . ($j++) . ' ';
-                switch($msg['type'])
-                {
-                    case 0:
-                        $text .= "MESSAGE\t- ";
-                        $log['@attributes']['type'] = 'message';
-                        $log['severity']['@value'] = 'NONE';
-                    break;
-                        
-                    case E_WARNING:
-                    case E_USER_WARNING:
-                    case E_DEPRECATED:
-                    case E_USER_DEPRECATED:
-                    case E_STRICT:
-                        $text .= "<b style=\"color: #0000cd\">WARNING</b>\t- ";
-                    $log['@attributes']['type'] = 'warning';
-                    $log['severity']['@value'] = 'WARNING';
-                    break;
-                        
-                    case E_NOTICE:
-                    case E_USER_NOTICE:
-                        $text .= "<b style=\"color: #0000cd\">NOTICE</b> \t- ";
-                    $log['@attributes']['type'] = 'notice';
-                    $log['severity']['@value'] = 'NOTICE';
-                    break;
-                    
-                    case E_USER_ERROR:
-                    case E_RECOVERABLE_ERROR:
-                    default:
-                        $text .= "<b style=\"color: #cd0000\">ERROR</b>  \t- ";
-                        $log['@attributes']['type'] = 'error';
-                        $log['severity']['@value'] = 'ERROR';
-                    break;
-                }
-                
-                $text .= $msg['message'] . "\n\t\tStack trace:";
-    
-                for($k = 0, $length = count($msg['stack']); $k < $length; $k++)
-                {
-                    $stack = $msg['stack'][$k];
-                    $text .= "\n\t\t#" . ($k + 1) . ' ' . $stack['file'] . '(' . $stack['line'] . '): ';
-                    $caller = null;
+                case E_NOTICE:
+                case E_USER_NOTICE:
+                    $text .= "<b style=\"color: #0000cd\">NOTICE</b> \t- ";
+                $log['@attributes']['type'] = 'notice';
+                $log['severity']['@value'] = 'NOTICE';
+                break;
 
-                    if (isset($stack['class'])) {
-                        $caller .= $stack['class'];
-                    }
-                    if (isset($stack['type'])) {
-                        $caller .= $stack['type'];
-                    }
-                    $caller .= $stack['function'] . '()';
-                    $text .= $caller;
-
-                    $log['stack']['method'][] = array(
-                        '@attributes' => array(
-                            'path' => $stack['file'],
-                            'line' => $stack['line']
-                        ),
-                        '@value' => $caller
-                    );
-                }
-
-                $exportXML['log'][] = $log;
+                case E_USER_ERROR:
+                case E_RECOVERABLE_ERROR:
+                default:
+                    $text .= "<b style=\"color: #cd0000\">ERROR</b>  \t- ";
+                    $log['@attributes']['type'] = 'error';
+                    $log['severity']['@value'] = 'ERROR';
+                break;
             }
+
+            $text .= $msg['message'] . "\n\t\tStack trace:";
+
+            for($k = 0, $length = count($msg['stack']); $k < $length; $k++)
+            {
+                $stack = $msg['stack'][$k];
+                $text .= "\n\t\t#" . ($k + 1) . ' ' . $stack['file'] . '(' . $stack['line'] . '): ';
+                $caller = null;
+
+                if (isset($stack['class'])) {
+                    $caller .= $stack['class'];
+                }
+                if (isset($stack['type'])) {
+                    $caller .= $stack['type'];
+                }
+                $caller .= $stack['function'] . '()';
+                $text .= $caller;
+
+                $log['stack']['method'][] = array(
+                    '@attributes' => array(
+                        'path' => $stack['file'],
+                        'line' => $stack['line']
+                    ),
+                    '@value' => $caller
+                );
+            }
+
+            $exportXML['log'][] = $log;
+        }
 
         /* Output error and debug messages */
         if ($showMessages)
         {
             echo $text;
-            if (self::$isLogging) {
-
-                try {
-                    self::$logPath .= '\log-' . Date::Now()->ToString() . '.xml';
-                    $xml = XML::createXML('logset', $exportXML);
-                    $xml->save(self::$logPath);
-                }
-                catch(Exception $e) {
-                    echo "\n\n#". $j. "<b style=\"color: #cd0000\">ERROR</b>\t- Could not export log to XML file '" . self::$logPath . "'. Saving log to the PHP error log.";
-                    error_log($text, 1);
-                }
-            }
-
             echo (self::$isVerbose) ? "\n</pre>": "\n-->";
+        }
+
+        if (self::$isLogging) {
+            try {
+                self::$logPath .= '\log-' . Date::Now()->ToString() . '.xml';
+                $xml = XML::createXML('logset', $exportXML);
+                $xml->save(self::$logPath);
+            }
+            catch(Exception $e) {
+                echo "<pre>\n\n#". $j. "<b style=\"color: #cd0000\">ERROR</b>\t- Could not export log to XML file '" . self::$logPath . "'. Saving log to the PHP error log.</pre>";
+                error_log($text, 1);
+            }
         }
     }
 

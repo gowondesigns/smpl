@@ -1,22 +1,26 @@
 <?php
 /**
  * Class.Language
- *
  * @package SMPL\Language
  */
 
 /**
- * Language Class
- *
- * Produces strict datetime objects that provide a fluent interface for
- * converting into various types and formats  
+ * A set of tools to provide language sets for the system to use 
  * @package Language
  */
 class Language
 {
+    /**
+     * Main instance of the Language set used throughout the system
+     * @var LanguageSet $langInstance
+     */
     private static $langInstance = null;
     
-    
+    /**
+     * LanguageSet factory
+     * @param string $languageCode Should correspond to to a language file 'smpl-languages/lang.<$languageCode>.php'
+     * @return LanguageSet     
+     */    
     public static function Create($languageCode = null)
     {
         if (isset($languageCode)) {
@@ -30,12 +34,20 @@ class Language
         return self::$langInstance;
     }
     
+    /**
+     * URI Hook to dynamically change the language     
+     */    
     public static function Hook()
     {
         $key = array_search('lang', Content::Uri());
         self::Reset(Content::Uri()[($key + 1)] );
     }
     
+    /**
+     * Factory to reset or set new main LanguageSet
+     * @param string $languageCode Should correspond to to a language file 'smpl-languages/lang.<$languageCode>.php'
+     * @return LanguageSet     
+     */ 
     public static function Reset($languageCode = null)
     {
         if (null === $languageCode) {
@@ -48,19 +60,34 @@ class Language
 }
 
 /**
- * Language Set Class
- *
- * Produces strict datetime objects that provide a fluent interface for
- * converting into various types and formats  
+ * Container of all translations for a given language. Served by Language factory. 
  * @package Language\LanguageSet
  */
 class LanguageSet
 {
+    /**
+     * Main instance of the Language set used throughout the system
+     * @var string $language
+     */
     private $language = null;
+   
+    /**
+     * Main instance of the Language set used throughout the system
+     * @var string $languageCode
+     */
     private $languageCode = null;
+    
+    /**
+     * list of all the translated phrases in the set.
+     * @var array $languagePhrases
+     */
     private $languagePhrases = array();
 
-    
+    /**
+     * Initialize language phrases to english
+     * @param string $languageCode Should correspond to to a language file 'smpl-languages/lang.<$languageCode>.php'
+     * @return \LanguageSet     
+     */ 
     public function __construct($languageCode)
     {
         // Initialize to US English
@@ -186,45 +213,61 @@ class LanguageSet
         );
         
          
-        if ($languageCode != "en-US") {
-            include("smpl-languages/lang.".$languageCode.".php");
+        if (isset($languageCode) && $languageCode != 'en-US') {
+            include("smpl-languages/lang." . $languageCode . ".php");
             if (!isset($SMPL_LANG_DESC) || !isset($SMPL_LANG_CODE) || !isset($SMPL_LANG_PHRASES)) {
-                trigger_error('Cannot find language file for language code"' . $languageCode . '" in ' . __DIR__ . '/smpl-languages/', E_USER_ERROR);
+                trigger_error('Cannot find language file for language code"' . $languageCode . '" in ' . __DIR__ . '/smpl-languages/. Defaulting to en-US.', E_USER_WARNING);
             }
-            
-            $this->language = $SMPL_LANG_DESC;
-            $this->languageCode = $SMPL_LANG_CODE;
-            foreach ($SMPL_LANG_PHRASES as $key => $value) {
-                $this->Update($key, $value);
+            else {
+                $this->language = $SMPL_LANG_DESC;
+                $this->languageCode = $SMPL_LANG_CODE;
+                foreach ($SMPL_LANG_PHRASES as $key => $value) {
+                    $this->Update($key, $value);
+                }
             }
-            
         }
     }
-
-    // Get the information on the current language    
+ 
+    /**
+     * Get the full name of this LanguageSet
+     * @return string     
+     */    
     public function Name()
     {
         return $this->language;
     }
 
+    /**
+     * Get the language code of this LanguageSet
+     * @return string     
+     */
     public function Code()
     {
         return $this->languageCode;
     }
 
-    // Use language phrase    
+    /**
+     * Get the translation of the input phrase/key
+     * @param string $key      
+     * @return string     
+     */    
     public function Phrase($key)
     {
         if (isset($this->languagePhrases[$key])) {
             return $this->languagePhrases[$key];
         }
         else {
-            trigger_error('Phrase \'' . $key . '\' does not exist in ' . $this->language . '-' . $this->languageCode, E_USER_WARNING);
+            trigger_error('Phrase \'' . $key . '\' does not exist in ' . $this->language . '\\' . $this->languageCode, E_USER_WARNING);
             return $key;
         }
     }
     
-    // Add/Update/Remove the content of a particular phrase, the changes are global    
+    /**
+     * Update/Add translation of the phrase/key with $value. If null, the phrase/key is removed.
+     * Changes only affect LanguageSet ar runtime, they are not committed to the language file.     
+     * @param string $key
+     * @param string $value                
+     */      
     public function Update($key, $value)
     {
         // If the value is set to NULL, then the key will be removed from the phrase list
@@ -232,9 +275,13 @@ class LanguageSet
             if (isset($this->languagePhrases[$key])) {
                 unset($this->languagePhrases[$key]);
             }
+            else {
+                trigger_error('Phrase \'' . $key . '\' does not exist in ' . $this->language . '-' . $this->languageCode, E_USER_WARNING);
+            }
         }
         // The default behavior is to replace the value an entry to the phrase list, or add a new phrase if it doesn't already exist 
         else {
+            Debug::Message('Adding phrase ' . $key . ':"' . $value . '" to '. $this->language . '-' . $this->languageCode);
             $this->languagePhrases[$key] = $value;
         }
     }  

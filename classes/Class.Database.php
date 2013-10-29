@@ -469,7 +469,7 @@ class Query
     }
     
     /**
-     * Predicate to check: <item> belongs to <set>{.,..,...}          
+     * Predicate to check: <column> belongs to <set>{.,..,...}          
      * @param string $item
      * @param array $set      
      * @return Query
@@ -490,7 +490,7 @@ class Query
     }
     
     /**
-     * Predicate to check: <item> does not belong to <set>{.,..,...}          
+     * Predicate to check: <column> does not belong to <set>{.,..,...}          
      * @param string $item
      * @param array $set      
      * @return Query
@@ -617,8 +617,13 @@ class Query
         $this->previous = __FUNCTION__;
         return $this;
     }
-    
-    // Can accept arrays
+
+    /**
+     * Add OrderBy predicate to Query
+     * @param string|array $item
+     * @param int $order
+     * @return Query
+     */
     public function OrderBy($item, $order = self::SORT_ASC)
     {
         // For submitting multiple items in a single request: array( 'item', 'item' => order, 'item', ...)
@@ -940,11 +945,22 @@ class MySqlDatabase extends MySQLi implements Database
             $sql .= ' WHERE ';
             $predicates = array();
             $links = array();
+            $item = array();
 
             foreach ($data['predicates'] as $predicate)
             {
-                $item = '`' . str_replace('.', '`.`', $predicate['item']) . '`';
+                if (is_array($predicate['item'])) {
+                    foreach ($predicate['item'] as $column) {
+                        $item[] = '`' . str_replace('.', '`.`', $column) . '`';
+                    }
+                }
+                // else treat item like a string
+                else {
+                    $item = '`' . str_replace('.', '`.`', $predicate['item']) . '`';                
+                }
 
+                // Sanitize values to be stored in Database
+                // Should also check for XSS
                 if (is_string($predicate['value'])) {
                     $predicate['value'] = '\'' . $this->real_escape_string($predicate['value']) . '\'';
                 }
@@ -994,9 +1010,15 @@ class MySqlDatabase extends MySQLi implements Database
                         $predicates[] = $item . ' NOT IN (' . implode(', ', $predicate['value']) . ')';
                     break;
                     case Query::IS_LIKE:
+                        if (is_array($item)) {
+                            $item = 'CONCAT(' . implode(',\' \',', $item) . ')';
+                        } 
                         $predicates[] = $item . ' LIKE \'' . $predicate['value'] . '\'';
                     break;
                     case Query::IS_NOT_LIKE:
+                        if (is_array($item)) {
+                            $item = 'CONCAT(' . implode(',\' \',', $item) . ')';
+                        } 
                         $predicates[] = $item . ' NOT LIKE \'' . $predicate['value'] . '\'';
                     break;
                     case Query::IS_NULL:

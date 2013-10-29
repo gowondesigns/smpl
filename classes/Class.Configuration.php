@@ -29,7 +29,7 @@
     private function __construct() {}
     
     /**
-     * Database factory method, establish database connection and then pass it
+     * Database factory method, establishes database connection and then pass it
      * @param string $databaseType
      * @param string $host
      * @param string $name
@@ -100,13 +100,12 @@
       */
     public static function Get($name)
     {
-        $result = Config::Database()->Execute(Query::Build('Config\\Get: Retrieve system settings.')
+        $value = Config::Database()->Execute(Query::Build("Configuration\\Get: Retrieving system setting '" . $name . "'.")
             ->Retrieve()
             ->UseTable('settings')
             ->Get('value-field')
-            ->Where()->IsEqual('name-hidden', $name));
+            ->Where()->IsEqual('name-hidden', $name))->Fetch();
         
-        $value = $result->Fetch();
         if (is_null($value)) {
             trigger_error('Could not find setting \'' . $name . '\'', E_USER_WARNING);
             $value['value-field'] = null;
