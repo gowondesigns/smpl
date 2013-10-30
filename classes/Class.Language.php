@@ -128,7 +128,7 @@ class LanguageSet
             
             // Control Panel - Logout Elements
             "logout" => "Logout",
-            "logoutNotice" => 'You have successfully logged out. You are being redirected to <a href="login.html">login.html</a>.<br/>If you are not redirected after a few seconds, please click on the link above.',
+            "logoutNotice" => 'You have successfully logged out. You are being redirected to <a href="?admin/login/">login.html</a>.<br/>If you are not redirected after a few seconds, please click on the link above.',
             
             // Control Panel - Login Elements
             "login" => "Login",
@@ -150,7 +150,7 @@ class LanguageSet
             "submit" => "Submit",
            
             // Control Panel - API
-            "api" => "API",
+            //"api" => "API",
             "api-token-field" => "API Token",
             "api-description-field" => "Description",
             "api-cnonce-field" => "CNONCE Token",

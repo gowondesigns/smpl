@@ -96,6 +96,12 @@ class Debug
      * @var string $logPath                                              
      */
     private static $logPath = null;
+    
+    /**
+     * Float containing the time of execution in microseconds
+     * @var float $executionStartTime                                            
+     */
+    private static $executionStartTime = null;
 
     /**
      * Private constructor so that Debug cannot be instantiated
@@ -112,7 +118,9 @@ class Debug
      * @param string $logPath Path to error log directory
      * @return bool Returns TRUE on initial use, FALSE on subsequent uses     
      */
-    public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null) {
+    public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null)
+    {
+        self::$executionStartTime = gettimeofday(true);
         self::$isDebug = $setDebugMode;
         self::$isStrict = $setStrict;
         self::$isVerbose = $setVerbose;
@@ -158,6 +166,7 @@ class Debug
      */
     public static function ExecutionEnd() {
         // The following error types cannot be handled with a user defined function:
+        $executionEndTime = gettimeofday(true);
         $criticalErrors = array(E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING);
         $error = error_get_last();
         $lastError = null;
@@ -185,10 +194,12 @@ class Debug
             }
         }
 
-        $text = (self::$isVerbose) ? "\n\n<pre>\n": "\n\n<!--\n";
+        $text = (self::$isVerbose) ? "\n\n<pre style=\"background-color: #ffffff; color: #000000;\">\n": "\n\n<!--\n";
         // Should this include information about the database? Is so, need to make interface
         $text .= $lastError . "\nServer Specs: PHP " . PHP_VERSION . ' (' . PHP_OS .
-            '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) . "kb\n";
+            '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) .
+            'kb; SCRIPT EXECUTION TIME: ' . ($executionEndTime - self::$executionStartTime) . "s\n" .
+            'CLIENT: ' . $_SERVER['HTTP_USER_AGENT'] . "\n";
 
         $exportXML = array(
             '@attributes' => array(
