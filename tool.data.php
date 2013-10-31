@@ -92,10 +92,10 @@ function GenerateNewData()
             ->Item('account-password-hash')->SetValue(md5('password'))
             ->Item('account-name-field')->SetValue("User {$i}")
             ->Item('account-email-field')->SetValue('fake_email@domain.com')
-            ->Item('permissions-access_system-checkbox')->SetValue($permissions[0])
-            ->Item('permissions-access_users-checkbox')->SetValue($permissions[1])
-            ->Item('permissions-access_content-checkbox')->SetValue($permissions[2])
-            ->Item('permissions-access_blocks-checkbox')->SetValue($permissions[3])
+            ->Item('group-access_system-bool')->SetValue($permissions[0])
+            ->Item('group-access_users-bool')->SetValue($permissions[1])
+            ->Item('group-access_content-bool')->SetValue($permissions[2])
+            ->Item('group-access_blocks-bool')->SetValue($permissions[3])
             ->Send();   
     }
 
@@ -115,7 +115,7 @@ function GenerateNewData()
             ->UsingTable("categories")
             ->Item('title-field')->SetValue($key)
             ->Item('title_mung-field')->SetValue(Utils::Munge($key, Config::Get('siteMungLength')))
-            ->Item('publish_flag-checkbox')->SetValue($value)
+            ->Item('publish_flag-bool')->SetValue($value)
             ->Send(); 
     }
     
@@ -134,7 +134,7 @@ function GenerateNewData()
             ->UsingTable("spaces")
             ->Item('title-field')->SetValue($key)
             ->Item('title_mung-field')->SetValue(Utils::Munge($key, Config::Get('siteMungLength')))
-            ->Item('publish_flag-checkbox')->SetValue($value)
+            ->Item('publish_flag-bool')->SetValue($value)
             ->Send(); 
     }
     
@@ -151,16 +151,16 @@ function GenerateNewData()
             ->UsingTable("content")
             ->Item('content-title-field')->SetValue($title)
             ->Item('content-title_mung-field')->SetValue(Utils::Munge($title, Config::Get('siteMungLength')))
-            ->Item('meta-static_page_flag-checkbox')->SetValue(rand(0,1))
-            ->Item('meta-indexed_flag-checkbox')->SetValue(rand(0,1))
-            ->Item('meta-default_page_flag-checkbox')->SetValue($default)
-            ->Item('meta-category-dropdown')->SetValue(rand(1,5))
-            ->Item('meta-author-dropdown')->SetValue(rand(1,16))
+            ->Item('meta-static_page_flag-bool')->SetValue(rand(0,1))
+            ->Item('meta-indexed_flag-bool')->SetValue(rand(0,1))
+            ->Item('meta-default_page_flag-bool')->SetValue($default)
+            ->Item('meta-category-set')->SetValue(rand(1,5))
+            ->Item('meta-author-set')->SetValue(rand(1,16))
             ->Item('meta-date-date')->SetValue(Date::Now()->AddTime($i)->ToInt())
-            ->Item('content-body-textarea')->SetValue($database->real_escape_string(gibberish(4,20)))
-            ->Item('publish-publish_flag-dropdown')->SetValue(Query::PUB_ACTIVE)
+            ->Item('content-body-text')->SetValue($database->real_escape_string(gibberish(4,20)))
+            ->Item('publish-publish_flag-set')->SetValue(Query::PUB_ACTIVE)
             ->Item('publish-publish_date-date')->SetValue(Date::Now()->AddTime($i)->ToInt())
-            ->Item('publish-unpublish_flag-checkbox')->SetValue(rand(0,1))
+            ->Item('publish-unpublish_flag-bool')->SetValue(rand(0,1))
             ->Item('publish-unpublish_date-date')->SetValue(Date::Now()->AddTime(120 + $i)->ToInt())
             ->Send();   
     }
@@ -190,8 +190,8 @@ echo $result; # prints: <p>Hello <strong>Parsedown</strong>!</p>
 
         $errors[] = $database->Update()
             ->UsingTable("content")
-            ->Item('meta-static_page_flag-checkbox')->SetValue(0)
-            ->Item('content-body-textarea')->SetValue(mysql_escape_string($article))
+            ->Item('meta-static_page_flag-bool')->SetValue(0)
+            ->Item('content-body-text')->SetValue(mysql_escape_string($article))
             ->Item('content-tags-field')->SetValue("test,stuff,blah,foo")
             ->Match("id", 3)
             ->Send();

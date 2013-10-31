@@ -160,15 +160,15 @@ class Content
         $database->Execute(Query::Build('Content\\Init: Publish pending articles.')
             ->Update()
             ->UseTable('content')
-            ->Set('publish-publish_flag-dropdown', Query::PUB_ACTIVE)
-            ->Where()->IsEqual('publish-publish_flag-dropdown', Query::PUB_FUTURE)
+            ->Set('publish-publish_flag-set', Query::PUB_ACTIVE)
+            ->Where()->IsEqual('publish-publish_flag-set', Query::PUB_FUTURE)
             ->AndWhere()->IsEqual('publish-publish_date-date', Date::Now()->ToInt()));
         $database->Execute(Query::Build('Content\\Init: Publish pending articles.')
             ->Update()
             ->UseTable('content')
-            ->Set('publish-publish_flag-dropdown', Query::PUB_NOT)
-            ->Set('publish-unpublish_flag-checkbox', 0)
-            ->Where()->IsEqual('publish-unpublish_flag-checkbox', 1)
+            ->Set('publish-publish_flag-set', Query::PUB_NOT)
+            ->Set('publish-unpublish_flag-bool', 0)
+            ->Where()->IsEqual('publish-unpublish_flag-bool', 1)
             ->AndWhere()->IsEqual('publish-unpublish_date-date', Date::Now()->ToInt()));
             
     }
@@ -257,19 +257,19 @@ class Content
         $content = Config::Database()->Execute(Query::Build('Retrieve content information.')
             ->Retrieve()
             ->UseTable('content')
-            ->Get(array('content-title_mung-field', 'meta-category-dropdown', 'meta-static_page_flag-checkbox', 'meta-indexed_flag-checkbox'))
-            ->Where()->IsEqual('publish-publish_flag-dropdown', Query::PUB_ACTIVE)
+            ->Get(array('content-title_mung-field', 'meta-category-set', 'meta-static_page_flag-bool', 'meta-indexed_flag-bool'))
+            ->Where()->IsEqual('publish-publish_flag-set', Query::PUB_ACTIVE)
             ->AndWhere()->IsEqual('id', self::$uri[1]))->Fetch();
         
         if (isset($content['content-title_mung-field']))
         {
-            $category = Content::GetCategoryByID($content['meta-category-dropdown']);
+            $category = Content::GetCategoryByID($content['meta-category-set']);
             $url = Utils::GenerateUri($category['title_mung-field'], 'articles', $content['content-title_mung-field']);
             
             //Check if content is a static page
-            if($content['meta-static_page_flag-checkbox'] == true)
+            if($content['meta-static_page_flag-bool'] == true)
             {
-                if($content['meta-indexed_flag-checkbox'] == true)
+                if($content['meta-indexed_flag-bool'] == true)
                      $url = Utils::GenerateUri($category['title_mung-field'], $content['content-title_mung-field']);
                 else
                      $url = Utils::GenerateUri($content['content-title_mung-field']);
@@ -351,9 +351,9 @@ Otherwise, look for the space being called
                     ->Get('id');
             
                 foreach ($searchPhrase as $phrase) {
-                    $query->OrWhere()->IsLike(array('content-title-field', 'content-body-textarea', 'content-tags-field'), '%' . $phrase . '%')
-                    ->AndWhere()->IsEqual('meta-static_page_flag-checkbox', 0)
-                    ->AndWhere()->IsEqual('publish-publish_flag-dropdown', Query::PUB_ACTIVE);
+                    $query->OrWhere()->IsLike(array('content-title-field', 'content-body-text', 'content-tags-field'), '%' . $phrase . '%')
+                    ->AndWhere()->IsEqual('meta-static_page_flag-bool', 0)
+                    ->AndWhere()->IsEqual('publish-publish_flag-set', Query::PUB_ACTIVE);
                 }
                 
                 if (self::$uri[2] == 'date')
@@ -489,9 +489,9 @@ class Space
             ->Retrieve()
             ->UseTable('blocks')
             ->Get('id')
-            ->Where()->IsEqual('meta-space-dropdown', $space['id'])
-            ->AndWhere()->IsEqual('publish-publish_flag-dropdown', Query::PUB_ACTIVE)
-            ->OrderBy('meta-priority-dropdown', Query::SORT_DESC)
+            ->Where()->IsEqual('meta-space-set', $space['id'])
+            ->AndWhere()->IsEqual('publish-publish_flag-set', Query::PUB_ACTIVE)
+            ->OrderBy('meta-priority-set', Query::SORT_DESC)
             ->OrderBy('item', Query::SORT_ASC));
             
         while ($block = $blocks->Fetch())
@@ -557,7 +557,7 @@ class Page implements IContent
         $category = $database->Execute(Query::Build('Grab page category using ID')
             ->Retrieve()
             ->UseTable('categories')
-            ->Where()->IsEqual('id', $page['meta-category-dropdown']))->Fetch();
+            ->Where()->IsEqual('id', $page['meta-category-set']))->Fetch();
         $this->categoryMung = $category['title_mung-field'];
     }
     
@@ -602,10 +602,10 @@ class Article extends Page
         $this->id = $article['id'];
         $this->title = $article['content-title-field'];
         $this->titleMung = $article['content-title_mung-field'];
-        $this->body = $article['content-body-textarea'];
+        $this->body = $article['content-body-text'];
         $this->date = Date::FromString($article['meta-date-date']);
-        $this->author = Content::GetAuthorById($article['meta-author-dropdown']);
-        $this->category = Content::GetCategoryById($article['meta-category-dropdown']); 
+        $this->author = Content::GetAuthorById($article['meta-author-set']);
+        $this->category = Content::GetCategoryById($article['meta-category-set']); 
         $this->tags = explode(',', $article['content-tags-field']);
         foreach ($this->tags as $key => $value) {
             $this->tags[$key] = trim($value);
@@ -614,7 +614,7 @@ class Article extends Page
         $category = $database->Execute(Query::Build('Grab article category using ID')
             ->Retrieve()
             ->UseTable('categories')
-            ->Where()->IsEqual('id', $article['meta-category-dropdown']))->Fetch();
+            ->Where()->IsEqual('id', $article['meta-category-set']))->Fetch();
         $this->categoryMung = $category['title_mung-field']; 
     }
     

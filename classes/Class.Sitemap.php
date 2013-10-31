@@ -30,7 +30,7 @@ class Sitemap
             ->Retrieve()
             ->UseTable('categories')
             ->Get('title_mung-field')
-            ->Where()->IsEqual('publish_flag-checkbox', Query::PUB_ACTIVE));
+            ->Where()->IsEqual('publish_flag-bool', Query::PUB_ACTIVE));
 
         while($category = $result->Fetch())
         {
@@ -42,8 +42,8 @@ class Sitemap
         $result = Config::Database()->Execute(Query::Build('Sitemap\\RenderXML: Get published pages')
             ->Retrieve()
             ->UseTable('content')
-            ->Where()->IsEqual('meta-static_page_flag-checkbox', 1)
-            ->AndWhere()->IsEqual('publish_flag-checkbox', Query::PUB_ACTIVE));
+            ->Where()->IsEqual('meta-static_page_flag-bool', 1)
+            ->AndWhere()->IsEqual('publish_flag-bool', Query::PUB_ACTIVE));
             
         while($pages = $result->Fetch())
         {

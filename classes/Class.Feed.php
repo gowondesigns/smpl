@@ -53,14 +53,14 @@ class Feed
             ->Retrieve()
             ->UseTable('content')
             ->Get('id')
-            ->Where()->IsEqual('publish-publish_flag-dropdown', Query::PUB_ACTIVE)
-            ->AndWhere()->IsEqual('meta-static_page_flag-checkbox', 0)
+            ->Where()->IsEqual('publish-publish_flag-set', Query::PUB_ACTIVE)
+            ->AndWhere()->IsEqual('meta-static_page_flag-bool', 0)
             ->OrderBy('publish-publish_date-date', Query::SORT_DESC)
             ->Limit(Config::Get('feedItemLimit'));
         
         if(isset($category['id'])) {
-            $query->AndWhere()->IsEqual('meta-category-dropdown', $category['id'])
-                ->AndWhere()->IsEqual('meta-indexed_flag-checkbox', 1);
+            $query->AndWhere()->IsEqual('meta-category-set', $category['id'])
+                ->AndWhere()->IsEqual('meta-indexed_flag-bool', 1);
         }
 
         

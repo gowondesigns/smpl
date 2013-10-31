@@ -7,7 +7,7 @@
                   GNU General Public License v3
                   <http://www.gnu.org/licenses/gpl-3.0.html>
 ------------------------------------------------------------------------------*/
-Debug::Set(Debug::DEBUG_ON, Debug::STRICT_OFF, Debug::VERBOSE_ON, Debug::LOGGING_OFF, __DIR__);
+Debug::Set(Debug::DEBUG_ON, Debug::STRICT_OFF, Debug::VERBOSE_OFF, Debug::LOGGING_OFF, __DIR__);
 
 IncludeFromFolder("classes/");
 

@@ -222,10 +222,10 @@ class Security
         $_SESSION[$key]['auth']['id'] = $sessionData['id'];
         $_SESSION[$key]['auth']['username'] = $sessionData['account-user_name-hash'];
         $_SESSION[$key]['auth']['period'] = Date::Now()->ToInt() + 10000;
-        $_SESSION[$key]['auth']['access']['system'] = $sessionData['permissions-access_system-checkbox'];
-        $_SESSION[$key]['auth']['access']['users'] = $sessionData['permissions-access_users-checkbox'];
-        $_SESSION[$key]['auth']['access']['content'] = $sessionData['permissions-access_content-checkbox'];
-        $_SESSION[$key]['auth']['access']['blocks'] = $sessionData['permissions-access_blocks-checkbox'];
+        $_SESSION[$key]['auth']['access']['system'] = $sessionData['group-access_system-bool'];
+        $_SESSION[$key]['auth']['access']['users'] = $sessionData['group-access_users-bool'];
+        $_SESSION[$key]['auth']['access']['content'] = $sessionData['group-access_content-bool'];
+        $_SESSION[$key]['auth']['access']['blocks'] = $sessionData['group-access_blocks-bool'];
         
         // Possibly use Cookies instead of Sessions (less server overhead, more security concerns)
         /*        
