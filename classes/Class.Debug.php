@@ -147,8 +147,9 @@ class Debug
      */
     public static function Message($msg = null) {
             $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-            array_shift($stack); // Remove top level of stack, redundant info
-
+            if (count($stack) > 1) {
+                array_shift($stack); // Remove top level of stack, redundant info
+            }
             // Get the function/method that called it
             $caller = (isset($stack[0]['class'])) ? $stack[0]['class'] . "\\" : NULL;
             $caller .= (isset($msg)) ? $stack[0]['function'] . ': ' : $stack[0]['function'];       
@@ -159,7 +160,225 @@ class Debug
                 );           
             self::$log[] = $message;
     }
-    
+
+    /**
+     * Detailed description of variable
+     * @param $variable
+     * @param int $strlen
+     * @param int $width
+     * @param int $depth
+     * @param int $i
+     * @param array $objects
+     * @return null|string
+     */
+    public static function Expand($variable, $strlen = 100,$width = 25,$depth = 10,$i = 0, $objects = array())
+    {
+        $search = array("\0", "\a", "\b", "\f", "\n", "\r", "\t", "\v");
+        $replace = array('\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v');
+        $string = null;
+
+        switch(gettype($variable)) {
+            case 'boolean':
+                $string .= $variable ? '<strong>bool</strong> true' : '<strong>bool</strong> false';
+                break;
+            case 'integer':
+                $string .= '<strong>int:</strong> ' . $variable;
+                break;
+            case 'double':
+                $string .= '<strong>double:</strong> ' . $variable;
+                break;
+            case 'resource':
+                $string.= '<strong>[resource]</strong>';
+                break;
+            case 'NULL':
+                $string.= '<strong>null</strong>';
+                break;
+            case 'unknown type':
+                $string .= '<strong>[unknown type]:</strong> ' . serialize($variable);
+                break;
+            case 'string':
+                $len = strlen($variable);
+                $variable = str_replace($search,$replace,substr($variable,0,$strlen),$count);
+                $variable = substr($variable,0,$strlen);
+                if ($len < $strlen) {
+                    $string .= '<strong>string(' . $len . ')</strong>: "' . $variable . '"';
+                }
+                else {
+                    $string .= '<strong>string(' . $len . ')</strong>: "' . $variable . '[...]"';
+                }
+                break;
+            case 'array':
+                $len = count($variable);
+                if ($i==$depth) $string.= '<strong>array('.$len.')</strong> {...}';
+                elseif(!$len) $string.= '<strong>array(0)</strong> {}';
+                else {
+                    $keys = array_keys($variable);
+                    $spaces = str_repeat(' ',$i*2);
+                    $string.= "<strong>array($len)</strong>\n".$spaces.'{';
+                    $count=0;
+                    foreach($keys as $key) {
+                        if ($count==$width) {
+                            $string.= "\n".$spaces."  ...";
+                            break;
+                        }
+                        $string.= "\n".$spaces."  [$key] => ";
+                        $string.= self::Expand($variable[$key],$strlen,$width,$depth,$i+1,$objects);
+                        $count++;
+                    }
+                    $string.="\n".$spaces.'}';
+                }
+                break;
+            case 'object':
+                $id = array_search($variable,$objects,true);
+                if ($id!==false)
+                    $string.=get_class($variable).'#'.($id+1).' {...}';
+                else if($i==$depth)
+                    $string.=get_class($variable).' {...}';
+                else {
+                    $id = array_push($objects,$variable);
+                    $array = (array)$variable;
+                    $spaces = str_repeat(' ',$i*2);
+                    $string.= get_class($variable)."#$id\n".$spaces.'{';
+                    $properties = array_keys($array);
+                    foreach($properties as $property) {
+                        $name = str_replace("\0",':',trim($property));
+                        $string.= "\n".$spaces."  [$name] => ";
+                        $string.= self::Expand($array[$property],$strlen,$width,$depth,$i+1,$objects);
+                    }
+                    $string.= "\n".$spaces.'}';
+                }
+                break;
+        }
+
+        if ($i>0) return $string;
+
+        /*/
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        do $caller = array_shift($backtrace); while ($caller && !isset($caller['file']));
+
+        if ($caller) {
+            $string = '<pre>' . $caller['file'] . '(' . $caller['line'] . "): " . $string;
+        }
+        else {
+            $string = "<pre>\n" . $string;
+        }
+
+        if ($i == 0) {
+            $string .= '</pre>';
+        }
+        //*/
+        Debug::Message("\n" . strip_tags($string));
+        return null;
+    }
+
+    /**
+     * Detailed description of variable, then end of execution
+     * @param $variable
+     * @param int $strlen
+     * @param int $width
+     * @param int $depth
+     * @param int $i
+     * @param array $objects
+     * @return null|string
+     */
+    public static function ExpandThenExit($variable, $strlen = 100,$width = 25,$depth = 10,$i = 0, $objects = array())
+    {
+        $search = array("\0", "\a", "\b", "\f", "\n", "\r", "\t", "\v");
+        $replace = array('\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v');
+        $string = null;
+
+        switch(gettype($variable)) {
+            case 'boolean':
+                $string .= $variable ? '<strong>bool</strong> true' : '<strong>bool</strong> false';
+                break;
+            case 'integer':
+                $string .= '<strong>int:</strong> ' . $variable;
+                break;
+            case 'double':
+                $string .= '<strong>double:</strong> ' . $variable;
+                break;
+            case 'resource':
+                $string.= '<strong>[resource]</strong>';
+                break;
+            case 'NULL':
+                $string.= '<strong>null</strong>';
+                break;
+            case 'unknown type':
+                $string .= '<strong>[unknown type]:</strong> ' . serialize($variable);
+                break;
+            case 'string':
+                $len = strlen($variable);
+                $variable = str_replace($search,$replace,substr($variable,0,$strlen),$count);
+                $variable = substr($variable,0,$strlen);
+                if ($len < $strlen) {
+                    $string .= '<strong>string(' . $len . ')</strong>: "' . $variable . '"';
+                }
+                else {
+                    $string .= '<strong>string(' . $len . ')</strong>: "' . $variable . '[...]"';
+                }
+                break;
+            case 'array':
+                $len = count($variable);
+                if ($i==$depth) $string.= '<strong>array('.$len.')</strong> {...}';
+                elseif(!$len) $string.= '<strong>array(0)</strong> {}';
+                else {
+                    $keys = array_keys($variable);
+                    $spaces = str_repeat(' ',$i*2);
+                    $string.= "<strong>array($len)</strong>\n".$spaces.'{';
+                    $count=0;
+                    foreach($keys as $key) {
+                        if ($count==$width) {
+                            $string.= "\n".$spaces."  ...";
+                            break;
+                        }
+                        $string.= "\n".$spaces."  [$key] => ";
+                        $string.= self::ExpandThenExit($variable[$key],$strlen,$width,$depth,$i+1,$objects);
+                        $count++;
+                    }
+                    $string.="\n".$spaces.'}';
+                }
+                break;
+            case 'object':
+                $id = array_search($variable,$objects,true);
+                if ($id!==false)
+                    $string.=get_class($variable).'#'.($id+1).' {...}';
+                else if($i==$depth)
+                    $string.=get_class($variable).' {...}';
+                else {
+                    $id = array_push($objects,$variable);
+                    $array = (array)$variable;
+                    $spaces = str_repeat(' ',$i*2);
+                    $string.= get_class($variable)."#$id\n".$spaces.'{';
+                    $properties = array_keys($array);
+                    foreach($properties as $property) {
+                        $name = str_replace("\0",':',trim($property));
+                        $string.= "\n".$spaces."  [$name] => ";
+                        $string.= self::ExpandThenExit($array[$property],$strlen,$width,$depth,$i+1,$objects);
+                    }
+                    $string.= "\n".$spaces.'}';
+                }
+                break;
+        }
+
+        if ($i>0) return $string;
+
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        do $caller = array_shift($backtrace); while ($caller && !isset($caller['file']));
+
+        if ($caller) {
+            $string = '<pre>' . $caller['file'] . '(' . $caller['line'] . "): " . $string;
+        }
+        else {
+            $string = "<pre>\n" . $string;
+        }
+
+        if ($i == 0) {
+            $string .= '</pre>';
+        }
+        echo $string;
+        die();
+    }
+
     /**
      * Handler for the end of execution.
      * Triggered by an unhandled error or the end of execution.
