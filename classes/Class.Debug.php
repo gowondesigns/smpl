@@ -140,6 +140,9 @@ class Debug
             return true;
         }
     }
+
+    public static function SetLogPath($path = null)
+    {}
     
     /**
      * Send message to Debugger
@@ -162,221 +165,239 @@ class Debug
     }
 
     /**
-     * Detailed description of variable
-     * @param $variable
-     * @param int $strlen
-     * @param int $width
-     * @param int $depth
-     * @param int $i
-     * @param array $objects
-     * @return null|string
+     * Output detailed description of one or more variables
+     * @param $item
+     * @return string
      */
-    public static function Expand($variable, $strlen = 100,$width = 25,$depth = 10,$i = 0, $objects = array())
+    public static function Expand($item)
     {
-        $search = array("\0", "\a", "\b", "\f", "\n", "\r", "\t", "\v");
-        $replace = array('\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v');
         $string = null;
+        if (func_num_args() > 1) {
+            foreach (func_get_args() as $arg) {
+                $string[] = call_user_func(array('Debug', 'Expand'), $arg);
+            }
 
-        switch(gettype($variable)) {
+            return implode("\n\n", $string);
+        }
+
+        $padding =
+            function($number) {
+                return str_repeat('  ', $number);
+            };
+
+        $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        array_shift($stack);
+        $depth = 0;
+        for ($j = 0; $j < count($stack); $j++) {
+            if ($stack[$j]['function'] == __FUNCTION__) {
+                $depth++;
+            }
+            else {
+                break;
+            }
+        }
+
+        switch (gettype($item)) {
             case 'boolean':
-                $string .= $variable ? '<strong>bool</strong> true' : '<strong>bool</strong> false';
+                $string .= ($item) ? '<strong>bool:</strong> true' : '<strong>bool:</strong> false';
                 break;
             case 'integer':
-                $string .= '<strong>int:</strong> ' . $variable;
+                $string .= '<strong>int:</strong> ' . $item;
                 break;
             case 'double':
-                $string .= '<strong>double:</strong> ' . $variable;
+                $string .= '<strong>double:</strong> ' . $item;
                 break;
             case 'resource':
-                $string.= '<strong>[resource]</strong>';
+                $string .= '<strong>resource:</strong> ' . get_resource_type($item);
                 break;
             case 'NULL':
-                $string.= '<strong>null</strong>';
-                break;
-            case 'unknown type':
-                $string .= '<strong>[unknown type]:</strong> ' . serialize($variable);
+                $string .= '<strong>null</strong>';
                 break;
             case 'string':
-                $len = strlen($variable);
-                $variable = str_replace($search,$replace,substr($variable,0,$strlen),$count);
-                $variable = substr($variable,0,$strlen);
-                if ($len < $strlen) {
-                    $string .= '<strong>string(' . $len . ')</strong>: "' . $variable . '"';
-                }
-                else {
-                    $string .= '<strong>string(' . $len . ')</strong>: "' . $variable . '[...]"';
-                }
+                $search = array("\0", "\a", "\b", "\f", "\n", "\r", "\t", "\v");
+                $replace = array('\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v');
+                $item = str_replace($search, $replace, $item);
+                // Add slashes to make string immediately reusable for PHP
+                $string .= '<strong>string(' . strlen($item) . '):</strong> "' . addslashes($item) . '"';
                 break;
             case 'array':
-                $len = count($variable);
-                if ($i==$depth) $string.= '<strong>array('.$len.')</strong> {...}';
-                elseif(!$len) $string.= '<strong>array(0)</strong> {}';
+                if ($depth > 0) {
+                    $string .= "\n" . $padding($depth);
+                }
+                if (count($item) < 1) {
+                    $string .= '<strong>array(0)</strong> {}';
+                }
                 else {
-                    $keys = array_keys($variable);
-                    $spaces = str_repeat(' ',$i*2);
-                    $string.= "<strong>array($len)</strong>\n".$spaces.'{';
-                    $count=0;
+                    $keys = array_keys($item);
+                    $string .= "<strong>array(" . count($item) . ")</strong>\n" . $padding($depth) . '{';
                     foreach($keys as $key) {
-                        if ($count==$width) {
-                            $string.= "\n".$spaces."  ...";
-                            break;
-                        }
-                        $string.= "\n".$spaces."  [$key] => ";
-                        $string.= self::Expand($variable[$key],$strlen,$width,$depth,$i+1,$objects);
-                        $count++;
+                        $index = (is_string($key)) ? '"' . addslashes($key) . '"': $key;
+                        $string .= "\n". $padding($depth + 1) . '[' . $index . '] => ' . self::Expand($item[$key]);
                     }
-                    $string.="\n".$spaces.'}';
+                    $string .= "\n" . $padding($depth) . '}';
                 }
                 break;
             case 'object':
-                $id = array_search($variable,$objects,true);
-                if ($id!==false)
-                    $string.=get_class($variable).'#'.($id+1).' {...}';
-                else if($i==$depth)
-                    $string.=get_class($variable).' {...}';
-                else {
-                    $id = array_push($objects,$variable);
-                    $array = (array)$variable;
-                    $spaces = str_repeat(' ',$i*2);
-                    $string.= get_class($variable)."#$id\n".$spaces.'{';
-                    $properties = array_keys($array);
-                    foreach($properties as $property) {
-                        $name = str_replace("\0",':',trim($property));
-                        $string.= "\n".$spaces."  [$name] => ";
-                        $string.= self::Expand($array[$property],$strlen,$width,$depth,$i+1,$objects);
+                $id =
+                    function ($object)
+                    {
+                        if(!is_object($object)) {
+                            return false;
+                        }
+                        ob_start();
+                        var_dump($object); // object(foo)#INSTANCE_ID (0) { }
+                        preg_match('~^.+?#(\d+)~s', ob_get_clean(), $id);
+                        return $id[1];
+                    };
+
+                $string .= '<strong>object(' . get_class($item) . ')#' . $id($item) . "</strong>\n" . $padding($depth) . '{';
+
+                $object = new ReflectionClass($item);
+                $properties = $object->getProperties();
+                foreach ($properties as $prop) {
+                    $prop->setAccessible(true);
+                    if ($prop->isPrivate()) {
+                        $visibility = 'private:';
                     }
-                    $string.= "\n".$spaces.'}';
+                    elseif ($prop->isProtected()) {
+                        $visibility = 'protected:';
+                    }
+                    else {
+                        $visibility = 'public:';
+                    }
+                    if ($prop->isStatic()) {
+                        $visibility .= 'static:';
+                    }
+                    $string .= "\n" . $padding($depth + 1) . '[' . $visibility . '"' . $prop->getName() . '"] => ' . self::Expand($prop->getValue($item));
                 }
+                $string .= "\n" . $padding($depth) . '}';
+                break;
+            case 'unknown type':
+            default:
+                $string .= '<strong>[unknown type]:</strong> ' . serialize($item);
                 break;
         }
 
-        if ($i>0) return $string;
-
-        /*/
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        do $caller = array_shift($backtrace); while ($caller && !isset($caller['file']));
-
-        if ($caller) {
-            $string = '<pre>' . $caller['file'] . '(' . $caller['line'] . "): " . $string;
-        }
-        else {
-            $string = "<pre>\n" . $string;
-        }
-
-        if ($i == 0) {
-            $string .= '</pre>';
-        }
-        //*/
-        Debug::Message("\n" . strip_tags($string));
-        return null;
+        return $string;
     }
 
     /**
-     * Detailed description of variable, then end of execution
-     * @param $variable
-     * @param int $strlen
-     * @param int $width
-     * @param int $depth
-     * @param int $i
-     * @param array $objects
-     * @return null|string
+     * Output detailed description of one or more variables, then end execution
+     * @param $item
+     * @return string
      */
-    public static function ExpandThenExit($variable, $strlen = 100,$width = 25,$depth = 10,$i = 0, $objects = array())
+    public static function ExpandThenExit($item)
     {
-        $search = array("\0", "\a", "\b", "\f", "\n", "\r", "\t", "\v");
-        $replace = array('\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v');
         $string = null;
+        if (func_num_args() > 1) {
+            foreach (func_get_args() as $arg) {
+                $string[] = call_user_func(array('Debug', 'Expand'), $arg);
+            }
 
-        switch(gettype($variable)) {
+            echo implode("\n\n", $string);
+            exit;
+        }
+
+        $padding =
+            function($number) {
+                return str_repeat('  ', $number);
+            };
+
+        $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        array_shift($stack);
+        $depth = 0;
+        for ($j = 0; $j < count($stack); $j++) {
+            if ($stack[$j]['function'] == __FUNCTION__) {
+                $depth++;
+            }
+            else {
+                break;
+            }
+        }
+
+        switch (gettype($item)) {
             case 'boolean':
-                $string .= $variable ? '<strong>bool</strong> true' : '<strong>bool</strong> false';
+                $string .= ($item) ? '<strong>bool:</strong> true' : '<strong>bool:</strong> false';
                 break;
             case 'integer':
-                $string .= '<strong>int:</strong> ' . $variable;
+                $string .= '<strong>int:</strong> ' . $item;
                 break;
             case 'double':
-                $string .= '<strong>double:</strong> ' . $variable;
+                $string .= '<strong>double:</strong> ' . $item;
                 break;
             case 'resource':
-                $string.= '<strong>[resource]</strong>';
+                $string .= '<strong>resource:</strong> ' . get_resource_type($item);
                 break;
             case 'NULL':
-                $string.= '<strong>null</strong>';
-                break;
-            case 'unknown type':
-                $string .= '<strong>[unknown type]:</strong> ' . serialize($variable);
+                $string .= '<strong>null</strong>';
                 break;
             case 'string':
-                $len = strlen($variable);
-                $variable = str_replace($search,$replace,substr($variable,0,$strlen),$count);
-                $variable = substr($variable,0,$strlen);
-                if ($len < $strlen) {
-                    $string .= '<strong>string(' . $len . ')</strong>: "' . $variable . '"';
-                }
-                else {
-                    $string .= '<strong>string(' . $len . ')</strong>: "' . $variable . '[...]"';
-                }
+                $search = array("\0", "\a", "\b", "\f", "\n", "\r", "\t", "\v");
+                $replace = array('\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v');
+                $item = str_replace($search, $replace, $item);
+                // Add slashes to make string immediately reusable for PHP
+                $string .= '<strong>string(' . strlen($item) . '):</strong> "' . addslashes($item) . '"';
                 break;
             case 'array':
-                $len = count($variable);
-                if ($i==$depth) $string.= '<strong>array('.$len.')</strong> {...}';
-                elseif(!$len) $string.= '<strong>array(0)</strong> {}';
+                if ($depth > 0) {
+                    $string .= "\n" . $padding($depth);
+                }
+                if (count($item) < 1) {
+                    $string .= '<strong>array(0)</strong> {}';
+                }
                 else {
-                    $keys = array_keys($variable);
-                    $spaces = str_repeat(' ',$i*2);
-                    $string.= "<strong>array($len)</strong>\n".$spaces.'{';
-                    $count=0;
+                    $keys = array_keys($item);
+                    $string .= "<strong>array(" . count($item) . ")</strong>\n" . $padding($depth) . '{';
                     foreach($keys as $key) {
-                        if ($count==$width) {
-                            $string.= "\n".$spaces."  ...";
-                            break;
-                        }
-                        $string.= "\n".$spaces."  [$key] => ";
-                        $string.= self::ExpandThenExit($variable[$key],$strlen,$width,$depth,$i+1,$objects);
-                        $count++;
+                        $index = (is_string($key)) ? '"' . addslashes($key) . '"': $key;
+                        $string .= "\n". $padding($depth + 1) . '[' . $index . '] => ' . self::Expand($item[$key]);
                     }
-                    $string.="\n".$spaces.'}';
+                    $string .= "\n" . $padding($depth) . '}';
                 }
                 break;
             case 'object':
-                $id = array_search($variable,$objects,true);
-                if ($id!==false)
-                    $string.=get_class($variable).'#'.($id+1).' {...}';
-                else if($i==$depth)
-                    $string.=get_class($variable).' {...}';
-                else {
-                    $id = array_push($objects,$variable);
-                    $array = (array)$variable;
-                    $spaces = str_repeat(' ',$i*2);
-                    $string.= get_class($variable)."#$id\n".$spaces.'{';
-                    $properties = array_keys($array);
-                    foreach($properties as $property) {
-                        $name = str_replace("\0",':',trim($property));
-                        $string.= "\n".$spaces."  [$name] => ";
-                        $string.= self::ExpandThenExit($array[$property],$strlen,$width,$depth,$i+1,$objects);
+                $id =
+                    function ($object)
+                    {
+                        if(!is_object($object)) {
+                            return false;
+                        }
+                        ob_start();
+                        var_dump($object); // object(foo)#INSTANCE_ID (0) { }
+                        preg_match('~^.+?#(\d+)~s', ob_get_clean(), $id);
+                        return $id[1];
+                    };
+
+                $string .= '<strong>object(' . get_class($item) . ')#' . $id($item) . "</strong>\n" . $padding($depth) . '{';
+
+                $object = new ReflectionClass($item);
+                $properties = $object->getProperties();
+                foreach ($properties as $prop) {
+                    $prop->setAccessible(true);
+                    if ($prop->isPrivate()) {
+                        $visibility = 'private:';
                     }
-                    $string.= "\n".$spaces.'}';
+                    elseif ($prop->isProtected()) {
+                        $visibility = 'protected:';
+                    }
+                    else {
+                        $visibility = 'public:';
+                    }
+                    if ($prop->isStatic()) {
+                        $visibility .= 'static:';
+                    }
+                    $string .= "\n" . $padding($depth + 1) . '[' . $visibility . '"' . $prop->getName() . '"] => ' . self::Expand($prop->getValue($item));
                 }
+                $string .= "\n" . $padding($depth) . '}';
+                break;
+            case 'unknown type':
+            default:
+                $string .= '<strong>[unknown type]:</strong> ' . serialize($item);
                 break;
         }
 
-        if ($i>0) return $string;
-
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        do $caller = array_shift($backtrace); while ($caller && !isset($caller['file']));
-
-        if ($caller) {
-            $string = '<pre>' . $caller['file'] . '(' . $caller['line'] . "): " . $string;
-        }
-        else {
-            $string = "<pre>\n" . $string;
-        }
-
-        if ($i == 0) {
-            $string .= '</pre>';
-        }
-        echo $string;
-        die();
+        echo "<pre>\n" . $string . "\n</pre>";
+        exit;
     }
 
     /**
