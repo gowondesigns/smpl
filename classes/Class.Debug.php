@@ -142,7 +142,16 @@ class Debug
     }
 
     public static function SetLogPath($path = null)
-    {}
+    {
+        if ($path === null) {
+            self::$logPath = null;
+            self::Message('Debugger log path reset.');
+        }
+        else {
+            self::$logPath = $path;
+            self::Message('Debugger log path set to: ' . $path);
+        }
+    }
     
     /**
      * Send message to Debugger
@@ -166,7 +175,7 @@ class Debug
 
     /**
      * Output detailed description of one or more variables
-     * @param $item
+     * @param mixed $item,...
      * @return string
      */
     public static function Expand($item)
@@ -250,25 +259,46 @@ class Debug
                         return $id[1];
                     };
 
-                $string .= '<strong>object(' . get_class($item) . ')#' . $id($item) . "</strong>\n" . $padding($depth) . '{';
-
+                $string .= '<strong>object(' . get_class($item) . ')#' . $id($item) . "</strong>";
                 $object = new ReflectionClass($item);
-                $properties = $object->getProperties();
-                foreach ($properties as $prop) {
-                    $prop->setAccessible(true);
-                    if ($prop->isPrivate()) {
-                        $visibility = 'private:';
+                $properties[] = $object->getProperties();
+                $interfaces = $object->getInterfaceNames();
+                $parents = array();
+                
+                // Recursively crawl and catch all properties of parent classes
+                while ($parent = $object->getParentClass()) {
+                    $parents[] = $parent->getName();
+                    $properties[$parent->getName()] = $parent->getProperties(ReflectionProperty::IS_STATIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE);
+                    $object= $parent;
+                }
+
+                if (!empty($parents)) {
+                    $string .= ' extends <strong>(' . implode(', ', $parents) . ')</strong>';
+                }
+                if (!empty($interfaces)) {
+                    $string .= ' implements <strong>(' . implode(', ', $interfaces) . ')</strong>';
+                }
+                
+                $string .= "\n" . $padding($depth) . '{';
+
+                foreach ($properties as $key => $set) {
+                    $key = (is_int($key)) ? '': $key . ':';
+                    foreach ($set as $prop) {
+                        $prop->setAccessible(true);
+                        if ($prop->isPrivate()) {
+                            $visibility = 'private:';
+                        }
+                        elseif ($prop->isProtected()) {
+                            $visibility = 'protected:';
+                        }
+                        else {
+                            $visibility = 'public:';
+                        }
+                        if ($prop->isStatic()) {
+                            $visibility .= 'static:';
+                        }
+                        $string .= "\n" . $padding($depth + 1) . '[' . $key . $visibility . '"' . $prop->getName() . '"] => ' . self::Expand($prop->getValue($item));
                     }
-                    elseif ($prop->isProtected()) {
-                        $visibility = 'protected:';
-                    }
-                    else {
-                        $visibility = 'public:';
-                    }
-                    if ($prop->isStatic()) {
-                        $visibility .= 'static:';
-                    }
-                    $string .= "\n" . $padding($depth + 1) . '[' . $visibility . '"' . $prop->getName() . '"] => ' . self::Expand($prop->getValue($item));
                 }
                 $string .= "\n" . $padding($depth) . '}';
                 break;
@@ -281,122 +311,18 @@ class Debug
         return $string;
     }
 
+
     /**
      * Output detailed description of one or more variables, then end execution
-     * @param $item
-     * @return string
+     * @param mixed $item,...
      */
     public static function ExpandThenExit($item)
     {
-        $string = null;
-        if (func_num_args() > 1) {
-            foreach (func_get_args() as $arg) {
-                $string[] = call_user_func(array('Debug', 'Expand'), $arg);
-            }
-
-            echo implode("\n\n", $string);
-            exit;
+        for ($i = 0; $i < func_num_args(); $i++) {
+            $strings[] = self::Expand(func_get_arg($i));
         }
-
-        $padding =
-            function($number) {
-                return str_repeat('  ', $number);
-            };
-
-        $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        array_shift($stack);
-        $depth = 0;
-        for ($j = 0; $j < count($stack); $j++) {
-            if ($stack[$j]['function'] == __FUNCTION__) {
-                $depth++;
-            }
-            else {
-                break;
-            }
-        }
-
-        switch (gettype($item)) {
-            case 'boolean':
-                $string .= ($item) ? '<strong>bool:</strong> true' : '<strong>bool:</strong> false';
-                break;
-            case 'integer':
-                $string .= '<strong>int:</strong> ' . $item;
-                break;
-            case 'double':
-                $string .= '<strong>double:</strong> ' . $item;
-                break;
-            case 'resource':
-                $string .= '<strong>resource:</strong> ' . get_resource_type($item);
-                break;
-            case 'NULL':
-                $string .= '<strong>null</strong>';
-                break;
-            case 'string':
-                $search = array("\0", "\a", "\b", "\f", "\n", "\r", "\t", "\v");
-                $replace = array('\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v');
-                $item = str_replace($search, $replace, $item);
-                // Add slashes to make string immediately reusable for PHP
-                $string .= '<strong>string(' . strlen($item) . '):</strong> "' . addslashes($item) . '"';
-                break;
-            case 'array':
-                if ($depth > 0) {
-                    $string .= "\n" . $padding($depth);
-                }
-                if (count($item) < 1) {
-                    $string .= '<strong>array(0)</strong> {}';
-                }
-                else {
-                    $keys = array_keys($item);
-                    $string .= "<strong>array(" . count($item) . ")</strong>\n" . $padding($depth) . '{';
-                    foreach($keys as $key) {
-                        $index = (is_string($key)) ? '"' . addslashes($key) . '"': $key;
-                        $string .= "\n". $padding($depth + 1) . '[' . $index . '] => ' . self::Expand($item[$key]);
-                    }
-                    $string .= "\n" . $padding($depth) . '}';
-                }
-                break;
-            case 'object':
-                $id =
-                    function ($object)
-                    {
-                        if(!is_object($object)) {
-                            return false;
-                        }
-                        ob_start();
-                        var_dump($object); // object(foo)#INSTANCE_ID (0) { }
-                        preg_match('~^.+?#(\d+)~s', ob_get_clean(), $id);
-                        return $id[1];
-                    };
-
-                $string .= '<strong>object(' . get_class($item) . ')#' . $id($item) . "</strong>\n" . $padding($depth) . '{';
-
-                $object = new ReflectionClass($item);
-                $properties = $object->getProperties();
-                foreach ($properties as $prop) {
-                    $prop->setAccessible(true);
-                    if ($prop->isPrivate()) {
-                        $visibility = 'private:';
-                    }
-                    elseif ($prop->isProtected()) {
-                        $visibility = 'protected:';
-                    }
-                    else {
-                        $visibility = 'public:';
-                    }
-                    if ($prop->isStatic()) {
-                        $visibility .= 'static:';
-                    }
-                    $string .= "\n" . $padding($depth + 1) . '[' . $visibility . '"' . $prop->getName() . '"] => ' . self::Expand($prop->getValue($item));
-                }
-                $string .= "\n" . $padding($depth) . '}';
-                break;
-            case 'unknown type':
-            default:
-                $string .= '<strong>[unknown type]:</strong> ' . serialize($item);
-                break;
-        }
-
-        echo "<pre>\n" . $string . "\n</pre>";
+        
+        echo "<pre>\n" . implode("\n\n", $strings) . "\n</pre>";
         exit;
     }
 
@@ -662,14 +588,14 @@ class Debug
 
 /**
  * Wrapper for Exceptions caused by E_WARNING
+ * Default PHP naming conventions are used for stylistic consistency 
  * @package Debug\Exception\Warning
  */
 class ErrorExceptionWithContext extends ErrorException
 {
-    protected $errorContext;
+    protected $errorContext = null;
 
     public function __construct($message, $code, $severity, $filename, $lineno, $err_context = null) {
-        //public __construct ([ string $message = "" [, int $code = 0 [, int $severity = 1 [, string $filename = __FILE__ [, int $lineno = __LINE__ [, Exception $previous = NULL ]]]]]] )
         parent::__construct($message, $code, $severity, $filename, $lineno);
         $this->errorContext = $err_context;
     }
