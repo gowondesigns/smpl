@@ -15,82 +15,111 @@ class Debug
     /**
      * Turn on Debug Messages, all uses of Debug::Message() are captured
      */
-    const DEBUG_ON = true;
-    
-    /**
-     * Turn off Debugger Messages
-     */
-    const DEBUG_OFF = false;
-    
+    const DEBUG_ON = 'DEBUGON';
+
     /**
      * Turn on Strict Debugging: E_WARNING, E_USER_WARNING, E_NOTICE, E_USER_NOTICE, 
      * E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED, E_USER_DEPRECATED, E_STRICT
      * will generate Exceptions 
+     * Otherwise, only E_USER_ERROR, E_RECOVERABLE_ERROR will
+     * generate exceptions          
      */
-    const STRICT_ON = true;
+    const STRICT_ON = 'STRICTON';
     
-    /**
-     * Turn on Strict Debugging, only E_USER_ERROR, E_RECOVERABLE_ERROR will
-     * generate exceptions     
-     */
-    const STRICT_OFF = false;
     
     /**
      * Turn on Verbose Output, log encapsulated in <pre> tag at the end of execution
+     * Turn off Verbose Output, log encapsulated in <!-- --> tag at the end of execution     
      */
-    const VERBOSE_ON = true;
+    const VERBOSE_ON = 'VERBOSEON';
     
     /**
-     * Turn off Verbose Output, log encapsulated in <!-- --> tag at the end of execution
+     * Turn on Debugger Logging, output is stored in XML file (or error_log)
      */
-    const VERBOSE_OFF = false;
-    
-    /**
-     * Turn on Debugger Logging, output is stored in flat file
-     */
-    const LOGGING_ON = true;
+    const LOGGING_ON = 'LOGGINGON';
     
     /**
      * Turn on Debugger Logging, output is not stored
      */
-    const LOGGING_OFF = false;
+    const EXPAND_TO_DEBUG = 'EXPANDTODEBUG';
+
+    /**
+     * Turn on Debugger Logging, output is not stored
+     */
+    const OUTPUT_OFF = 'OUTPUTOFF';
+    
+    /**
+     * Turn on Debugger Logging, output is not stored
+     */
+    const OUTPUT_STYLE_OFF = 'OUTPUTSTYLEOFF';    
+
+    /**
+     * Turn on Debugger Logging, output is not stored
+     */
+    const LOCK = 'LOCKDEBUGGER';
     
     /**
      * Use Debug Messages
-     * @var bool $isDebug
+     * @var bool $debug
      */
-    private static $isDebug = false;
+    private static $debug;
     
     /**
      * Use Strict Debugging
-     * @var bool $isStrict
+     * @var bool $strict
      */
-    private static $isStrict = false;
+    private static $strict;
     
     /**
      * Use Verbose Output
-     * @var bool $isVerbose
+     * @var bool $verbose
      */
-    private static $isVerbose = false;
+    private static $verbose;
     
     /**
      * Use Debug Logging
-     * @var bool $isLogging
+     * @var bool $logging
      */
-    private static $isLogging = false;
+    private static $logging;
+
+    /**
+     * Use Debug Logging
+     * @var bool $logging
+     */
+    private static $expandToDebug;
     
     /**
-     * Stores whether the Debug has already been set    
-     * @var bool $isInitialized                                              
+     * Use Debug Logging
+     * @var bool $logging
      */
-    private static $isInitialized = false;
+    private static $outputOff;
+    
+    /**
+     * Use Debug Logging
+     * @var bool $logging
+     */
+    private static $outputStyleOff;
+    
+    /**
+     * Use Debug Logging
+     * @var bool $logging
+     */
+    private static $lock;
+        
+    /**
+     * Stores whether the Debug has already been set    
+     * @var bool $initialized                                              
+     */
+    private static $initialized = false;
     
     /**
      * Debug log for messages and errors
      * @var array $log
      */
     private static $log = array();
-    
+
+
+
     /**
      * Path to the file to store the log in
      * @var string $logPath                                              
@@ -99,9 +128,9 @@ class Debug
     
     /**
      * Float containing the time of execution in microseconds
-     * @var float $executionStartTime                                            
+     * @var float $initTime                                            
      */
-    private static $executionStartTime = null;
+    private static $initTime = null;
 
     /**
      * Private constructor so that Debug cannot be instantiated
@@ -118,25 +147,93 @@ class Debug
      * @param string $logPath Path to error log directory
      * @return bool Returns TRUE on initial use, FALSE on subsequent uses     
      */
-    public static function Set($setDebugMode, $setStrict, $setVerbose, $setLogging, $logPath = null)
+    public static function Set()
     {
-        self::$executionStartTime = gettimeofday(true);
-        self::$isDebug = $setDebugMode;
-        self::$isStrict = $setStrict;
-        self::$isVerbose = $setVerbose;
-        self::$isLogging = $setLogging;
-        self::$logPath = $logPath;
-        
-        if (self::$isInitialized) {
-            self::Message('Debugger was previously initialized. Overriding values.');
-            return false;
-        }
-        else {
-            error_reporting(0); //Completely disable PHP messaging
+        if (!self::$initialized) {
+            // Log initialization time
+            self::$initTime = gettimeofday(true);
+            self::$lock = false;
+            
+            //Set up PHP instance for debugging
+            ini_set('display_errors', 'On');
+            error_reporting(-1);
             set_error_handler(array('Debug', 'ErrorHandler'));
             set_exception_handler(array('Debug', 'ExceptionHandler'));
             register_shutdown_function(array('Debug', 'ExecutionEnd'));
-            self::$isInitialized = true;
+            
+            // create debug shortcuts for fast/lazy debugging
+            if (!function_exists('l')) {
+                function l() {
+                    call_user_func_array(array('Debug', 'Log'), func_get_args());
+                }
+            }
+            if (!function_exists('t')) {
+                function t() {
+                    return call_user_func_array(array('Debug', 'Timer'), func_get_args());
+                }
+            }
+            if (!function_exists('e')) {
+                function e() {
+                    return call_user_func_array(array('Debug', 'Expand'), func_get_args());
+                }
+            }
+            if (!function_exists('k')) {
+                function k() {
+                    call_user_func_array(array('Debug', 'ExpandExit'), func_get_args());
+                }
+            }
+        }
+        elseif (self::$lock) {
+            trigger_error('Debugger was previously initialized and locked. Cannot override.', E_USER_ERROR);
+        }
+
+        // Initialize parameters
+        self::$debug = false;
+        self::$strict = false;
+        self::$verbose = false;
+        self::$logging = false;
+        self::$expandToDebug = false;
+        self::$outputOff = false;
+        self::$outputStyleOff = false;
+
+        foreach(func_get_args() as $arg) {
+            switch ($arg) {
+                case self::DEBUG_ON:
+                    self::$debug = true;
+                    break;
+                case self::STRICT_ON:
+                    self::$strict = true;
+                    break;
+                case self::VERBOSE_ON:
+                    self::$verbose = true;
+                    break;
+                case self::LOGGING_ON:
+                    self::$logging = true;
+                    break;
+                case self::EXPAND_TO_DEBUG:
+                    self::$expandToDebug = true;
+                    break;
+                case self::OUTPUT_OFF:
+                    self::$outputOff = true;
+                    break;
+                case self::OUTPUT_STYLE_OFF:
+                    self::$outputStyleOff = true;
+                    break;
+                case self::LOCK:
+                    self::$lock = true;
+                    break;
+                default:
+                    trigger_error('Invalid Debugger parameter "' . $arg . '"', E_USER_ERROR);
+                    break;
+            }
+        }
+                
+        if (self::$initialized) {
+            self::Log('Debugger was previously initialized. Overriding values.');
+            return false;
+        }
+        else {
+            self::$initialized = true;
             return true;
         }
     }
@@ -145,11 +242,11 @@ class Debug
     {
         if ($path === null) {
             self::$logPath = null;
-            self::Message('Debugger log path reset.');
+            self::Log('Debugger log path reset.');
         }
         else {
             self::$logPath = $path;
-            self::Message('Debugger log path set to: ' . $path);
+            self::Log('Debugger log path set to: ' . $path);
         }
     }
     
@@ -157,20 +254,63 @@ class Debug
      * Send message to Debugger
      * @param string $msg Message stored in the Debug Log
      */
-    public static function Message($msg = null) {
+    public static function Log($msg = null) {
             $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        //self::ExpandExit($stack);
             if (count($stack) > 1) {
                 array_shift($stack); // Remove top level of stack, redundant info
             }
             // Get the function/method that called it
             $caller = (isset($stack[0]['class'])) ? $stack[0]['class'] . "\\" : NULL;
-            $caller .= (isset($msg)) ? $stack[0]['function'] . ': ' : $stack[0]['function'];       
+            $caller .= (isset($msg)) ? $stack[0]['function'] . ': ' : $stack[0]['function'];
             $message = array(
                 'type' => 0,
                 'message' => $caller . $msg,
                 'stack' => $stack
-                );           
+                );
             self::$log[] = $message;
+        //self::ExpandExit($message);
+    }
+    
+    public static function Timer( $message = null, $scope = '' )
+    {
+        $chrono = array();
+        if (!self::$debug) {
+            return false;
+        }
+        self::Log();
+        return true;
+        /*
+        if (!isset(self::$time[ $scope ])) {
+            Debug::Log();
+            return true;
+            $chrono[] = '<b class="init">' . $scope . ' chrono init</b>';
+        }
+        elseif ( is_string( $message ) ) {
+            $chrono[] = sprintf('<span class="time">%s -> %s: %fs</span>'
+                    , $scope
+                    , $message
+                    , round( self::$timer[ $scope ][ $message ] = microtime( true ) - self::$time[ $scope ], 6 ));
+        }
+        elseif ( $message && isset( self::$timer[ $scope ] ) ) {
+            asort( self::$timer[ $scope ] );
+            $base = reset ( self::$timer[ $scope ] ); // shortest duration
+            foreach( self::$timer[ $scope ] as $event => $duration )
+                $table[] = sprintf( '%5u - %-38.38s <i>%7fs</i>'
+                    , round( $duration / $base, 2 )
+                    , $event
+                    , round( $duration, 3 ));
+            $chrono[] = '<div class="table"><b>' . $scope . ' chrono table</b>' . PHP_EOL .
+            sprintf( '%\'-61s %-46s<i>duration</i>%1$s%1$\'-61s'
+                    , PHP_EOL
+                    , 'unit - action'
+                ) .
+                implode( PHP_EOL, $table ) . PHP_EOL .
+                '</div>';
+        }
+        echo '<pre class="debug chrono">' . implode( PHP_EOL, $chrono ) . '</pre>';
+        return self::$time[ $scope ] = microtime( true );
+        //*/
     }
 
     /**
@@ -230,13 +370,13 @@ class Debug
                 $string .= '<strong>string(' . strlen($item) . '):</strong> "' . addslashes($item) . '"';
                 break;
             case 'array':
-                if ($depth > 0) {
-                    $string .= "\n" . $padding($depth);
-                }
                 if (count($item) < 1) {
                     $string .= '<strong>array(0)</strong> {}';
                 }
                 else {
+                    if ($depth > 0) {
+                        $string .= "\n" . $padding($depth);
+                    }
                     $keys = array_keys($item);
                     $string .= "<strong>array(" . count($item) . ")</strong>\n" . $padding($depth) . '{';
                     foreach($keys as $key) {
@@ -316,13 +456,10 @@ class Debug
      * Output detailed description of one or more variables, then end execution
      * @param mixed $item,...
      */
-    public static function ExpandThenExit($item)
+    public static function ExpandExit($item)
     {
-        for ($i = 0; $i < func_num_args(); $i++) {
-            $strings[] = self::Expand(func_get_arg($i));
-        }
-        
-        echo "<pre>\n" . implode("\n\n", $strings) . "\n</pre>";
+        $string = call_user_func_array(array('Debug', 'Expand'), func_get_args());
+        echo "<pre>\n" . $string . "\n</pre>";
         exit;
     }
 
@@ -342,13 +479,13 @@ class Debug
         {
             $error['message'] = htmlentities($error['message']);
             $lastError = '<b>EXECUTION ENDED BY FATAL ERROR</b> in <b>' . $error['file'] . '(' . $error['line'] . '):</b> '. $error['message'] . "\n";
-            self::$isVerbose = self::VERBOSE_ON;
-            self::$isDebug = self::DEBUG_ON;
+            self::$verbose = self::VERBOSE_ON;
+            self::$debug = self::DEBUG_ON;
         }
         
         // Show messages if anything > Message occurs or log is set in debug mode
         $showMessages = false;
-        if (self::$isDebug && !empty(self::$log)) {
+        if (self::$debug && !empty(self::$log)) {
             $showMessages = true;
         }
         else {
@@ -360,16 +497,18 @@ class Debug
             }
         }
 
-        $text = (self::$isVerbose) ? "\n\n<pre style=\"background-color: #ffffff; color: #000000;\">\n": "\n\n<!--\n";
-        // Should this include information about the database? Is so, need to make interface
-        $text .= $lastError . "\nServer Specs: PHP " . PHP_VERSION . ' (' . PHP_OS .
-            '); PEAK MEM USAGE: ' . (memory_get_peak_usage() / 1024) .
-            'kb; SCRIPT EXECUTION TIME: ' . ($executionEndTime - self::$executionStartTime) . "s\n" .
-            'CLIENT: ' . $_SERVER['HTTP_USER_AGENT'] . "\n";
+        $text = (self::$verbose) ? "\n<pre style=\"background-color: #ffffff; color: #000000;\">\n": "\n\n<!--\n";
+        // Output server information
+        $server_info = (empty($_SERVER['SERVER_SOFTWARE'])) ? PHP_SAPI . '; PHP' . PHP_VERSION . ' (' . PHP_OS . ')' : $_SERVER['SERVER_SOFTWARE']; 
+        $text .= $lastError . "\nSERVER INFO: " . $server_info .
+            "\nPEAK MEM USAGE: " . (memory_get_peak_usage() / 1024) .
+            "kb\nSCRIPT EXECUTION TIME: " . ($executionEndTime - self::$initTime) .
+            "s\nCLIENT: " . $_SERVER['HTTP_USER_AGENT'] . "\n";
 
         $exportXML = array(
             '@attributes' => array(
                 'version' => '0.1.0',
+                'server' => htmlentities($server_info, ENT_QUOTES),
                 'datetime' => Date::Now()->ToString(),
                 'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
                 'xsi:noNamespaceSchemaLocation' => 'logsetSchema.xsd'
@@ -381,7 +520,7 @@ class Debug
         for($i = 0; $i < count(self::$log); $i++)
         {
             $msg = self::$log[$i];
-            if (!self::$isDebug && $msg['type'] == 0) {
+            if (!self::$debug && $msg['type'] == 0) {
                 continue;
             }
 
@@ -439,6 +578,8 @@ class Debug
 
             $text .= $msg['message'] . "\n\t\tStack trace:";
 
+            // [MUSTCHANGE] handling of stack trace for display and logging in cases where stack is empty
+            // should change into DO-WHILE method
             for($k = 0, $length = count($msg['stack']); $k < $length; $k++)
             {
                 $stack = $msg['stack'][$k];
@@ -462,6 +603,10 @@ class Debug
                     '@value' => $caller
                 );
             }
+            
+            if (empty($msg['stack'])) {
+                $text .= "\n\t\t#1 {main}";
+            } 
 
             $exportXML['log'][] = $log;
         }
@@ -470,11 +615,12 @@ class Debug
         if ($showMessages)
         {
             echo $text;
-            echo (self::$isVerbose) ? "\n</pre>": "\n-->";
+            echo (self::$verbose) ? "\n</pre>": "\n-->";
         }
 
-        if (self::$isLogging) {
+        if (self::$logging) {
             try {
+                // check if partnering XML class exists, if not, throw up to output to default error_log
                 self::$logPath .= '\log-' . Date::Now()->ToString() . '.xml';
                 $xml = XML::createXML('logset', $exportXML);
                 $xml->save(self::$logPath);
@@ -484,6 +630,7 @@ class Debug
                 error_log($text, 1);
             }
         }
+        exit;
     }
 
     /**
@@ -506,6 +653,7 @@ class Debug
         
         $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         array_shift($stack);
+        
         $message = array('type' => $err_severity, 'stack' => $stack, 'context' => null);
         $err_msg = htmlentities($err_msg);
 
@@ -521,7 +669,7 @@ class Debug
 
         self::$log[] = $message;
 
-        if (self::$isStrict || $err_severity == E_USER_ERROR || $err_severity == E_RECOVERABLE_ERROR) {
+        if (self::$strict || $err_severity == E_USER_ERROR || $err_severity == E_RECOVERABLE_ERROR) {
             self::ThrowException($err_severity, $err_msg, $err_file, $err_line, $err_context);
         }
 
@@ -540,10 +688,13 @@ class Debug
 
         if (is_a($e, 'ErrorExceptionWithContext')) {
             /** @var $e ErrorExceptionWithContext */
-            echo "'</b>\n\n\tError Context:\n\n" . $e->getErrorContextAsString();
+            if (!empty($e->getErrorContext())) {
+                echo "</b>\n\n\tError Context:\n\n" . $e->getErrorContextAsString();
+            }
+            
         }
 
-        echo "\n</pre>";
+        echo "</pre>";
     }
 
     /**
@@ -593,7 +744,7 @@ class Debug
  */
 class ErrorExceptionWithContext extends ErrorException
 {
-    protected $errorContext = null;
+    protected $errorContext = array();
 
     public function __construct($message, $code, $severity, $filename, $lineno, $err_context = null) {
         parent::__construct($message, $code, $severity, $filename, $lineno);
@@ -609,13 +760,7 @@ class ErrorExceptionWithContext extends ErrorException
     {
         $context = null;
         foreach ($this->errorContext as $name => $value) {
-            $context .= '$' . $name . ': ';
-            if ($value === null) {
-                $context .= "NULL;\n";
-            }
-            else {
-                $context .= serialize($value) . "\n";
-            }
+            $context .= '$' . $name . ': ' . Debug::Expand($value) . "\n";
         }
         return $context;
     }

@@ -784,7 +784,7 @@ class MySqlDatabase extends MySQLi implements Database
      * @return MySqlDatabaseResult
      */
     public function CustomQuery($query) {
-        Debug::Message($query);
+        Debug::Log($query);
         $this->real_query($query);
         return new MySqlDatabaseResult($this);
     }
@@ -803,7 +803,7 @@ class MySqlDatabase extends MySQLi implements Database
 
         // Validate Query Type is set
         if (!isset($data['type'])) {
-            Debug::Message('Database\\IsValid: Query('. $query .') Failed type integrity check.');
+            Debug::Log('Database\\IsValid: Query('. $query .') Failed type integrity check.');
             return false;
         }
 
@@ -817,12 +817,12 @@ class MySqlDatabase extends MySQLi implements Database
                 foreach ($cluster as $name) {
                     // Check if referenced predicate exists
                     if (is_numeric($name) && !array_key_exists(($name - 1), $data['predicates'])) {
-                        Debug::Message('Database\\IsValid: Query('. $query .') Failed predicate integrity check.');
+                        Debug::Log('Database\\IsValid: Query('. $query .') Failed predicate integrity check.');
                         return false;
                     }
                     // Check if referenced cluster exists
                     if (!is_numeric($name) && !array_key_exists($name, $data['clusters'])) {
-                        Debug::Message('Database\\IsValid: Query('. $query .') Failed cluster integrity check (1).');
+                        Debug::Log('Database\\IsValid: Query('. $query .') Failed cluster integrity check (1).');
                         return false;
                     }
                 }
@@ -830,7 +830,7 @@ class MySqlDatabase extends MySQLi implements Database
             }
 
             if (($totalStatements - 1) !== count($clustered)) {
-                Debug::Message('Database\\IsValid: Query('. $query .') Failed cluster integrity check (2).');
+                Debug::Log('Database\\IsValid: Query('. $query .') Failed cluster integrity check (2).');
                 return false;
             }
         }
@@ -875,7 +875,7 @@ class MySqlDatabase extends MySQLi implements Database
                 $sql .= ' (`' . implode('`, `', $items) . '`)';
                 $sql .= ' VALUES(' . implode(', ', $values) . ')';
 
-                Debug::Message($sql);
+                Debug::Log($sql);
                 //return $sql . PHP_EOL;
                 $this->real_query($sql);
                 return new MySqlDatabaseResult($this);
@@ -1129,7 +1129,7 @@ class MySqlDatabase extends MySQLi implements Database
             }
         }
 
-        Debug::Message($sql);
+        Debug::Log($sql);
         //return $sql . PHP_EOL;
         $this->real_query($sql);
         return new MySqlDatabaseResult($this);

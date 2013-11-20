@@ -147,7 +147,7 @@ class Content
         */
         foreach (glob("smpl-includes/class.*.php") as $filename)
         {
-            Debug::Message("Including additional class found at: ".$filename);
+            Debug::Log("Including additional class found at: ".$filename);
             include_once($filename);
         }
         

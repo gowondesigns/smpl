@@ -28,7 +28,7 @@ class Language
         }
         if (null === self::$langInstance) {
             $languageCode = Config::Get("languageDefault");
-            Debug::Message('Initializing system language to: ' . $languageCode);
+            Debug::Log('Initializing system language to: ' . $languageCode);
             self::$langInstance = new LanguageSet($languageCode);
         }
         return self::$langInstance;
@@ -53,7 +53,7 @@ class Language
         if (null === $languageCode) {
             $languageCode = Config::Get("languageDefault");
         }
-        Debug::Message('Resetting system language to: ' . $languageCode);
+        Debug::Log('Resetting system language to: ' . $languageCode);
         self::$langInstance = new LanguageSet($languageCode);
         return self::$langInstance;
     }
@@ -281,7 +281,7 @@ class LanguageSet
         }
         // The default behavior is to replace the value an entry to the phrase list, or add a new phrase if it doesn't already exist 
         else {
-            Debug::Message('Adding phrase ' . $key . ':"' . $value . '" to '. $this->language . '-' . $this->languageCode);
+            Debug::Log('Adding phrase ' . $key . ':"' . $value . '" to '. $this->language . '-' . $this->languageCode);
             $this->languagePhrases[$key] = $value;
         }
     }  

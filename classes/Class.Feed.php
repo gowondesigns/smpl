@@ -41,7 +41,7 @@ class Feed
             $category = $result->Fetch();
         }
 
-        Debug::Message("Feed\\Generate: Creating new feed object of type ".$type);
+        Debug::Log("Feed\\Generate: Creating new feed object of type ".$type);
         if(class_exists($type) && is_subclass_of($type,'IFeed'))
             $feed = new $type;
         else {
