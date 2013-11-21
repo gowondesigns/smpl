@@ -118,7 +118,8 @@ class Debug
      */
     private static $log = array();
 
-
+    private static $timer = array();
+    private static $time = array();
 
     /**
      * Path to the file to store the log in
@@ -136,16 +137,11 @@ class Debug
      * Private constructor so that Debug cannot be instantiated
      * @return Debug
      */
-    private function __construct() {} 
-    
+    private function __construct() {}
+
     /**
      * Initialize (or Reset) Debugger settings and set custom handlers
-     * @param bool $setDebugMode TRUE => Store Debug messages in log
-     * @param bool $setStrict TRUE => All errors pass as exceptions | FALSE => Notices and Warnings passed as messages
-     * @param bool $setVerbose Debug errors are printed to screen (on false, debug errors are passed as HTML5 comments)
-     * @param bool $setLogging TRUE => Store Debug in XML file
-     * @param string $logPath Path to error log directory
-     * @return bool Returns TRUE on initial use, FALSE on subsequent uses     
+     * @return bool Returns TRUE on initial use, FALSE on subsequent uses
      */
     public static function Set()
     {
@@ -255,62 +251,79 @@ class Debug
      * @param string $msg Message stored in the Debug Log
      */
     public static function Log($msg = null) {
-            $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        //self::ExpandExit($stack);
-            if (count($stack) > 1) {
-                array_shift($stack); // Remove top level of stack, redundant info
-            }
-            // Get the function/method that called it
-            $caller = (isset($stack[0]['class'])) ? $stack[0]['class'] . "\\" : NULL;
-            $caller .= (isset($msg)) ? $stack[0]['function'] . ': ' : $stack[0]['function'];
-            $message = array(
-                'type' => 0,
-                'message' => $caller . $msg,
-                'stack' => $stack
-                );
-            self::$log[] = $message;
-        //self::ExpandExit($message);
+        $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        if (count($stack) > 1) {
+            array_shift($stack); // Remove top level of stack, redundant info
+        }
+        
+        // Check if user is using lazy Debug function l()
+        if (isset($stack[1]['function']) && $stack[1]['function'] === 'l') {
+            $caller = (isset($msg)) ? 'Debug\Log: ' : 'Debug\Log'; 
+        }
+        else {
+            // Otherwise, Get the function/method that called it
+            $caller = (isset($stack[0]['class'])) ? $stack[0]['class'] . "\\" : "[function]\\";
+            $caller .= (isset($msg)) ? $stack[0]['function'] . ': ' : $stack[0]['function'];        
+        }
+
+        $message = array(
+            'type' => 0,
+            'message' => $caller . $msg,
+            'stack' => $stack
+            );
+        self::$log[] = $message;
     }
     
-    public static function Timer( $message = null, $scope = '' )
+    public static function Timer( $message = null, $label = '' )
     {
-        $chrono = array();
+        /*
+        $valid = Pattern::Validate(Pattern::DEBUG_TIMER_LABEL_NAME, $label);
+        if ($valid === false) {
+            trigger_error('Invalid Timer Label: '. $label, E_USER_ERROR);
+        } //*/
+        //echo self::Expand($message,self::$time, self::$timer, ( $message && isset( self::$timer[ $label ] ) ));
+
         if (!self::$debug) {
             return false;
         }
-        self::Log();
-        return true;
-        /*
-        if (!isset(self::$time[ $scope ])) {
-            Debug::Log();
-            return true;
-            $chrono[] = '<b class="init">' . $scope . ' chrono init</b>';
+
+        $log = null;
+        $name = ($label === '') ? '': '"'. $label . '" ';
+        
+        if (!isset(self::$time[$label])) {
+            $log = $name . 'Timer Initialized';
         }
-        elseif ( is_string( $message ) ) {
-            $chrono[] = sprintf('<span class="time">%s -> %s: %fs</span>'
-                    , $scope
+        elseif($message !== true) {
+            if (extension_loaded('bcmath')) {
+                self::$timer[$label][$message] = bcsub(self::GetTime(), self::$time[$label], 5);
+            }
+            else {
+                self::$timer[$label][$message] = self::GetTime() - self::$time[$label];
+            }
+            $log = sprintf('%s -> %s: %fs'
+                    , $label
                     , $message
-                    , round( self::$timer[ $scope ][ $message ] = microtime( true ) - self::$time[ $scope ], 6 ));
+                    , self::$timer[$label][$message]);
         }
-        elseif ( $message && isset( self::$timer[ $scope ] ) ) {
-            asort( self::$timer[ $scope ] );
-            $base = reset ( self::$timer[ $scope ] ); // shortest duration
-            foreach( self::$timer[ $scope ] as $event => $duration )
-                $table[] = sprintf( '%5u - %-38.38s <i>%7fs</i>'
-                    , round( $duration / $base, 2 )
+        elseif ($message === true && isset(self::$timer[$label])) {
+            asort(self::$timer[$label]);
+            $base = reset(self::$timer[$label]); // shortest duration
+            foreach(self::$timer[$label] as $event => $duration) {
+                $table[] = sprintf( '%5u - %-38.38s <i>%.5fs</i>'
+                    , round($duration/$base, 2)
                     , $event
-                    , round( $duration, 3 ));
-            $chrono[] = '<div class="table"><b>' . $scope . ' chrono table</b>' . PHP_EOL .
-            sprintf( '%\'-61s %-46s<i>duration</i>%1$s%1$\'-61s'
+                    , round($duration, 5)
+                );
+            }
+            $log = $label . ' Timer Statistics' . PHP_EOL .
+                sprintf( '%\'-61s %-46s<i>Duration</i>%1$s%1$\'-61s'
                     , PHP_EOL
-                    , 'unit - action'
+                    , 'Unit - Description'
                 ) .
-                implode( PHP_EOL, $table ) . PHP_EOL .
-                '</div>';
+                implode( PHP_EOL, $table ) . PHP_EOL;
         }
-        echo '<pre class="debug chrono">' . implode( PHP_EOL, $chrono ) . '</pre>';
-        return self::$time[ $scope ] = microtime( true );
-        //*/
+        self::Log($log);
+        return self::$time[$label] = self::GetTime();
     }
 
     /**
@@ -353,8 +366,9 @@ class Debug
             case 'integer':
                 $string .= '<strong>int:</strong> ' . $item;
                 break;
+            // For "historical reasons," PHP's gettype() function calls floats "double"
             case 'double':
-                $string .= '<strong>double:</strong> ' . $item;
+                $string .= '<strong>float:</strong> ' . $item;
                 break;
             case 'resource':
                 $string .= '<strong>resource:</strong> ' . get_resource_type($item);
@@ -407,6 +421,7 @@ class Debug
                 
                 // Recursively crawl and catch all properties of parent classes
                 while ($parent = $object->getParentClass()) {
+                    /** @var $parent ReflectionClass */
                     $parents[] = $parent->getName();
                     $properties[$parent->getName()] = $parent->getProperties(ReflectionProperty::IS_STATIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE);
                     $object= $parent;
@@ -424,6 +439,7 @@ class Debug
                 foreach ($properties as $key => $set) {
                     $key = (is_int($key)) ? '': $key . ':';
                     foreach ($set as $prop) {
+                        /** @var $prop ReflectionProperty */
                         $prop->setAccessible(true);
                         if ($prop->isPrivate()) {
                             $visibility = 'private:';
@@ -583,6 +599,11 @@ class Debug
             for($k = 0, $length = count($msg['stack']); $k < $length; $k++)
             {
                 $stack = $msg['stack'][$k];
+                if (!isset($stack['file']) || !isset($stack['line'])) {
+                    $stack['file'] = '[internal] ' . $msg['stack'][($k + 1)]['file'];
+                    $stack['line'] = $msg['stack'][($k + 1)]['line'];
+                }
+
                 $text .= "\n\t\t#" . ($k + 1) . ' ' . $stack['file'] . '(' . $stack['line'] . '): ';
                 $caller = null;
 
@@ -688,13 +709,28 @@ class Debug
 
         if (is_a($e, 'ErrorExceptionWithContext')) {
             /** @var $e ErrorExceptionWithContext */
-            if (!empty($e->getErrorContext())) {
+            $context = $e->getErrorContext();
+            if (!empty($context)) {
                 echo "</b>\n\n\tError Context:\n\n" . $e->getErrorContextAsString();
             }
             
         }
 
         echo "</pre>";
+    }
+
+    /**
+     * Produces time in microseconds
+     * @return string|float
+     */
+    public static function GetTime()
+    {
+        if (extension_loaded('bcmath')) {
+            return vsprintf('%d.%06d', gettimeofday());
+        }
+        else {
+            return gettimeofday(true);
+        }
     }
 
     /**
