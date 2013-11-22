@@ -21,8 +21,7 @@ class Debug
      * Turn on Strict Debugging: E_WARNING, E_USER_WARNING, E_NOTICE, E_USER_NOTICE, 
      * E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED, E_USER_DEPRECATED, E_STRICT
      * will generate Exceptions 
-     * Otherwise, only E_USER_ERROR, E_RECOVERABLE_ERROR will
-     * generate exceptions          
+     * Otherwise, only E_USER_ERROR, E_RECOVERABLE_ERROR will generate exceptions
      */
     const STRICT_ON = 'STRICTON';
     
@@ -34,29 +33,39 @@ class Debug
     const VERBOSE_ON = 'VERBOSEON';
     
     /**
-     * Turn on Debugger Logging, output is stored in XML file (or error_log)
+     * Save Debug Log to XML file (or error_log)
      */
-    const LOGGING_ON = 'LOGGINGON';
+    const SAVE_LOG = 'LOGGINGON';
     
     /**
-     * Turn on Debugger Logging, output is not stored
+     * Expand method will be sent to Debug Log vs returned in string
      */
     const EXPAND_TO_DEBUG = 'EXPANDTODEBUG';
 
     /**
-     * Turn on Debugger Logging, output is not stored
+     * Turn off Debug Output completely
      */
     const OUTPUT_OFF = 'OUTPUTOFF';
     
     /**
-     * Turn on Debugger Logging, output is not stored
+     * Remove styling of Debug Output
      */
     const OUTPUT_STYLE_OFF = 'OUTPUTSTYLEOFF';    
 
     /**
-     * Turn on Debugger Logging, output is not stored
+     * Lock Debug settings to prevent them from being changed
      */
     const LOCK = 'LOCKDEBUGGER';
+
+    /**
+     * Set a Timer marker
+     */
+    const TIMER_SET = null;
+
+    /**
+     * Show Timer stats
+     */
+    const TIMER_STATS = true;
     
     /**
      * Use Debug Messages
@@ -78,9 +87,9 @@ class Debug
     
     /**
      * Use Debug Logging
-     * @var bool $logging
+     * @var bool $saveLog
      */
-    private static $logging;
+    private static $saveLog;
 
     /**
      * Use Debug Logging
@@ -114,12 +123,12 @@ class Debug
     
     /**
      * Debug log for messages and errors
-     * @var array $log
+     * @var array $logs
      */
-    private static $log = array();
+    private static $logs = array();
 
-    private static $timer = array();
-    private static $time = array();
+    private static $timerMarkers = array();
+    private static $times = array();
 
     /**
      * Path to the file to store the log in
@@ -163,31 +172,43 @@ class Debug
                     call_user_func_array(array('Debug', 'Log'), func_get_args());
                 }
             }
+            else {
+                self::Log('Cannot use l() for Debug::Log(), function name has already been set.');
+            }
             if (!function_exists('t')) {
                 function t() {
                     return call_user_func_array(array('Debug', 'Timer'), func_get_args());
                 }
+            }
+            else {
+                self::Log('Cannot use t() for Debug::Timer(), function name has already been set.');
             }
             if (!function_exists('e')) {
                 function e() {
                     return call_user_func_array(array('Debug', 'Expand'), func_get_args());
                 }
             }
+            else {
+                self::Log('Cannot use e() for Debug::Expand(), function name has already been set.');
+            }
             if (!function_exists('k')) {
                 function k() {
                     call_user_func_array(array('Debug', 'ExpandExit'), func_get_args());
                 }
             }
+            else {
+                self::Log('Cannot use k() for Debug::ExpandExit(), function name has already been set.');
+            }
         }
         elseif (self::$lock) {
-            trigger_error('Debugger was previously initialized and locked. Cannot override.', E_USER_ERROR);
+            trigger_error('Debugger was previously initialized and locked. Cannot override.', E_USER_WARNING);
         }
 
         // Initialize parameters
         self::$debug = false;
         self::$strict = false;
         self::$verbose = false;
-        self::$logging = false;
+        self::$saveLog = false;
         self::$expandToDebug = false;
         self::$outputOff = false;
         self::$outputStyleOff = false;
@@ -203,8 +224,8 @@ class Debug
                 case self::VERBOSE_ON:
                     self::$verbose = true;
                     break;
-                case self::LOGGING_ON:
-                    self::$logging = true;
+                case self::SAVE_LOG:
+                    self::$saveLog = true;
                     break;
                 case self::EXPAND_TO_DEBUG:
                     self::$expandToDebug = true;
@@ -234,15 +255,15 @@ class Debug
         }
     }
 
-    public static function SetLogPath($path = null)
+    public static function SetSavePath($path = null)
     {
         if ($path === null) {
             self::$logPath = null;
-            self::Log('Debugger log path reset.');
+            self::Log('Debugger log save path reset.');
         }
         else {
             self::$logPath = $path;
-            self::Log('Debugger log path set to: ' . $path);
+            self::Log('Debugger log save path set to: ' . $path);
         }
     }
     
@@ -271,65 +292,61 @@ class Debug
             'message' => $caller . $msg,
             'stack' => $stack
             );
-        self::$log[] = $message;
+        self::$logs[] = $message;
     }
     
-    public static function Timer( $message = null, $label = '' )
+    public static function Timer($message = Debug::TIMER_SET, $label = '')
     {
-        /*
+        $log = null;
+        $table = array();
         $valid = Pattern::Validate(Pattern::DEBUG_TIMER_LABEL_NAME, $label);
         if ($valid === false) {
             trigger_error('Invalid Timer Label: '. $label, E_USER_ERROR);
-        } //*/
-        //echo self::Expand($message,self::$time, self::$timer, ( $message && isset( self::$timer[ $label ] ) ));
-
+        }
+        // Do not run if not in debug mode
         if (!self::$debug) {
             return false;
         }
-
-        $log = null;
-        $name = ($label === '') ? '': '"'. $label . '" ';
-        
-        if (!isset(self::$time[$label])) {
-            $log = $name . 'Timer Initialized';
+        // Use default label if none is given
+        if($label === '') {
+            $label = '[default]';
         }
-        elseif($message !== true) {
+        // Check if marker has been initialized
+        if (!isset(self::$times[$label])) {
+            $log = $label . ' Initialized';
+        }
+        elseif($message === Debug::TIMER_SET || is_string($message)) {
             if (extension_loaded('bcmath')) {
-                self::$timer[$label][$message] = bcsub(self::GetTime(), self::$time[$label], 5);
+                self::$timerMarkers[$label][$message] = bcsub(self::GetTime(), self::$times[$label], 6);
             }
             else {
-                self::$timer[$label][$message] = self::GetTime() - self::$time[$label];
+                self::$timerMarkers[$label][$message] = self::GetTime() - self::$times[$label];
             }
-            $log = sprintf('%s -> %s: %fs'
-                    , $label
-                    , $message
-                    , self::$timer[$label][$message]);
+            $log = sprintf('%s -> %s: %fs', $label, $message, self::$timerMarkers[$label][$message]);
         }
-        elseif ($message === true && isset(self::$timer[$label])) {
-            asort(self::$timer[$label]);
-            $base = reset(self::$timer[$label]); // shortest duration
-            foreach(self::$timer[$label] as $event => $duration) {
-                $table[] = sprintf( '%5u - %-38.38s <i>%.5fs</i>'
-                    , round($duration/$base, 2)
-                    , $event
-                    , round($duration, 5)
-                );
+        elseif($message === Debug::TIMER_STATS && isset(self::$timerMarkers[$label])) {
+            $base = min(array_filter(self::$timerMarkers[$label], function($x) { return $x > 0; }));
+            foreach(self::$timerMarkers[$label] as $event => $duration) {
+                $table[] = sprintf("\t\t%5u - %-38.38s <i>%.5fs</i>", round($duration / $base, 2), $event, round($duration, 5));
             }
-            $log = $label . ' Timer Statistics' . PHP_EOL .
-                sprintf( '%\'-61s %-46s<i>Duration</i>%1$s%1$\'-61s'
-                    , PHP_EOL
-                    , 'Unit - Description'
-                ) .
+            $log = $label . " Timer Statistics\n" .
+                sprintf( "\t\t%'-61s\t\t %-46s%s\n\t\t%'-61s", PHP_EOL, 'Unit - Description', '<i>Duration</i>', PHP_EOL) .
                 implode( PHP_EOL, $table ) . PHP_EOL;
         }
+        // Otherwise, do nothing
+        else {
+            return false;
+        }
+
         self::Log($log);
-        return self::$time[$label] = self::GetTime();
+        self::$times[$label] = self::GetTime();
+        return true;
     }
 
     /**
      * Output detailed description of one or more variables
      * @param mixed $item,...
-     * @return string
+     * @return null|string
      */
     public static function Expand($item)
     {
@@ -464,6 +481,10 @@ class Debug
                 break;
         }
 
+        if(self::$expandToDebug) {
+            Debug::Log($string);
+            return null;
+        }
         return $string;
     }
 
@@ -475,7 +496,9 @@ class Debug
     public static function ExpandExit($item)
     {
         $string = call_user_func_array(array('Debug', 'Expand'), func_get_args());
-        echo "<pre>\n" . $string . "\n</pre>";
+        if(!self::$expandToDebug) {
+            echo "<pre>\n" . $string . "\n</pre>";
+        }
         exit;
     }
 
@@ -501,11 +524,11 @@ class Debug
         
         // Show messages if anything > Message occurs or log is set in debug mode
         $showMessages = false;
-        if (self::$debug && !empty(self::$log)) {
+        if (self::$debug && !empty(self::$logs)) {
             $showMessages = true;
         }
         else {
-            foreach(self::$log as $msg) {
+            foreach(self::$logs as $msg) {
                 if ($msg['type'] > 0) {
                     $showMessages = true;
                     break;
@@ -533,9 +556,9 @@ class Debug
         );
 
         $j = 1;
-        for($i = 0; $i < count(self::$log); $i++)
+        for($i = 0; $i < count(self::$logs); $i++)
         {
-            $msg = self::$log[$i];
+            $msg = self::$logs[$i];
             if (!self::$debug && $msg['type'] == 0) {
                 continue;
             }
@@ -639,7 +662,7 @@ class Debug
             echo (self::$verbose) ? "\n</pre>": "\n-->";
         }
 
-        if (self::$logging) {
+        if (self::$saveLog) {
             try {
                 // check if partnering XML class exists, if not, throw up to output to default error_log
                 self::$logPath .= '\log-' . Date::Now()->ToString() . '.xml';
@@ -688,7 +711,7 @@ class Debug
             $message['message'] = '<b>UNKNOWN ERROR TYPE</b> in <b>'. $err_file . '(' .$err_line . '):</b> ' . $err_msg;
         }
 
-        self::$log[] = $message;
+        self::$logs[] = $message;
 
         if (self::$strict || $err_severity == E_USER_ERROR || $err_severity == E_RECOVERABLE_ERROR) {
             self::ThrowException($err_severity, $err_msg, $err_file, $err_line, $err_context);

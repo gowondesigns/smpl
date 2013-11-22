@@ -22,9 +22,9 @@ class Pattern
     const XML_VALID_TAG_NAME = '/^[a-z_]+[a-z0-9\:\-\.\_]*[^:]*$/i';
     
     /**
-     * Regex Debug::Timer labels
+     * Regex Debug::Timer labels: Alphanumeric string, must begin with alpha, up to 30 char length
      */
-    const DEBUG_TIMER_LABEL_NAME = '/(^[A-Za-z][A-Za-z0-9\-_]{0,29}$)|(^0$)/';
+    const DEBUG_TIMER_LABEL_NAME = '/^[A-Za-z0-9\-_]{0,30}$/';
 
     /**
      * Regex SQL column names: Alphanumeric string, must begin with alpha, up to 30 char length
