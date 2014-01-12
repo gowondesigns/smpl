@@ -629,7 +629,7 @@ class Query
         // For submitting multiple items in a single request: array( 'item', 'item' => order, 'item', ...)
         if (is_array($item)) {
             foreach($item as $key => $value) {
-                if (!Pattern::Validate(Pattern::SQL_NAME, $item)) {
+                if (!Pattern::Validate(Pattern::SQL_NAME, $key)) {
                     trigger_error('Item name must be alphanumeric, begin with a letter, and be less than or equal to 30 characters in length.', E_USER_ERROR);
                 }
                 if (is_numeric($key)) {
@@ -940,7 +940,7 @@ class MySqlDatabase extends MySQLi implements Database
         }
 
         /* Where Clauses*/
-        if (isset($data['predicates']))
+        if (!empty($data['predicates']))
         {
             $sql .= ' WHERE ';
             $predicates = array();
@@ -1106,7 +1106,6 @@ class MySqlDatabase extends MySQLi implements Database
 
         /* Query Optimizers */
         if (!empty($data['order'])) {
-            var_dump($data['order']);
             $order = array();
 
             for ($i = 0; $i < count($data['order']); $i++) {
