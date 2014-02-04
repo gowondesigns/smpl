@@ -8,6 +8,7 @@
  * Debug Static Class
  * Procedure: All issues throw a PHP standard error type. Debug error handler turns Errors into Exceptions that can be caught.
  * Warnings and Notices only throw exceptions in Strict Mode. Logging defaults to PHP error log.
+ * Designed to be self-contained, does not use any other classes.
  * @package Debug
  */
 class Debug
@@ -299,7 +300,8 @@ class Debug
     {
         $log = null;
         $table = array();
-        $valid = Pattern::Validate(Pattern::DEBUG_TIMER_LABEL_NAME, $label);
+
+        $valid = preg_match('/^[A-Za-z0-9\-_]{0,30}$/', $label);
         if ($valid === false) {
             trigger_error('Invalid Timer Label: '. $label, E_USER_ERROR);
         }
@@ -548,7 +550,7 @@ class Debug
             '@attributes' => array(
                 'version' => '0.1.0',
                 'server' => htmlentities($server_info, ENT_QUOTES),
-                'datetime' => Date::Now()->ToString(),
+                'datetime' => self::GetDateString(),
                 'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
                 'xsi:noNamespaceSchemaLocation' => 'logsetSchema.xsd'
             ),
@@ -665,7 +667,7 @@ class Debug
         if (self::$saveLog) {
             try {
                 // check if partnering XML class exists, if not, throw up to output to default error_log
-                self::$logPath .= '\log-' . Date::Now()->ToString() . '.xml';
+                self::$logPath .= '\log-' . self::GetDateString() . '.xml';
                 $xml = XML::createXML('logset', $exportXML);
                 $xml->save(self::$logPath);
             }
@@ -754,6 +756,15 @@ class Debug
         else {
             return gettimeofday(true);
         }
+    }
+
+    /**
+     * Get date in YYYYMMDDHHmmSS format
+     * @return string
+     */
+    private static function GetDateString()
+    {
+        return date('YmdHis');
     }
 
     /**
