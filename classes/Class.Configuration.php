@@ -19,6 +19,7 @@
     const DB_PREFIX = '';
     const USE_MODREWRITE = false;
     const USE_SSL = false;
+    const USE_MINIFY = false;
 
     private static $database = null;
 

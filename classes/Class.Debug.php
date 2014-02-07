@@ -355,14 +355,18 @@ class Debug
         $string = null;
         if (func_num_args() > 1) {
             foreach (func_get_args() as $arg) {
-                $string[] = call_user_func(array('Debug', 'Expand'), $arg);
+                $string[] = self::Expand($arg);
+                //$string[] = call_user_func(array('Debug', 'Expand'), $arg);
             }
 
+            if(self::$expandToDebug) {
+                Debug::Log("\n" . implode("\n\n", $string));
+                return null;
+            }
             return implode("\n\n", $string);
         }
 
-        $padding =
-            function($number) {
+        $padding = function($number) {
                 return str_repeat('  ', $number);
             };
 
@@ -483,8 +487,8 @@ class Debug
                 break;
         }
 
-        if(self::$expandToDebug) {
-            Debug::Log($string);
+        if(self::$expandToDebug && $depth == 0) {
+            Debug::Log("\n" . $string);
             return null;
         }
         return $string;
@@ -493,11 +497,16 @@ class Debug
 
     /**
      * Output detailed description of one or more variables, then end execution
-     * @param mixed $item,...
+     * @param mixed $params,...
      */
-    public static function ExpandExit($item)
+    public static function ExpandExit($params)
     {
-        $string = call_user_func_array(array('Debug', 'Expand'), func_get_args());
+        $string = array();
+            foreach (func_get_args() as $arg) {
+                $string[] = self::Expand($arg);
+            }
+        $string = implode("\n\n", $string);
+        //$string = call_user_func_array(array('Debug', 'Expand'), func_get_args());
         if(!self::$expandToDebug) {
             echo "<pre>\n" . $string . "\n</pre>";
         }
@@ -509,6 +518,10 @@ class Debug
      * Triggered by an unhandled error or the end of execution.
      */
     public static function ExecutionEnd() {
+        if (self::$outputOff) {
+            exit;
+        }
+
         // The following error types cannot be handled with a user defined function:
         $executionEndTime = gettimeofday(true);
         $criticalErrors = array(E_ERROR, E_PARSE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING);
@@ -621,6 +634,7 @@ class Debug
 
             // [MUSTCHANGE] handling of stack trace for display and logging in cases where stack is empty
             // should change into DO-WHILE method
+
             for($k = 0, $length = count($msg['stack']); $k < $length; $k++)
             {
                 $stack = $msg['stack'][$k];
@@ -649,7 +663,7 @@ class Debug
                     '@value' => $caller
                 );
             }
-            
+
             if (empty($msg['stack'])) {
                 $text .= "\n\t\t#1 {main}";
             } 
@@ -758,6 +772,10 @@ class Debug
         }
     }
 
+    public static function TriggerExceptionMode() {
+        self::$expandToDebug = false;
+    }
+
     /**
      * Get date in YYYYMMDDHHmmSS format
      * @return string
@@ -828,9 +846,10 @@ class ErrorExceptionWithContext extends ErrorException
 
     public function getErrorContextAsString()
     {
+        Debug::TriggerExceptionMode();
         $context = null;
         foreach ($this->errorContext as $name => $value) {
-            $context .= '$' . $name . ': ' . Debug::Expand($value) . "\n";
+            $context .= '$' . $name . ': ' . Debug::Expand($value) . "\n\n";
         }
         return $context;
     }

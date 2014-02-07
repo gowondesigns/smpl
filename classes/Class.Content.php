@@ -101,6 +101,10 @@ class Content
     // Method to initiate all automatic actions
     public static function Initialize()
     {
+        if (Config::USE_MINIFY) {
+            ob_start(array('Content', 'Minify'));
+        }
+
         // Set script timezone to UTC for uniform dates regardless of server settings
         // Date objects will handle offset internally
         date_default_timezone_set('UTC');
@@ -151,7 +155,7 @@ class Content
             include_once($filename);
         }
         
-        // Is no POST signature is present, any existing validation data should be unset
+        // If no POST signature is present, any existing validation data should be unset
         $key = Security::Key();
         if (!isset($_POST[$key]))
             unset($_SESSION[$key]['validate']);
@@ -467,8 +471,33 @@ Otherwise, look for the space being called
         
         $article = new Article($data);
         $article->Render();
-    }    
-    
+    }
+
+    /**
+     * @param $buffer
+     * @param $mode
+     * @return mixed|string
+     */
+    private static function Minify($buffer, $mode) {
+        $search = array(
+            '/<!--[^\[](.*?)-->/s' => '',
+            //'/ +/' => ' ', // Old way to remove extra whitespace, wasn't catching everything
+            '/\s{2,}/' => '', // New way catches everything, maybe that's too aggressive?
+            //"/<!–\{(.*?)\}–>|<!–(.*?)–>|[\t\r\n]|<!–|–>|\/\/ <!–|\/\/ –>|<!\[CDATA\[|\/\/ \]\]>|\]\]>|\/\/\]\]>|\/\/<!\[CDATA\[/" => ''
+            "/[\t\r\n]|<!–|–>|\/\/ <!–|\/\/ –>|<!\[CDATA\[|\/\/ \]\]>|\]\]>|\/\/\]\]>|\/\/<!\[CDATA\[/" => ''
+        );
+        $buffer = preg_replace(array_keys($search), array_values($search), $buffer);
+        /* Only gzip for content with a min size of 860 bytes
+         *
+         * The reasons 860 bytes is the minimum size for compression is twofold: (1) The overhead of compressing an object
+         * under 860 bytes outweighs performance gain. (2) Objects under 860 bytes can be transmitted via a single packet
+         * anyway, so there isn't a compelling reason to compress them.
+         */
+        if (ob_get_length() >= 860) {
+            return ob_gzhandler($buffer, $mode);
+        }
+        return $buffer;
+    }
 }
 
 
